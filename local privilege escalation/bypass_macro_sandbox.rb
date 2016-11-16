@@ -332,16 +332,16 @@ def revert_bypass
 
         # display detailed description of dword value sellected to inject...
         # and at the same time restrict the use of dword:0 or dword:1...
-        if datastore['DWORD'] == '0' || datastore['DWORD'] == '1'
+        if datastore['DWORD'] == 0 || datastore['DWORD'] == 1
           print_error("This function does not support [ dword: #{value} ]")
           print_warning("please set DWORD to [ 2 | 3 | 4 ] run levels...")
           print_line("")
           return
-        elsif datastore['DWORD'] == '2'
+        elsif datastore['DWORD'] == 2
           lvl = "Disable All macros with notification."
-        elsif datastore['DWORD'] == '3'
+        elsif datastore['DWORD'] == 3
           lvl = "Disable all macros except those digitally signed."
-        elsif datastore['DWORD'] == '4'
+        elsif datastore['DWORD'] == 4
           lvl = "Disable all without notification."
         else
           print_error("This function does not support [ dword: #{value} ]")
