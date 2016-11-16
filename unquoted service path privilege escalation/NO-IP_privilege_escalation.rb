@@ -121,7 +121,7 @@ class MetasploitModule < Msf::Post
                                 ],
   
                         'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => 'nov 15 2016',
+                        'DisclosureDate' => 'nov 16 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true', # requires elevated privileges
