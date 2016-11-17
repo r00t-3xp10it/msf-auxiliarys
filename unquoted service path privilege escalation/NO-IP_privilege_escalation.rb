@@ -54,7 +54,6 @@
 # use attrib to hidde your program.exe in target? => set HIDDEN_ATTRIB true
 #
 # "WARNING: This module will not delete the payload deployed"
-# "WARNING: This module will change backdoor timestamp to: 1-10-2015 7:30 am"
 # "WARNING: Note that only executables explicitly written to interface with the Service Control
 # Manager should be installed this way. While SC will happily accept a regular non-service binary,
 # you will receive the fatal Error 1053 when you attempt to start the service, please read the follow
@@ -120,8 +119,8 @@ class MetasploitModule < Msf::Post
                                         'SpecialThanks: milton_barra', # testing/debug module
                                 ],
   
-                        'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => 'nov 16 2016',
+                        'Version'        => '$Revision: 1.4',
+                        'DisclosureDate' => 'nov 17 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true', # requires elevated privileges
