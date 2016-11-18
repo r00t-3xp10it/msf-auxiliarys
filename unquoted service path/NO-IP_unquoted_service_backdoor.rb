@@ -7,7 +7,7 @@
 
 
 ##
-# Exploit Title  : NO-IP_persistence_payload.rb - 'Unquoted Service Path vuln'
+# Exploit Title  : NO-IP_unquoted_service_backdoor.rb - 'Unquoted Service Path vuln'
 # NO-IP Version  : 4.1.1
 # vuln Discover  : Ehsan Hosseini
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
@@ -62,20 +62,20 @@
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
-# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/NO-IP_persistence_payload.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/NO-IP_persistence_payload.rb
+# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/NO-IP_unquoted_service_backdoor.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/NO-IP_unquoted_service_backdoor.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
 #
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
 # msf exploit(handler) > reload_all
-# msf exploit(handler) > use post/windows/escalate/NO-IP_persistence_payload
-# msf post(NO-IP_persistence_payload) > info
-# msf post(NO-IP_persistence_payload) > show options
-# msf post(NO-IP_persistence_payload) > show advanced options
-# msf post(NO-IP_persistence_payload) > set [option(s)]
-# msf post(NO-IP_persistence_payload) > exploit
+# msf exploit(handler) > use post/windows/escalate/NO-IP_unquoted_service_backdoor
+# msf post(NO-IP_unquoted_service_backdoor) > info
+# msf post(NO-IP_unquoted_service_backdoor) > show options
+# msf post(NO-IP_unquoted_service_backdoor) > show advanced options
+# msf post(NO-IP_unquoted_service_backdoor) > set [option(s)]
+# msf post(NO-IP_unquoted_service_backdoor) > exploit
 ##
  
  
