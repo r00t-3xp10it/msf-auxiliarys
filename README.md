@@ -19,5 +19,5 @@ my collection of metasploit auxiliary post-modules
 ![msf post(module_name)](https://dl.dropboxusercontent.com/u/21426454/msf.jpeg)
 
 
-# Please read my 'WIKI' for further information.
+[Please read my 'WIKI' for further information](https://github.com/r00t-3xp10it/msf-auxiliarys/wiki/Welcome-to-the-msf-auxiliarys-wiki!)
 
