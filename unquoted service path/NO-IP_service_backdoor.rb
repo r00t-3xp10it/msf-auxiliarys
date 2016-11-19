@@ -257,7 +257,7 @@ def ls_stage2
   bin_path = "C:\\Program.exe"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['HIDDEN_ATTRIB'] == 'nil'
+  if datastore['HIDDEN_ATTRIB'].blank?
     print_error("Options not configurated correctly...")
     print_warning("Please set HIDDEN_ATTRIB option!")
     return nil
@@ -317,7 +317,7 @@ def ls_stage3
   hklm = "HKLM\\System\\CurrentControlSet\\services\\#{s_name}"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['SERVICE_STATUS'] == 'nil'
+  if datastore['SERVICE_STATUS'].blank?
     print_error("Options not configurated correctly...")
     print_warning("Please set SERVICE_STATUS option!")
     return nil
@@ -442,7 +442,7 @@ def ls_stage4
   bin_name = "C:\\Program.exe"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['BLANK_TIMESTOMP'] == 'nil'
+  if datastore['BLANK_TIMESTOMP'].blank?
     print_error("Options not configurated correctly...")
     print_warning("Please set BLANK_TIMESTOMP option!")
     return nil

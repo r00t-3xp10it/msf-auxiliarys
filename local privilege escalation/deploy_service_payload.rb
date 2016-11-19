@@ -196,7 +196,7 @@ def ls_stage1
   p_name = datastore['PAYLOAD_NAME'] # payload.exe
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['LOCAL_PATH'] == 'nil' || datastore['SERVICE_NAME'] == 'nil' || datastore['PAYLOAD_NAME'] == 'nil'
+  if datastore['LOCAL_PATH'].blank? || datastore['SERVICE_NAME'].blank? || datastore['PAYLOAD_NAME'].blank?
     print_error("Options not configurated correctly...")
     print_warning("Please set LOCAL_PATH | SERVICE_NAME | PAYLOAD_NAME options!")
     return nil
@@ -256,7 +256,7 @@ def ls_stage2
   p_name = datastore['PAYLOAD_NAME'] # payload.exe
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['DEPLOY_PATH'] == 'nil' || datastore['PAYLOAD_NAME'] == 'nil'
+  if datastore['DEPLOY_PATH'].blank? || datastore['PAYLOAD_NAME'].blank?
     print_error("Options not configurated correctly...")
     print_warning("Please set DEPLOY_PATH | PAYLOAD_NAME options!")
     return nil
@@ -500,7 +500,7 @@ def ls_stage5
   p_name = datastore['PAYLOAD_NAME'] # payload.exe
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['DEPLOY_PATH'] == 'nil' || datastore['PAYLOAD_NAME'] == 'nil'
+  if datastore['DEPLOY_PATH'].blank? || datastore['PAYLOAD_NAME'].blank?
     print_error("Options not configurated correctly...")
     print_warning("Please set DEPLOY_PATH | PAYLOAD_NAME options!")
     return nil
