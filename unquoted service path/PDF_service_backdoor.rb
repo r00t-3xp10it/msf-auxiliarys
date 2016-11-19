@@ -7,7 +7,7 @@
 
 
 ##
-# Exploit Title  : NO-IP_unquoted_service_backdoor.rb - 'Unquoted Service Path Privilege Escalation'
+# Exploit Title  : PDF_service_backdoor.rb - 'Unquoted Service Path Privilege Escalation'
 # PDF Version    : 4.1.12
 # vuln Discover  : Joey Lane
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
@@ -69,20 +69,20 @@
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
-# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/NO-IP_unquoted_service_backdoor.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/NO-IP_unquoted_service_backdoor.rb
+# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/PDF_service_backdoor.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/PDF_service_backdoor.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
 #
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
 # msf exploit(handler) > reload_all
-# msf exploit(handler) > use post/windows/escalate/NO-IP_unquoted_service_backdoor
-# msf post(NO-IP_unquoted_service_backdoor) > info
-# msf post(NO-IP_unquoted_service_backdoor) > show options
-# msf post(NO-IP_unquoted_service_backdoor) > show advanced options
-# msf post(NO-IP_unquoted_service_backdoor) > set [option(s)]
-# msf post(NO-IP_unquoted_service_backdoor) > exploit
+# msf exploit(handler) > use post/windows/escalate/PDF_service_backdoor
+# msf post(PDF_service_backdoor) > info
+# msf post(PDF_service_backdoor) > show options
+# msf post(PDF_service_backdoor) > show advanced options
+# msf post(PDF_service_backdoor) > set [option(s)]
+# msf post(PDF_service_backdoor) > exploit
 #
 #
 # [ FINAL NOTES ]

