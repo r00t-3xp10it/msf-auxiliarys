@@ -12,12 +12,8 @@ my collection of metasploit auxiliary post-modules
     4º - reload metasploit database (reload_all)
 
 
-# [deploy_service_payload] set DEPLOY_PATH C:\\Users
+# [deploy_service_payload]
 ![msf post(module_name)](https://dl.dropboxusercontent.com/u/21426454/msf2.jpeg)
-
-# [deploy_service_payload] set SERVICE_STATUS true
-![msf post(module_name)](https://dl.dropboxusercontent.com/u/21426454/msf.jpeg)
-
 
 [Please read my 'WIKI' for further information](https://github.com/r00t-3xp10it/msf-auxiliarys/wiki/Welcome-to-the-msf-auxiliarys-wiki!)
 
