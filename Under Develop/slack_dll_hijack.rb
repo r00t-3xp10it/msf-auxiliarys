@@ -268,7 +268,7 @@ def run
 
     # check for proper session.
     if not sysinfo.nil?
-      print_status("Running module against: #{sys_nfo['Computer']}")
+      print_status("Running module against: #{sysnfo['Computer']}")
     else
       print_error("ABORT]:This post-module only works in meterpreter sessions")
       raise Rex::Script::Completed
