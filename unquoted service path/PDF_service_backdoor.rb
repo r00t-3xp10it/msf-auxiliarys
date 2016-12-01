@@ -213,7 +213,7 @@ def ls_stage1
 
   # chose to deploy payload in C:\  -> [C:\Program.exe] OR ...
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
-  if datastore['PDF_EXE'] == true
+  if datastore['PDF_EXE'] == 'true'
    payload = "%programfiles(x86)%\\PDF.exe"
    shell = "PDF.exe"
   else
@@ -294,7 +294,7 @@ def ls_stage2
 
   # chose to deploy payload in C:\  -> [C:\Program.exe] OR ...
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
-  if datastore['PDF_EXE'] == true
+  if datastore['PDF_EXE'] == 'true'
    payload = "%programfiles(x86)%\\PDF.exe"
    shell = "PDF.exe"
   else
@@ -486,7 +486,7 @@ def ls_stage4
   end
 
   # to deploy payload in C:\Program Files (x86)  -> [C:\Program Files (x86)\PDF.exe]
-  if datastore['PDF_EXE'] == true
+  if datastore['PDF_EXE'] == 'true'
    payload = "%programfiles(x86)%\\PDF.exe"
    shell = "PDF.exe"
   else
