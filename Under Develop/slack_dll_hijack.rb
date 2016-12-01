@@ -256,7 +256,7 @@ def ls_stage2
 
       # revert original dll...
       print_good(" Revert slack dll to default stage...")
-      r = session.sys.process.execute("cmd.exe /c MOVE /Y #{d_path}\\#{b_name} #{d_path}\\${p_name}", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c MOVE /Y #{d_path}\\#{b_name} #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
       print_status("slack dll reverted to default stage...")
       print_line("")
