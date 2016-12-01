@@ -133,7 +133,7 @@ class MetasploitModule < Msf::Post
 
 
 
-C:\\Users\tester\\AppData\\Roaming\\Spotify
+
 
 
 # --------------------------------------------
