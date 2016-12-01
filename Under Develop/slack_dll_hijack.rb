@@ -206,6 +206,15 @@ def ls_stage1
       r.channel.close
       r.close
 
+    else
+      print_error("ABORT: post-module cant find backdoor agent path...")
+      print_error("BACKDOOR_AGENT: #{d_path}\\#{p_name}")
+      print_line("")
+    end
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
 end
 
 
