@@ -206,9 +206,6 @@ def ls_stage1
       r.channel.close
       r.close
 
-  # error exception funtion
-  rescue ::Exception => e
-  print_error("Error: #{e.class} #{e}")
 end
 
 
@@ -257,6 +254,17 @@ def run
     print_line("")
 
 
+    # check for proper session.
+    if not sysinfo.nil?
+      print_status("Running module against: #{sys_nfo['Computer']}")
+    else
+      print_error("ABORT]:This post-module only works in meterpreter sessions")
+      raise Rex::Script::Completed
+    end
+    # elevate session privileges befor runing options
+    client.sys.config.getprivs.each do |priv|
+    end
+
  
 # ------------------------------------
 # Selected settings to run
@@ -268,5 +276,4 @@ def run
       if datastore['REVERT_HIJACK']
          ls_stage2
       end
-   end
 end
