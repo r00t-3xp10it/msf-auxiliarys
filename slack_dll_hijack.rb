@@ -19,8 +19,8 @@
 # DLL Hijacking is when you abuse the library search order to gain execution in a process.
 # Being able to write to the directory an executable it allows a malicious actor the ability
 # to drop a dll with the same name as one the executable will request via LoadLibrary. When
-# executable attempts to load the expected library, they will instead load the malicious dll.
-# "In this case the current install directory and PATH environment (%localappdata%) are the
+# executable attempts to load the expected library, it will instead load the malicious dll.
+# "In this case the current install directory and PATH environment (%LOCALAPPDATA%) are the
 # problems. When a program makes the decision to load a DLL from the current directory, it
 # can lead to DLL hijacking, in this example expoited remotelly"...
 #
