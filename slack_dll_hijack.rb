@@ -20,8 +20,8 @@
 # Being able to write to the directory an executable it allows a malicious actor the ability
 # to drop a dll with the same name as one the executable will request via LoadLibrary, When
 # executable attempts to load the expected library, they will instead load the malicious dll.
-# "In this case the current directory and PATH environment are the problem, When a program makes
-# the decision to load a DLL from the current directory, it can lead to DLL hijacking"...
+# "In this case the current directory and PATH environment are the problem, When a program
+# makes the decision to load a DLL from the current directory, it can lead to DLL hijacking"...
 #
 #
 #
