@@ -11,17 +11,18 @@
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Slack Version  : 2.3.2
 # Vuln Discover  : Chaitanya Haritash
-# Tested on      : Windows 7 ultimate (32 bites)
+# Tested on      : Windows 7 ultimate (32 bits)
 # Software Link  : http://www.techspot.com/downloads/6754-slack.html
 #
 #
 # [ VULNERABILITY DETAILS ]
 # DLL Hijacking is when you abuse the library search order to gain execution in a process.
 # Being able to write to the directory an executable it allows a malicious actor the ability
-# to drop a dll with the same name as one the executable will request via LoadLibrary, When
+# to drop a dll with the same name as one the executable will request via LoadLibrary. When
 # executable attempts to load the expected library, they will instead load the malicious dll.
-# "In this case the current directory and PATH environment are the problem, When a program
-# makes the decision to load a DLL from the current directory, it can lead to DLL hijacking"...
+# "In this case the current install directory and PATH environment (%localappdata%) are the
+# problems. When a program makes the decision to load a DLL from the current directory, it
+# can lead to DLL hijacking, in this example expoited remotelly"...
 #
 #
 #
