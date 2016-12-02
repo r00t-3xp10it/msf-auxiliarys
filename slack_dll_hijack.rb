@@ -84,7 +84,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'dll hijacking in slack 2.3.2 software',
                         'Description'   => %q{
-                                        This post-exploitation module requires a meterpreter session to be able to upload/inject our libEGL.dll malicious agent into the path of the service (dll hijacking) "WARNING: payload to send must be named as: libEGL.dll"
+                                        This post-exploitation module requires a meterpreter session to be able to upload our malicious libEGL.dll agent into slack 2.3.2 working directory. When slack.exe attempts to load the expected library, it will instead load the malicious dll. "WARNING: payload to send must be named as: libEGL.dll"
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -93,7 +93,7 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : Chaitanya Haritash', # vuln discover
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
+                        'Version'        => '$Revision: 1.3',
                         'DisclosureDate' => 'dez 2 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
