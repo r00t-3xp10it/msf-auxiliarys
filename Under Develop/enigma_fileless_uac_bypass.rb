@@ -65,6 +65,7 @@ require 'rex'
 require 'msf/core'
 require 'msf/core/post/common'
 require 'msf/core/post/windows/priv'
+require 'msf/core/post/windows/registry'
 
 
 
@@ -72,11 +73,12 @@ require 'msf/core/post/windows/priv'
 # Metasploit Class name and includes
 # ----------------------------------
 class MetasploitModule < Msf::Post
-      Rank = GreatRanking
+      Rank = ExcellentRanking
  
          include Msf::Post::Common
          include Msf::Post::Windows::Priv
          include Msf::Post::Windows::Error
+         include Msf::Post::Windows::Registry
 
 
 
