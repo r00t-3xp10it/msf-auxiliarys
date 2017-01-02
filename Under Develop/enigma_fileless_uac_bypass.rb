@@ -15,18 +15,27 @@
 #
 #
 # [ DESCRIPTION ]
+# Most of the UAC bypass techniques require dropping a file to disk (for example, placing a DLL on disk
+# to perform a DLL hijack). The technique used in this module differs from the other public methods and
+# provides a useful new technique that does not rely on a privileged file copy, code injection, or placing
+# a traditional file on disk.
+#
+# As a normal user, you have write access to keys in HKCU, if an elevated process interacts with keys you
+# are able to manipulate you can potentially interfere with actions a high-integrity process is attempting
+# to perform. (hijack the process being started), Due to the fact that I was able to hijack the process,
+# it is possible to simply execute whatever malicious cmd.exe command you wish. This means that code execution
+# has been achieved in a high integrity process (bypassing UAC) without dropping a DLL or other file down to
+# the file system. This significantly reduces the risk to the attacker because they aren’t placing a traditional
+# file on the file system that can be caught by AV/HIPS or forensically identified later.
+# "This module differs from OJ msf module in the fact that will use cmd.exe insted of powershell.exe"
+#
 #
 #
 #
 # [ MODULE DEFAULT OPTIONS ]
-# The session number to run this module on        => set SESSION 3
-# The service name to be created (or query)       => set SERVICE_NAME MyService
-# Input the payload name to be uploaded           => set PAYLOAD_NAME payload.exe
-# The destination path were to deploy payload     => set DEPLOY_PATH %userprofile%
-# The full path (local) of payload to be uploaded => set LOCAL_PATH /root/payload.exe
-#
-# [ MODULE ADVANCED OPTIONS ]
-# Blank remote backdoor timestomp attributs?      => set BLANK_TIMESTOMP true
+# The session number to run this module on  => set SESSION 3
+# The cmd.exe command to be executed        => set CMD_COMMAND cmd.exe /c start notepad.exe
+# Delete malicious registry key hive?       => set DEL_REGKEY true
 #
 #
 #
@@ -76,15 +85,15 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'enigma0x3 fileless uac bypass [RCE]',
+                        'Name'          => 'enigma fileless uac bypass [RCE]',
                         'Description'   => %q{
-                                        To demonstrate this attack, Matt Graeber (@mattifestation) and enigma0x3 constructed a PowerShell script that, when executed on a system, will create the required registry entry in the current user’s hive (HKCU\Software\Classes\mscfile\shell\open\command), set the default value to whatever you pass via the -Command parameter, run eventvwr.exe.
+                                        To demonstrate this attack, Matt Graeber (@mattifestation) and enigma0x3 constructed a PowerShell script that, when executed on a system, will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the -Command parameter,and run eventvwr.exe. "This module differs from OJ msf module in the fact that will use cmd.exe to execute commands insted of powershell.exe"
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        # 'SpecialThanks: Fatima Ferreira | Chaitanya', # collaborators
+                                        'Vuln dicover : enigma0x3 | Matt Graeber', # credits
                                 ],
  
                         'Version'        => '$Revision: 1.0',
@@ -94,10 +103,10 @@ class MetasploitModule < Msf::Post
                         'Privileged'     => 'false', # thats no need for privilege escalation..
                         'Targets'        =>
                                 [
-                                         # Tested againts windows 7 (build 7600/7601) SP 1 | XP SP1 (32 bits)
+                                         # Tested againts windows 7 | Windows 8 | Windows 10
                                          [ 'Windows XP', 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '3', # default its to run againts windows 7 (build 7600)
+                        'DefaultTarget'  => '6', # default its to run againts windows 10
                         'References'     =>
                                 [
                                          [ 'URL', 'goo.gl/XHQ6aF' ],
@@ -118,7 +127,7 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('CMD_COMMAND', [ false, 'The cmd command to be executed (eg cmd.exe /c <command>)']),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious service?' , false])
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class)
 
         end
