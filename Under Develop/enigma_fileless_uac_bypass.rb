@@ -27,7 +27,7 @@
 # has been achieved in a high integrity process (bypassing UAC) without dropping a DLL or other file down to
 # the file system. This significantly reduces the risk to the attacker because they aren’t placing a traditional
 # file on the file system that can be caught by AV/HIPS or forensically identified later.
-# "This module differs from OJ msf module in the fact that will use cmd.exe insted of powershell.exe"
+# "This module differs from OJ msf module because it uses cmd.exe insted of powershell.exe"
 #
 #
 #
@@ -87,7 +87,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'enigma fileless uac bypass [RCE]',
                         'Description'   => %q{
-                                        To demonstrate this attack, Matt Graeber (@mattifestation) and enigma0x3 constructed a PowerShell script that, when executed on a system, will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the -Command parameter,and run eventvwr.exe. "This module differs from OJ msf module in the fact that will use cmd.exe to execute commands insted of powershell.exe"
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the CMD_COMMAND parameter, and runs eventvwr.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
