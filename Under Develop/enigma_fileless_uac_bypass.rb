@@ -166,7 +166,7 @@ def ls_stage1
       Rex::sleep(1.0)
     else
        # registry hive key not found, aborting module execution.
-       print_warning("Hive key: HKCR\\mscfile\\shell\\open\\command")
+       print_warning("Hive key: HKCR\\mscfile\\shell\\open\\command (mmc.exe call)")
        print_error("Post-module cant find the registry hive key needed...")
        print_error("System does not apper to be vuln to the exploit code!")
        print_line("")
