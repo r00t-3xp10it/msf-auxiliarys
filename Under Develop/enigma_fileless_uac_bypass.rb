@@ -109,8 +109,8 @@ class MetasploitModule < Msf::Post
                         'References'     =>
                                 [
                                          [ 'URL', 'POC: goo.gl/XHQ6aF' ],
-                                         [ 'URL', 'http://sourceforge.net/users/peterubuntu10' ],
-                                         [ 'URL', 'http://sourceforge.net/projects/msf-auxiliarys/repository' ]
+                                         [ 'URL', 'https://github.com/r00t-3xp10it' ],
+                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ]
 
 
                                 ],
