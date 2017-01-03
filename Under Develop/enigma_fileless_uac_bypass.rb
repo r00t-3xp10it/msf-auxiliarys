@@ -117,7 +117,6 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
                                          'SESSION' => '1', # Default its to run againts session 1
-                                         'CMD_COMMAND' => 'start notepad.exe', # Default cmd command (demo)
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -126,7 +125,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('CMD_COMMAND', [ false, 'The cmd command to be executed']),
+                                OptString.new('CMD_COMMAND', [ false, 'The cmd command to be executed (eg start notepad.exe)']),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class)
 
