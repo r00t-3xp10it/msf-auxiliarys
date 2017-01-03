@@ -9,7 +9,7 @@
 ##
 # Exploit Title  : enigma_fileless_uac_bypass.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
-# Vuln discover  : enigma0x3 | mattifestation
+# Vuln discover  : enigma0x3 | @mattifestation
 # Tested on      : Windows 7 | Windows 8 | Windows 10
 # POC: https://enigma0x3.net/2016/08/15/fileless-uac-bypass-using-eventvwr-exe-and-registry-hijacking/
 #
