@@ -34,7 +34,7 @@
 #
 # [ MODULE DEFAULT OPTIONS ]
 # The session number to run this module on  => set SESSION 3
-# The cmd.exe command to be executed        => set CMD_COMMAND cmd.exe /c start notepad.exe
+# The cmd.exe command to be executed        => set CMD_COMMAND start firefox.exe www.househot.com
 # Delete malicious registry key hive?       => set DEL_REGKEY true
 #
 #
