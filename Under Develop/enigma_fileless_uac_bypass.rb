@@ -33,14 +33,17 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on  => set SESSION 3
-# The cmd.exe command to be executed        => set CMD_COMMAND start firefox.exe www.househot.com
-# Delete malicious registry key hive?       => set DEL_REGKEY true
+# The session number to run this module on    => set SESSION 3
+# The cmd.exe command to be executed (target) => set CMD_COMMAND start firefox.exe www.househot.com
+# Check target vulnerability settings/status? => set CHECK_VULN true
+# Delete malicious registry hive keys/values? => set DEL_REGKEY true
+#
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
 # Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/enigma_fileless_uac_bypass.rb
 # Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/enigma_fileless_uac_bypass.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
+#
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
