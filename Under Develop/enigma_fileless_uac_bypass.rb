@@ -291,7 +291,7 @@ def ls_stage3
     if check_vuln_call.nil? || check_vuln_call == 0
       hive_status = "NOT FOUND"
     else
-      hive_status = "FOUND VULN HIVE"
+      hive_status = "#{check_vuln_call}"
     end
 
     # check target registry hive/key settings
@@ -299,21 +299,19 @@ def ls_stage3
     if check_vuln_key.nil? || check_vuln_key == 0
       key_status = "NOT FOUND"
     else
-      key_status = "FOUND HIJACKING KEY"
+      key_status = "#{check_vuln_key}"
     end
 
   print_line("")
   print_line("")
   Rex::sleep(1.0)
   # display target registry settings to user... 
-  print_line("VULNERABLE_SOFT: #{vuln_soft}")
-  print_line("    STATUS     : #{hive_status}")
-  print_line("    HIVE_KEY   : #{vuln_hive}")
-  print_line("    KEY_DATA   : #{check_vuln_call}")
+  print_line("VULNERABLE_SOFT : #{vuln_soft}")
+  print_line("    VULN_HIVE   : #{vuln_hive}")
+  print_line("    KEY_DATA    : #{hive_status}")
   print_line("")
-  print_line("    STATUS     : #{key_status}")
-  print_line("    HIJACK_KEY : #{vuln_key}")
-  print_line("    KEY_DATA   : #{check_vuln_key}")
+  print_line("    HIJACK_HIVE : #{vuln_key}")
+  print_line("    KEY_DATA    : #{key_status}")
   print_line("")
   print_line("")
 end
