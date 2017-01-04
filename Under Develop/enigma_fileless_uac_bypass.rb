@@ -270,7 +270,7 @@ def ls_stage3
 
   r=''
   session = client
-  vuln_valu = "Default"                              # value name
+  vuln_valu = "(Default)"                            # value name
   vuln_soft = "eventvwr.exe"                         # vulnerable software name
   vuln_hive = "HKCR\\mscfile\\shell\\open\\command"  # vulnerable hive key call (mmc.exe)
   vuln_key = "HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # vuln hijack key
