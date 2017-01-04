@@ -251,7 +251,6 @@ def ls_stage2
 
     # close channel when done
     print_status("registry hijack reverted to default stage")
-    print_line("")
     r.channel.close
     r.close
 
@@ -285,6 +284,8 @@ def ls_stage3
     Rex::sleep(1.5)
   end
 
+    print_warning("Reading proccess registry hive keys...")
+    Rex::sleep(1.0)
     # check target registry hive/key settings
     check_vuln_call = registry_getvaldata(vuln_hive,vuln_valu)
     if check_vuln_call.nil? || check_vuln_call == 0
