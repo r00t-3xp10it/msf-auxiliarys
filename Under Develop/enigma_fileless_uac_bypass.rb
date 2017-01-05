@@ -29,6 +29,7 @@
 # the file system. This significantly reduces the risk to the attacker because they aren’t placing a traditional
 # file on the file system that can be caught by AV/HIPS or forensically identified later.
 # "This module differs from 'OJ msf module' because it uses cmd.exe insted of powershell.exe"
+# "This module will not work if target UAC level its set to 'Always Notify' (non-default setting)"
 #
 #
 #
@@ -61,6 +62,15 @@
 # msf post(enigma_fileless_uac_bypass) > show advanced options
 # msf post(enigma_fileless_uac_bypass) > set [option(s)]
 # msf post(enigma_fileless_uac_bypass) > exploit
+#
+# [ HINT ]
+# In some linux distributions postgresql need to be started and
+# metasploit database deleted/rebuild to be abble to load module.
+# 1 - /etc/init.d/postgresql start
+# 2 - msfdb delete
+# 3 - msfdb init
+# 4 - msfconsole
+# 5 - reload_all
 ##
 
 
