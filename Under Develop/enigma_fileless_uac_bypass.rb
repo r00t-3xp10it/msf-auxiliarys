@@ -303,7 +303,6 @@ end
 
 
 
-#TODO: check IF vuln_valu = "(Default)" gives error
 # -------------------------------------------
 # CHECK TARGET VULNERABILITY STATUS/EXISTANCE
 # -------------------------------------------
@@ -388,10 +387,6 @@ def run
     print_line("")
 
 
-    #
-    # the 'def check' funtion that rapid7 requires.
-    # Guidelines for Accepting Modules: goo.gl/OQ6HEE
-    #
     # check for proper session (meterpreter)
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
