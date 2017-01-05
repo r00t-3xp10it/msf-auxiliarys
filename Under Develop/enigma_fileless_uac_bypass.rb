@@ -328,18 +328,18 @@ def ls_stage3
     Rex::sleep(1.0)
     # check target registry hive/key settings
     if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
-      report_on = "exploitable"
+      report_on = "EXPLOITABLE"
     else
       vuln_hive = "NOT FOUND"
-      report_on = "not exploitable"
+      report_on = "NOT EXPLOITABLE"
     end
 
     # check target registry hive/key settings
     if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-      report_tw = "hijack hive present"
+      report_tw = "HIJACK HIVE PRESENT"
     else
       vuln_key = "NOT FOUND"
-      report_tw = "hijack hive not present"
+      report_tw = "HIJACK HIVE NOT PRESENT"
     end
 
   print_line("")
