@@ -326,8 +326,10 @@ def ls_stage3
   r=''
   session = client
   vuln_soft = "eventvwr.exe"                         # vulnerable software name
+  uac_level = "ConsentPromptBehaviorAdmin"           # uac level key
   vuln_hive = "HKCR\\mscfile\\shell\\open\\command"  # vulnerable hive key call (mmc.exe)
   vuln_key = "HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # vuln hijack key
+  uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['CHECK_VULN'] == 'nil'
@@ -349,17 +351,26 @@ def ls_stage3
       report_on = "NOT EXPLOITABLE"
     end
 
+      # check target registry hive/key settings
+      if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
+        report_tw = "HIJACK HIVE PRESENT"
+      else
+        vuln_key = "NOT FOUND"
+        report_tw = "HIJACK HIVE NOT PRESENT"
+      end
+
     # check target registry hive/key settings
-    if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-      report_tw = "HIJACK HIVE PRESENT"
+    check_uac = registry_getvaldata("#{uac_hivek}","#{uac_level}")
+    if check_uac == 2
+      report_level = "always notify (not exploitable)"
     else
-      vuln_key = "NOT FOUND"
-      report_tw = "HIJACK HIVE NOT PRESENT"
+      report_level = "#{check_uac} (exploitable)"
     end
 
   print_line("")
   # display target registry settings to user...
   print_line("VULNERABLE_SOFT : #{vuln_soft}")
+  print_line("    UAC_LEVEL   : #{report_level}")
   print_line("    VULN_HIVE   : #{vuln_hive}")
   print_line("    KEY_INFO    : #{report_on}")
   print_line("")
