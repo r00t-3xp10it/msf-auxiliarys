@@ -210,6 +210,7 @@ def ls_stage1
     if check_success == 2
        print_warning("Target UAC set to: always notify")
        print_error("[ABORT]: module can not work under this condictions...")
+       print_error("Remote system its not vulnerable to the exploit code!")
        print_line("")
        Rex::sleep(1.0)
       return nil
