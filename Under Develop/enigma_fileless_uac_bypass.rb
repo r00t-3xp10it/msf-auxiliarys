@@ -403,6 +403,7 @@ def run
       runtor = client.sys.config.getuid # <-- error in this key? why?
       runsession = client.session_host
       directory = client.fs.dir.pwd
+      oscheck = client.fs.file.expand_path("%SystemRoot%")
 
 
     # Print banner and scan results on screen
@@ -426,10 +427,10 @@ def run
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
     # check for proper operative system (windows)
-    #if client.platform !~ /win32|win64/i
-    #  print_error("[ ABORT ]: This module only works againts windows systems")
-    #  raise Rex::Script::Completed
-    #end
+    if not oscheck == "C:\\Windows"
+      print_error("[ ABORT ]: This module only works againts windows systems")
+      return nil
+    end
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals
     # that we are not on a meterpreter session!
@@ -437,7 +438,7 @@ def run
       print_status("Running module against: #{sysnfo['Computer']}")
     else
       print_error("[ ABORT ]: This module only works against meterpreter sessions!")
-      raise Rex::Script::Completed
+      return nil
     end
     # elevate session privileges befor runing options
     client.sys.config.getprivs.each do |priv|
