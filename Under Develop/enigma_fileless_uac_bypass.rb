@@ -376,6 +376,8 @@ def ls_stage3
     check_uac = registry_getvaldata("#{uac_hivek}","#{uac_level}")
     if check_uac == 2
       report_level = "ALWAYS NOTIFY (NOT EXPLOITABLE)"
+    elsif check_uac.nil?
+      report_level = "DWORD DATA EMPTY (NON-WINDOWS?)"
     else
       report_level = "#{check_uac} (EXPLOITABLE)"
     end
