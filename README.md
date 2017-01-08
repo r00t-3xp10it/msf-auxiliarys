@@ -15,5 +15,8 @@ my collection of metasploit auxiliary post-modules
 # [deploy_service_payload]
 ![msf post(module_name)](https://dl.dropboxusercontent.com/u/21426454/msf2.jpeg)
 
+# [enigma_fileless_uac_bypass]
+![msf post(module_name)](https://dl.dropboxusercontent.com/u/21426454/github/fsdd.jpg)
+
 [Please read my 'WIKI' for further information](https://github.com/r00t-3xp10it/msf-auxiliarys/wiki/Welcome-to-the-msf-auxiliarys-wiki!)
 
