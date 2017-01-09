@@ -1,6 +1,9 @@
 # msf-auxiliarys
 my collection of metasploit auxiliary post-modules
 
+.. image:: https://nikolaskama.me/content/images/2016/09/onioff_demo.png
+   :target: https://www.youtube.com/watch?v=OJwONONkgRE?autoplay=1
+
 # Description
     this working directory contains diferent metasploit auxiliary modules
     writen by me to be of assistence in post-exploitation common tasks.
