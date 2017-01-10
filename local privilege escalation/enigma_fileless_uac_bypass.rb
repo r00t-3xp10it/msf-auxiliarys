@@ -402,20 +402,38 @@ def ls_stage3
         oscheck = "NOT COMPATIBLE SYSTEM"
       end
 
-  print_line("")
-  # display target registry settings to user...
-  # i hope you are smart enouth to recognise a vulnerable output :D
-  print_line("VULNERABLE_SOFT : #{vuln_soft}")
-  print_line("    TARGET_OS   : #{oscheck}")
-  print_line("    UAC_LEVEL   : #{report_level}")
-  print_line("")
-  print_line("    VULN_HIVE   : #{vuln_hive}")
-  print_line("    KEY_INFO    : #{report_on}")
-  print_line("")
-  print_line("    HIJACK_HIVE : #{vuln_key}")
-  print_line("    KEY_INFO    : #{report_tw}")
-  print_line("")
+    print_line("")
+    # display target registry settings to user...
+    # i hope you are smart enouth to recognise a vulnerable output :D
+    print_line("VULNERABLE_SOFT : #{vuln_soft}")
+    print_line("    TARGET_OS   : #{oscheck}")
+    print_line("    UAC_LEVEL   : #{report_level}")
+    print_line("")
+    print_line("    VULN_HIVE   : #{vuln_hive}")
+    print_line("    KEY_INFO    : #{report_on}")
+    print_line("")
+    print_line("    HIJACK_HIVE : #{vuln_key}")
+    print_line("    KEY_INFO    : #{report_tw}")
+    print_line("")
+    print_line("")
+    Rex::sleep(1.0)
+
+  # building better reports outputs
+  if report_on == "EXPLOITABLE"
+    print_line("REPORT : System reports that vulnerability its present: [HKCR]")
+  else
+    print_line("REPORT : System reports vulnerability NOT present under [HKCR]")
+  end
+  if vuln_key == "NOT FOUND"
+    print_line("REPORT : None hijacking registry key was found under -> [HKCU]")
+    print_line("       : that allows local/remote-code execution (enigma bypass)")
+  else
+    print_line("REPORT : Hijacking method its active, waiting for eventvwr.exe")
+    print_line("       : execution to run injected string in target machine...")
+  end
+
 Rex::sleep(1.0)
+print_line("")
 end
 
 
