@@ -3,7 +3,7 @@ msf-auxiliarys
 my collection of metasploit auxiliary post-modules
 
 .. image:: https://dl.dropboxusercontent.com/u/21426454/github/fsdd.jpg
-   :target: https://www.youtube.com/watch?v=OJwONONkgRE
+   :target: https://www.youtube.com/watch?v=OJwONONkgRE?autoplay=1&loop=1
 
 Description
 ----------
