@@ -13,10 +13,10 @@ my collection of metasploit auxiliary post-modules
     4º - reload metasploit database (reload_all)
 
 
-## [deploy_service_payload]
+## deploy_service_payload
 ![msf-auxiliarys](https://dl.dropboxusercontent.com/u/21426454/msf2.jpeg)
 
-## [enigma_fileless_uac_bypass]
+## enigma_fileless_uac_bypass
 ![msf-auxiliarys](https://dl.dropboxusercontent.com/u/21426454/github/fsdd.jpg)
 
 [Please read my 'WIKI' for further information](https://github.com/r00t-3xp10it/msf-auxiliarys/wiki/Welcome-to-the-msf-auxiliarys-wiki!)
