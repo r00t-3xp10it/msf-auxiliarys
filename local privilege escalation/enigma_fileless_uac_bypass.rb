@@ -421,16 +421,16 @@ def ls_stage3
 
   # building better reports outputs
   if report_on == "EXPLOITABLE"
-    print_line("REPORT : System reports that vulnerability its present: [HKCR]")
+    print_line("    REPORT : System reports that vulnerability its present: [HKCR]")
   else
-    print_line("REPORT : System reports vulnerability NOT present under [HKCR]")
+    print_line("    REPORT : System reports vulnerability NOT present under [HKCR]")
   end
   if vuln_key == "NOT FOUND"
-    print_line("REPORT : None hijacking registry key was found under -> [HKCU]")
-    print_line("       : that allows local/remote-code execution (enigma bypass)")
+    print_line("    REPORT : None hijacking registry key was found under -> [HKCU]")
+    print_line("           : that allows local/remote-code execution (enigma bypass)")
   else
-    print_line("REPORT : Hijacking method its active, waiting for eventvwr.exe")
-    print_line("       : execution to run injected string in target machine...")
+    print_line("    REPORT : Hijacking method its active, waiting for eventvwr.exe")
+    print_line("           : execution to run injected string in target machine...")
   end
 
 Rex::sleep(1.0)
