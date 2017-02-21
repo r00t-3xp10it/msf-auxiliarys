@@ -43,7 +43,8 @@
 # HINT: To deploy a powershell payload (shellcode string) we need to set the option
 # 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
 # EXAMPLE: set USE_POWERSHELL true
-# EXAMPLE: set EXEC_COMMAND aDfSjRnGlsWlDtBsQkGftmoEdD==
+# EXAMPLE: set EXEC_COMMAND ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
+# HINT: echo 'test' > c:\\test.txt -> ENCODED IN BASE64: ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
 # ---
 #
 #
