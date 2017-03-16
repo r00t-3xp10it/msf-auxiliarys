@@ -431,7 +431,7 @@ def ls_stage3
     print_line("    REPORT : None hijacking registry key was found under -> [HKCU]")
     print_line("           : that allows local/remote-code execution (enigma bypass)")
   else
-    print_line("    REPORT : Hijacking method its active, waiting for eventvwr.exe")
+    print_line("    REPORT : Hijacking method its active, waiting for CompMgmtLauncher.exe")
     print_line("           : execution to run injected string in target machine...")
   end
 
