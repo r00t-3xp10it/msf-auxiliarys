@@ -164,24 +164,17 @@ class MetasploitModule < Msf::Post
 
 
 
-# -----------------------------------------------------------------------
+#
 # the 'def check()' funtion that rapid7 requires to accept new modules.
-# Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
-# -----------------------------------------------------------------------
+# https://github.com/rapid7/metasploit-framework/wiki/How-to-write-a-check%28%29-method
+#
 def check
-  # variable declarations
-  value = "isolatedCommand"
-  hive = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command"
-    # check for vulnerable registry hive existance?
-    if registry_enumkeys("HKCU\\Software\\Classes\\exefile")
-      return Exploit::CheckCode::Appears
-    # check for hijack registry key existance?
-    elsif registry_getvaldata("#{hive}","#{value}")
-      return Exploit::CheckCode::Vulnerable
-    else
-      # non vulnerable system
-      return Exploit::CheckCode::Safe
-    end
+  # check for vulnerable registry hive existance?
+  if registry_enumkeys("HKCU\\Software\\Classes\\exefile")
+    return Exploit::CheckCode::Appears
+  else
+    return Exploit::CheckCode::Safe
+  end
 end
 
 
