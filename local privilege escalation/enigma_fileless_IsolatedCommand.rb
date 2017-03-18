@@ -61,6 +61,7 @@
 # msf exploit(handler) > use post/windows/escalate/enigma_fileless_IsolatedCommand
 # msf post(enigma_fileless_IsolatedCommand) > info
 # msf post(enigma_fileless_IsolatedCommand) > show options
+# msf post(enigma_fileless_IsolatedCommand) > show targets
 # msf post(enigma_fileless_IsolatedCommand) > show advanced options
 # msf post(enigma_fileless_IsolatedCommand) > set [option(s)]
 # msf post(enigma_fileless_IsolatedCommand) > exploit
@@ -159,6 +160,29 @@ class MetasploitModule < Msf::Post
                         ], self.class) 
 
         end
+
+
+
+
+# -----------------------------------------------------------------------
+# the 'def check()' funtion that rapid7 requires to accept new modules.
+# Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
+# -----------------------------------------------------------------------
+def check
+  # variable declarations
+  value = "isolatedCommand"
+  hive = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command"
+    # check for vulnerable registry hive existance?
+    if registry_enumkeys("HKCU\\Software\\Classes\\exefile")
+      return Exploit::CheckCode::Appears
+    # check for hijack registry key existance?
+    elsif registry_getvaldata("#{hive}","#{value}")
+      return Exploit::CheckCode::Vulnerable
+    else
+      # non vulnerable system
+      return Exploit::CheckCode::Safe
+    end
+end
 
 
 
