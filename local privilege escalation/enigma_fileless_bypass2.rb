@@ -9,7 +9,7 @@
 ##
 # Exploit Title  : enigma_fileless_bypass2.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
-# Vuln discover  : enigma0x3 | @mattifestation | x4zx
+# Vuln discover  : enigma0x3 | @mattifestation
 # Tested on      : Windows 7 | Windows 8 | Windows 10
 # POC: http://x42.obscurechannel.com/?p=368
 #
@@ -109,7 +109,7 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'enigma fileless uac bypass [x4zx]',
+                        'Name'          => 'enigma fileless uac bypass [x4zx POC]',
                         'Description'   => %q{
                                         Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs CompMgmtLauncher.exe (hijacking the process being started to gain code execution).
                         },
@@ -117,7 +117,7 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover : enigma0x3 | mattifestation | x4zx', # credits
+                                        'Vuln discover : enigma0x3 | mattifestation', # credits
                                 ],
  
                         'Version'        => '$Revision: 1.1',
