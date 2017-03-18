@@ -39,7 +39,6 @@
 # Check target vulnerability settings/status?  => set CHECK_VULN true
 # Delete malicious registry hive keys/values?  => set DEL_REGKEY true
 # Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
-# The binary.exe vulnerable?                   => set VUL_SOFT sdclt.exe
 # ---
 # HINT: To deploy a powershell payload (shellcode string) we need to set the option
 # 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
