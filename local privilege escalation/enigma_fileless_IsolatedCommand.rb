@@ -140,7 +140,6 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
                                          'SESSION' => '1',          # Default its to run againts session 1
-                                         'VUL_SOFT'=> 'sdclt.exe',  # Default its to run againts sdclt.exe
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
