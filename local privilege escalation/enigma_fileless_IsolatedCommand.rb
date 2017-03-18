@@ -290,8 +290,6 @@ end
 
     # close channel when done
     print_status("UAC-RCE Credits: enigma0x3 + @mattifestation")
-    print_warning("execute: shell")
-    print_warning("execute: start #{vul_serve} /KickOffElev")
     print_line("")
     r.channel.close
     r.close
@@ -350,7 +348,7 @@ def ls_stage2
 
       # check if remote registry hive keys was deleted successefuly
       if registry_getvaldata("#{chec_hive}","#{vul_value}")
-        print_error("Module can not verify if deletion has successefully!")
+        print_warning("Module can not verify if deletion has successefully!")
       else
         print_status("Registry hive keys deleted successefuly!")
       end
@@ -398,9 +396,10 @@ def ls_stage3
     Rex::sleep(2.0)
     # check target registry hive/key settings (hijacking key)
     if registry_getvaldata("#{vuln_key}","#{vul_value}")
+      vuln_stats = "#{vuln_key}\\#{vul_value}"
       report_tw = "HIJACK KEY ACTIVE"
     else
-      vuln_key = "NOT FOUND"
+      vuln_stats = "NOT FOUND"
       report_tw = "HIJACK KEY NOT PRESENT"
     end
 
@@ -429,14 +428,14 @@ def ls_stage3
     print_line("    TARGET_OS   : #{oscheck}")
     print_line("    UAC_LEVEL   : #{report_level}")
     print_line("")
-    print_line("    HIJACK_HIVE : #{vuln_key}\\#{vul_value}")
+    print_line("    HIJACK_HIVE : #{vuln_stats}")
     print_line("    KEY_INFO    : #{report_tw}")
     print_line("")
     print_line("")
     Rex::sleep(1.0)
 
   # building better reports outputs
-  if vuln_key == "NOT FOUND"
+  if vuln_stats == "NOT FOUND"
     print_line("    REPORT : None hijacking registry key was found under -> [HKCU]")
     print_line("           : that allows local/remote-code execution (enigma bypass)")
   else
