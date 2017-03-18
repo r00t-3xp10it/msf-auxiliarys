@@ -220,7 +220,7 @@ end
     print_status("Hijacking #{vul_serve} process!")
     Rex::sleep(1.5)
   end
-chec_hive
+
     # search in target regedit if binary calls runas
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
@@ -464,7 +464,6 @@ def run
       runtor = client.sys.config.getuid
       runsession = client.session_host
       directory = client.fs.dir.pwd
-
 
 
     # Print banner and scan results on screen
