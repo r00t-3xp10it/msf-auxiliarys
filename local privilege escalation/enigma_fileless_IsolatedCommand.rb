@@ -118,7 +118,7 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover : enigma0x3 | mattifestation', # credits
+                                        'Vuln discover: enigma0x3 | mattifestation', # credits
                                 ],
  
                         'Version'        => '$Revision: 1.2',
