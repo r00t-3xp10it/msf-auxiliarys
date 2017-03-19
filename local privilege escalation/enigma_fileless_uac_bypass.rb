@@ -62,7 +62,6 @@
 # msf exploit(handler) > use post/windows/escalate/enigma_fileless_uac_bypass
 # msf post(enigma_fileless_uac_bypass) > info
 # msf post(enigma_fileless_uac_bypass) > show options
-# msf post(enigma_fileless_uac_bypass) > show targets
 # msf post(enigma_fileless_uac_bypass) > show advanced options
 # msf post(enigma_fileless_uac_bypass) > set [option(s)]
 # msf post(enigma_fileless_uac_bypass) > exploit
