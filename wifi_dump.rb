@@ -6,6 +6,7 @@
 ##
 
 
+
 ##
 # [ wifi_dump.rb - ESSID credentials dump (wlan/lan) ]
 # $Id$ 2.0 Author: pedr0 Ubuntu aka: [r00t-3xp10it]
