@@ -1,3 +1,12 @@
+
+
+
+
+# recent develop work
+# search for # :
+
+
+
 ##
 # This file is part of the Metasploit Framework and may be subject to
 # redistribution and commercial restrictions. Please see the Metasploit
@@ -157,8 +166,6 @@ class MetasploitModule < Msf::Post
                         ], self.class) 
 
         end
-
-
 
 
 
@@ -459,6 +466,7 @@ def run
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
+    # : FUNTION TO TEST
     # check for proper operative system (windows 10)
     if not sysinfo['OS'] =~ /Windows 10/
       print_error("[ ABORT ]: This module only works againt windows 10 systems")
