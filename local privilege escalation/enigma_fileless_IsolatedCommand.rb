@@ -199,7 +199,7 @@ end
     # search in target regedit if binary calls runas
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
-    if registry_enumkeys("HKCU\\Software\\Classes\\exefile")
+    if registry_enumkeys("HKCU\\Software\\Classes")
       print_good(" exec => remote registry hive key found!")
       Rex::sleep(1.0)
     else
@@ -373,11 +373,11 @@ def ls_stage3
     if registry_getvaldata("#{vuln_key}","#{vul_value}")
       vuln_stats = "#{vuln_key}"
       report_tw = "REGISTRY HIJACK KEY FOUND (UAC Bypass Active)"
-    elsif registry_enumkeys("HKCU\\Software\\Classes\\exefile")
-      vuln_stats = "HKCU\\Software\\Classes\\exefile"
+    elsif registry_enumkeys("HKCU\\Software\\Classes")
+      vuln_stats = "HKCU\\Software\\Classes"
       report_tw = "REGISTRY HIVE FOUND (Vulnerable)"
     else
-      vuln_stats = "HKCU\\Software\\Classes\\exefile"
+      vuln_stats = "HKCU\\Software\\Classes"
       report_tw = "REGISTRY HIVE NOT FOUND (Not Vulnerable)"
     end
 
@@ -457,7 +457,6 @@ def run
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
-    # : FUNTION TO TEST
     # check for proper operative system (windows 10)
     if not sysinfo['OS'] =~ /Windows 10/
       print_error("[ ABORT ]: This module only works againt windows 10 systems")
