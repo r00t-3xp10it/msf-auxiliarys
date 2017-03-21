@@ -372,13 +372,15 @@ def ls_stage3
     # check target registry hive/key settings (hijacking hive/key)
     if registry_getvaldata("#{vuln_key}","#{vul_value}")
       vuln_stats = "#{vuln_key}"
-      report_tw = "REGISTRY HIJACK KEY FOUND (UAC Bypass Active)"
+      report_tw = "UAC BYPASS ACTIVE (runas)"
     elsif registry_enumkeys("HKCU\\Software\\Classes")
+      vul_value = "NOT FOUND"
       vuln_stats = "HKCU\\Software\\Classes"
-      report_tw = "REGISTRY HIVE FOUND (Vulnerable)"
+      report_tw = "VULNERABLE (hive found)"
     else
+      vul_value = "NOT FOUND"
       vuln_stats = "HKCU\\Software\\Classes"
-      report_tw = "REGISTRY HIVE NOT FOUND (Not Vulnerable)"
+      report_tw = "NOT VULNERABLE (hive not found)"
     end
 
     # check target registry hive/key settings (UAC level settings)
@@ -408,7 +410,7 @@ def ls_stage3
     print_line("")
     print_line("    HIJACK_KEY  : #{vul_value}")
     print_line("    HIJACK_HIVE : #{vuln_stats}")
-    print_line("    KEY_INFO    : #{report_tw}")
+    print_line("    VULN_STATUS : #{report_tw}")
     print_line("")
     print_line("")
     Rex::sleep(1.0)
