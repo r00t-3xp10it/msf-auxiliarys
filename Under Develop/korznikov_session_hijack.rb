@@ -400,7 +400,6 @@ def run
       return nil
     end
     #
-    # TODO: check if this works..
     # check if we are running againts a priviliged session
     #
     if not runtor == "NT AUTHORITY/SYSTEM"
