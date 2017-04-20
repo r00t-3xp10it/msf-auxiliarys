@@ -88,7 +88,7 @@ class MetasploitModule < Msf::Post
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                         'Inspiration: Chaitanya [ SSA RedTeam ]',     # module inspiration
-                                        'Special thanks: Vault7 CIA Hacking Tools'    # CIA wikileaks public leak
+                                        'Special thanks: CIA wikileaks Vault7 leak'   # CIA wikileaks public leak
                                 ],
  
                         'Version'        => '$Revision: 1.2',
@@ -283,14 +283,6 @@ def run
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
-    #
-    # check if we are running againts a priviliged session
-    #
-    if not runtor == "NT AUTHORITY/SYSTEM"
-      print_error("[ ABORT ]: This module requires a priviliged session ..")
-      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
-      return nil
-    end
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals
     # that we are not on a meterpreter session!
@@ -298,6 +290,14 @@ def run
       print_status("Running module against: #{sysnfo['Computer']}")
     else
       print_error("[ ABORT ]: This module only works against meterpreter sessions!")
+      return nil
+    end
+    #
+    # check if we are running againts a priviliged session
+    #
+    if not runtor == "NT AUTHORITY/SYSTEM"
+      print_error("[ ABORT ]: This module requires a priviliged session ..")
+      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
       return nil
     end
     # elevate session privileges befor runing options
