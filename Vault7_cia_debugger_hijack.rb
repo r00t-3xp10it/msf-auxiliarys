@@ -287,6 +287,14 @@ def run
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
+    #
+    # check if we are running againts a priviliged session
+    #
+    if not runtor == "NT AUTHORITY/SYSTEM"
+      print_error("[ ABORT ]: This module requires a priviliged session ..")
+      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
+      return nil
+    end
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals
     # that we are not on a meterpreter session!
@@ -294,14 +302,6 @@ def run
       print_status("Running module against: #{sysnfo['Computer']}")
     else
       print_error("[ ABORT ]: This module only works against meterpreter sessions!")
-      return nil
-    end
-    #
-    # check if we are running againts a priviliged session
-    #
-    if not runtor == "NT AUTHORITY/SYSTEM"
-      print_error("[ ABORT ]: This module requires a priviliged session ..")
-      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
       return nil
     end
     # elevate session privileges befor runing options
