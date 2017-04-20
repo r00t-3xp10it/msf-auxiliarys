@@ -295,9 +295,10 @@ def run
       print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
       return nil
     end
-    # check for proper session (meterpreter)
-    # the non-return of sysinfo command reveals
-    # that we are not on a meterpreter session!
+    #
+    # check for proper session (meterpreter) the non-return of sysinfo
+    # command reveals that we are not on a meterpreter session ..
+    #
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
