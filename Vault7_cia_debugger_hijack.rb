@@ -88,7 +88,7 @@ class MetasploitModule < Msf::Post
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                         'Inspiration: Chaitanya [ SSA RedTeam ]',     # module inspiration
-                                        'Special thanks: CIA wikileaks Vault7 leak'   # CIA wikileaks public leak
+                                        'Special thanks: Wikileaks Vault7 CIA leak'   # CIA wikileaks public leak
                                 ],
  
                         'Version'        => '$Revision: 1.2',
