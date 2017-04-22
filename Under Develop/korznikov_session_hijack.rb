@@ -402,9 +402,9 @@ def run
     #
     # check if we are running againts a priviliged session
     #
-    if not runtor == "NT AUTHORITY/SYSTEM"
+    if not runtor == "NT AUTHORITY\\SYSTEM"
       print_error("[ ABORT ]: This module requires a priviliged session ..")
-      print_warning("This module requires NT AUTHORITY/SYSTEM privs to run")
+      print_warning("This module requires NT AUTHORITY\\SYSTEM privs to run")
       return nil
     end
     # elevate session privileges befor runing options
