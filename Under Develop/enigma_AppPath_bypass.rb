@@ -149,7 +149,6 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false]),
                                 OptString.new('PAYLOAD_NAME', [ false, 'The payload NAME to be uploaded (eg shell.exe)']),
                                 OptString.new('DEPLOY_PATH', [ false, 'The destination were to deploy (eg %temp%)']),
                                 OptString.new('LOCAL_PATH', [ false, 'The full path of payload.exe to upload (eg /root/shell.exe)'])
@@ -157,6 +156,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false])
                         ], self.class)
 
