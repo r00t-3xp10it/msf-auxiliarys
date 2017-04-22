@@ -21,7 +21,7 @@
 # IFileOperation/DLL hijacking approach. This technique works on Windows 10 build 15031.
 # This module will upload your payload.exe, create the required registry entry in the current
 # user’s hive and runs sdclt.exe (hijacking the process being started to gain code execution).
-# "The 2º session will be executed in an higth-integrity context (privilege escalation)"
+# "The 2º session will be executed in an higth-integrity context (allowing privilege escalation)"
 #
 # NOTE:
 # Some Microsoft signed binaries auto-elevate themselfs due to their manifest like "sdclt.exe"
