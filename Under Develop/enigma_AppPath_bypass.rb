@@ -70,9 +70,8 @@
 # In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
 # 1 - service postgresql start
-# 2 - msfdb delete (optional)
-# 3 - msfdb init   (optional)
-# 4 - msfconsole -x 'reload_all'
+# 2 - msfdb reinit   (optional)
+# 3 - msfconsole -x 'reload_all'
 ##
 
 
