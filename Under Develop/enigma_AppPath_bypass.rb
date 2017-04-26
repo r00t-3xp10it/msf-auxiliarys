@@ -200,12 +200,12 @@ def ls_hijack
     #
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(1.0)
-    if registry_enumkeys("HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths")
+    if registry_enumkeys("HKCU\\Software\\Microsoft\\Windows\\CurrentVersion")
       print_good(" exec => remote registry hive key found!")
       Rex::sleep(1.0)
     else
       # registry hive key not found, aborting module execution ..
-      print_warning("Hive key: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion (App Paths)")
+      print_warning("Hive key: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion")
       print_error("[ABORT]: module cant find the registry hive key needed ..")
       print_error("System does not appear to be vulnerable to the exploit code!")
       print_line("")
@@ -311,7 +311,7 @@ def ls_clean
       Rex::sleep(1.0)
     else
        # Registry hive key not found, aborting module execution.
-       print_warning("Hive key: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths")
+       print_warning("Hive key: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe")
        print_error("[ABORT]: module cant find the registry hive key needed ..")
        print_line("")
        Rex::sleep(1.0)
