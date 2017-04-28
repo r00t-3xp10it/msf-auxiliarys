@@ -346,6 +346,7 @@ def ls_vulncheck
   r=''
   session = client
   hija_soft = "sdclt.exe"
+  sys_build = session.sys.config.sysinfo
   oscheck = client.fs.file.expand_path("%OS%")
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
@@ -410,6 +411,7 @@ def ls_vulncheck
   print_line("")
   print_line("VULNERABLE_SOFT : #{hija_soft}")
   print_line("    TARGET_OS   : #{oscheck}")
+  print_line("    OS BUILD    : #{sys_build['Computer']}")
   print_line("    UAC_LEVEL   : #{report_level}")
   print_line("")
   print_line("    HIJACK_HIVE : #{vuln_stats}")
