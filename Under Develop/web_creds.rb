@@ -27,10 +27,11 @@ def initialize(info = {})
 	'Description'  => %q{
 		This module gets passwords from Firefox and Google Chrome
 	},
-	'License'      => 'UNKNOWN_LICENSE',
-	'Platform'     => ['win'],
-	'SessionTypes' => ['meterpreter'],
-	'Author'       => ['r00t-3xp10it, Milton@barra'],
+	'License'        => 'UNKNOWN_LICENSE',
+	'Platform'       => ['win'],
+	'SessionTypes'   => ['meterpreter'],
+	'Author'         => ['r00t-3xp10it, Milton@barra'],
+        'DisclosureDate' => 'mai 6 2017',
 
     
 	'DefaultOptions' =>
