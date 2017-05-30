@@ -143,7 +143,6 @@ class MetasploitModule < Msf::Post
 #
 def ls_stage1
 
-  file_temp=''
   session = client
   init_check = datastore['INIT_PATH']    # /etc/init.d
   remote_path = datastore['REMOTE_PATH'] # /root/payload
@@ -233,6 +232,40 @@ end
 
 
 
+#
+# Delete init.d script and confs ..
+#
+def ls_stage2
+
+  session = client
+  init_check = datastore['INIT_PATH']    # /etc/init.d
+  script_check = "#{init_check}/persist" # /etc/init.d/persist
+  #
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options ..
+  #
+  if datastore['DEL_PERSISTENCE'] == 'nil'
+    vprint_error("Options not configurated correctly ..")
+    vprint_warning("Please set DEL_PERSISTENCE option!")
+    return nil
+  else
+    vprint_status("Delete init.d persistence script ..")
+    Rex::sleep(1.0)
+  end
+
+    #
+    # Check init.d persiste script existance ..
+    #
+    if not session.fs.file.exist?(script_check)
+      vprint_error("%red" + "script: #{script_check} not found ..")
+      return nil
+    end
+
+  # not yet writen 
+  vprint_warning("%yeloow" + "Funtion not yet writen ..")
+  Rex::sleep(1.0)
+  return nil
+end
 
 
 
