@@ -80,8 +80,8 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',                     # Default its to run againts session 1
-                                         'INIT_PATH' => '/etc/init.d/persist', # Default init.d persistence script full path
+                                         'SESSION' => '1',             # Default its to run againts session 1
+                                         'INIT_PATH' => '/etc/init.d', # Default init.d directory full path
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
