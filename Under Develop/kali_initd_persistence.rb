@@ -142,7 +142,7 @@ class MetasploitModule < Msf::Post
 def ls_stage1
 
   session = client
-  os = session.sys.config.sysinfo
+  rem = session.sys.config.sysinfo
   init_check = datastore['INIT_PATH']        # /etc/init.d
   remote_path = datastore['REMOTE_PATH']     # /root/payload
   script_check = "#{init_check}/persistance" # /etc/init.d/persistance
@@ -219,7 +219,7 @@ def ls_stage1
     #
     # Final displays to user ..
     #
-    vprint_status("Persistence activated on: #{os['Computer']}")
+    vprint_status("Persistence activated on: #{rem['Computer']}")
     Rex::sleep(1.0)
     vprint_line("")
 
@@ -240,7 +240,7 @@ end
 def ls_stage2
 
   session = client
-  os = session.sys.config.sysinfo
+  rem = session.sys.config.sysinfo
   init_check = datastore['INIT_PATH']        # /etc/init.d
   script_check = "#{init_check}/persistance" # /etc/init.d/persistance
   #
@@ -288,7 +288,7 @@ def ls_stage2
     #
     # Final displays to user ..
     #
-    vprint_status("Persistence deleted from: #{os['Computer']}")
+    vprint_status("Persistence deleted from: #{rem['Computer']}")
     vprint_warning("This module will NOT delete the binary from target ..")
     Rex::sleep(1.0)
     vprint_line("")
