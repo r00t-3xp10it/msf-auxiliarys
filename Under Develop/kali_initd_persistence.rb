@@ -342,10 +342,10 @@ def run
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
     # check for proper operative system (Linux)
-    #if not session.platform == 'linux'
-    #  print_error("[ ABORT ]: This module only works againt Linux systems")
-    #  return nil
-    #end
+    if not sysinfo['OS'] =~ /Linux/
+      print_error("[ ABORT ]: This module only works againt Linux systems")
+      return nil
+    end
     #
     # Check if we are running in an higth integrity context ..
     #
