@@ -345,11 +345,10 @@ def run
       return nil
     end
     #
-    # Check if we are running in an higth integrity context ..
-    # if not runtor =~ /uid=0/
+    # Check if we are running in an higth integrity context (root)
     #
-    if not is_root?
-      print_error("[ ABORT ]: Root access is required ..")
+    if not runtor =~ /uid=0/
+      print_error("[ ABORT ]: Root access is required in non-Kali distros ..")
       return nil
     end
     #
