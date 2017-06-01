@@ -240,7 +240,7 @@ def ls_persisting
         cmd_exec("update-rc.d persistance defaults # 97 03")
       else
         vprint_error("%red" + "init.d script: #{script_check} not found ..")
-        vprint_error("Persistence not achieved ..")
+        vprint_error("%red" + "Persistence not achieved ..")
         return nil
       end
 
@@ -309,7 +309,7 @@ def ls_cleanning
       #
       vprint_good("Remove script from init.d directory ..")
       Rex::sleep(1.0)
-      cmd_exec("rm -f #{init}/persistance")
+      cmd_exec("rm -f #{script_check}")
       vprint_good("Delete persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
