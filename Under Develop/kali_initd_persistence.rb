@@ -355,9 +355,17 @@ end
     #
     # Final displays to user ..
     #
-    print_status("Persistence achieved on: #{rem['Computer']}")
-    Rex::sleep(1.0)
-    print_line("")
+    if datastore['SYSTEMD'] == true
+      print_status("Persistence achieved on: #{rem['Computer']}")
+      Rex::sleep(1.0)
+      print_status("To start service: systemctl start persistance.service")
+      Rex::sleep(1.0)
+      print_line("")
+    else
+      print_status("Persistence achieved on: #{rem['Computer']}")
+      Rex::sleep(1.0)
+      print_line("")
+    end
 
   #
   # error exception funtion
@@ -552,8 +560,8 @@ def run
     print_line("    Running on session  : #{datastore['SESSION']}")
     print_line("    Computer            : #{sysnfo['Computer']}")
     print_line("    Target Architecture : #{sysnfo['Architecture']}")
-    print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Target IP addr      : #{runsession}")
+    print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Payload directory   : #{directory}")
     print_line("    Client UID          : #{runtor}")
     print_line("")
