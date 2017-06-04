@@ -219,7 +219,7 @@ if datastore['SYSTEMD'] == true
         f.write("[Service]\n")
         f.write("ExecStart=#{remote_path}\n\n")
         f.write("[Install]\n")
-        f.write("WantedBy=multi-user.target\n")
+        f.write("WantedBy=default.target\n")
         f.close
       end
       print_good("Service path: #{serv_file}")
