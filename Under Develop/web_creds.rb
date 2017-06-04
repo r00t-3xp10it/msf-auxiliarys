@@ -30,7 +30,7 @@ def initialize(info = {})
 	'License'        => 'UNKNOWN_LICENSE',
 	'Platform'       => ['win'],
 	'SessionTypes'   => ['meterpreter'],
-	'Author'         => ['r00t-3xp10it, Milton@barra'],
+	'Author'         => ['r00t-3xp10it, Milton-barra'],
         'DisclosureDate' => 'mai 6 2017',
 
     
