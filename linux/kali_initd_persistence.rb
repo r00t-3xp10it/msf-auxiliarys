@@ -38,7 +38,7 @@
 # EXAMPLE: #!/bin/sh agents will be executed         : sh /root/agent.sh
 # EXAMPLE: #!/usr/bin/python agents will be executed : python /root/agent.py
 # HINT: Rename your agent name to 'agent' when using 'SHEBANG true' option ..
-# HINT: This funtion will not use 'START_TIME' 'INIT_PATH' or 'SHEBANG' options.
+# HINT: This funtion will not use 'START_TIME' 'INIT_PATH' or 'SYSTEMD' options.
 # ---
 #
 #
