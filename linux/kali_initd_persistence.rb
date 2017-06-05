@@ -38,7 +38,7 @@
 # EXAMPLE: #!/bin/sh agents will be executed         : sh /root/agent.sh
 # EXAMPLE: #!/usr/bin/python agents will be executed : python /root/agent.py
 # HINT: Rename your agent name to 'agent' when using 'SHEBANG true' option ..
-# HINT: This funtion will not use 'START_TIME' 'INIT_PATH' or 'SHEBANG' options.
+# HINT: This funtion will not support 'SYSTEMD' or 'RPATH_SYSTEMD' options.
 # ---
 #
 #
@@ -133,7 +133,7 @@ class MetasploitModule < Msf::Post
                                          'SESSION' => '1',             # Default its to run againts session 1
                                          'START_TIME' => '8',          # Default time (sec) to start remote agent
                                          'INIT_PATH' => '/etc/init.d', # Default init.d remote directory full path
-                                         'RPATH_SYSTEMD' => '/etc/systemd/system', # Default systmd directory 
+                                         'RPATH_SYSTEMD' => '/etc/systemd/system', # Default systemd directory 
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -180,7 +180,7 @@ def ls_stage1
     print_warning("Please set REMOTE_PATH option!")
     return nil
   else
-    print_status("Persist: #{remote_path} agent ..")
+    print_status("Persist: #{remote_path} ..")
     Rex::sleep(1.0)
   end
 
@@ -279,6 +279,7 @@ else
     # Sellect how agent will execute (in persistence script call)
     #
     if datastore['SHEBANG'] == true
+    print_status("Agent with shebang sellected ..")
       #
       # If used agents with SHEBANG (eg #!/usr/bin/python)
       # TODO: Check Extensions execution using bash ( elf | sh | py | rb | pl ) 
@@ -342,7 +343,7 @@ else
       #
       if session.fs.file.exist?(script_check)
         print_good("Config init.d persistence script ..")
-        cmd_exec("chmod +x #{script_check}")
+        cmd_exec("chmod 755 #{script_check}")
         Rex::sleep(1.0)
         print_good("Update init.d service status (symlinks) ..")
         # update-rc.d persistance defaults # 97 03
