@@ -8,7 +8,7 @@
 
 
 ##
-# [ wifi_dump_linux.rb - ESSID credentials dump (wlan/lan) ]
+# [ wifi_dump_linux.rb - ESSID credentials dump (wpa/wep) ]
 # Author: pedr0 Ubuntu [r00t-3xp10it]
 # tested on: linux Kali 2.0
 #
@@ -37,7 +37,7 @@
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
 # msf exploit(handler) > reload_all
-# msf exploit(handler) > use post/windows/wlan/wifi_dump_linux
+# msf exploit(handler) > use post/linux/gather/wifi_dump_linux
 # msf post(wifi_dump_linux) > info
 # msf post(wifi_dump_linux) > show options
 # msf post(wifi_dump_linux) > show advanced options
@@ -90,7 +90,7 @@ class MetasploitModule < Msf::Post
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
-                                        'peterubuntu10[at]sourceforge[dot]net', # post-module author
+                                        'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
                         'Version'        => '$Revision: 1.2',
@@ -100,7 +100,7 @@ class MetasploitModule < Msf::Post
                         'Privileged'     => 'true',  # root privs required in non-Kali distros
                         'Targets'        =>
                                 [
-                                         [ 'linux' ]
+                                         [ 'Linux' ]
                                 ],
                         'DefaultTarget'  => '1', # default its to run againts Kali 2.0
                         'References'     =>
@@ -120,7 +120,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('DUMP_CREDS', [ false, 'Dump credentials of remote system', false])
+                                OptString.new('DUMP_CREDS', [ false, 'Dump credentials of remote system?', false])
                         ], self.class)
 
                 register_advanced_options(
@@ -135,7 +135,7 @@ class MetasploitModule < Msf::Post
 
 
 #
-# DUMP WLAN/WEP CREDENTIALS FROM TARGET ..
+# DUMP WPA/WEP CREDENTIALS FROM TARGET ..
 #
 def ls_stage1
 
@@ -158,6 +158,7 @@ def ls_stage1
     #
     if not session.fs.dir.exist?(rpath)
       vprint_error("Remote path: #{rpath} not found ..")
+      vprint_error("Please set 'REMOTE_DIR' advanced option to point to another path!")
       vprint_line("")
       return nil
     end
@@ -265,7 +266,7 @@ def run
     # Check if we are running in an higth integrity context (root)
     #
     if not is_root?
-      vprint_error("[ABORT]: Root access is required to dump creds ..")
+      vprint_error("[ABORT]: Root access is required in non-Kali distros ..")
       return nil
     end
     #
