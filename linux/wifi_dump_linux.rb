@@ -169,20 +169,21 @@ def ls_stage1
       open_ports = cmd_exec("/bin/netstat -tulpn")
       Rex::sleep(1.0)
 
-      #
-      # Display results on screen (wpa|wep) dump/gather info ..
-      #
-      vprint_line("")
-      vprint_line("WPA CREDENTIALS:")
-      vprint_line("----------------")
-      vprint_line(wpa_out)
-      vprint_line("")
-      Rex::sleep(0.5)
-      vprint_line("WEP CREDENTIALS:")
-      vprint_line("----------------")
-      vprint_line(wep_out)
-      vprint_line("")
-      Rex::sleep(0.5)
+        #
+        # Display results on screen (wpa|wep) dump/gather info ..
+        #
+        vprint_line("")
+        vprint_line("WPA CREDENTIALS:")
+        vprint_line("----------------")
+        vprint_line(wpa_out)
+        vprint_line("")
+        Rex::sleep(0.5)
+        vprint_line("WEP CREDENTIALS:")
+        vprint_line("----------------")
+        vprint_line(wep_out)
+        vprint_line("")
+        Rex::sleep(0.5)
+
       #
       # Display target open ports ..
       #
