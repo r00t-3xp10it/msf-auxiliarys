@@ -14,14 +14,15 @@
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
-# This post-exploitation module requires a meterpreter session,
-# to be able to dump ESSID stored passwords (wlan/lan) in linux.
-# HINT: this module requires root privileges to run ..
+# This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key
+# from your target CLIENT Linux machine using /etc/NetworkManager/system-connections/ files. This module
+# also gathers target open ports information and stores the dumps into msf loot folder (if selected)
+# HINT: this module requires root privileges to run in non-Kali distros ..
 #
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on => set SESSION 3
-# Dump credentials from remote system?     => set DUMP_CREDS true
+# Dump credentials of remote system?       => set DUMP_CREDS true
 # Display remote target open ports?        => set OPEN_PORTS true
 # Store credentials in msf loot folder?    => set STORE_CREDS true
 # The default path for network connections => set REMOTE_DIR /etc/NetworkManager/system-connections
@@ -82,9 +83,9 @@ class MetasploitModule < Msf::Post
 #
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'ESSID credentials dump (wlan/lan)',
+                        'Name'          => 'ESSID credentials dump (wpa/wep)',
                         'Description'   => %q{
-                                        This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key from your target CLIENT Linux machine using /etc/NetworkManager/system-connections/ files. The module gathers NetworkManager's plaintext "psk" information.
+                                        This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key from your target CLIENT Linux machine using /etc/NetworkManager/system-connections/ files. This module also gathers target open ports information and stores the dumps into msf loot folder (if selected)
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -92,7 +93,7 @@ class MetasploitModule < Msf::Post
                                         'peterubuntu10[at]sourceforge[dot]net', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
+                        'Version'        => '$Revision: 1.2',
                         'DisclosureDate' => 'jun 7 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -119,7 +120,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('DUMP_CREDS', [ false, 'Dump credentials from remote system', false])
+                                OptString.new('DUMP_CREDS', [ false, 'Dump credentials of remote system', false])
                         ], self.class)
 
                 register_advanced_options(
