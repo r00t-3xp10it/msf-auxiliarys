@@ -191,7 +191,7 @@ def ls_stage1
     # Store data to msf loot folder (local) ..
     #
     if datastore['STORE_LOOT'] == true
-      print_warning("Credentials stored in: .msf4/loot (local folder) ..")
+      print_warning("Credentials stored in: .msf4/loot (local) ..")
       store_loot("wpa/wep_credentials", "text/plain", session, data_dump, "wpa/wep_dump.txt", "output of wpa/wep dump")
     end
 
