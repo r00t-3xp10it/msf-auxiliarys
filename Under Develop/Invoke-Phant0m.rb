@@ -10,24 +10,34 @@
 ##
 # [ Invoke_PhantOm.rb - disable logfiles creation ]
 # Author: pedr0 Ubuntu aka: [r00t-3xp10it]
-# tested on: windows 7 | windows 10
+# tested on: windows 10
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
 # This post-exploitation module requires a meterpreter session,
-# to be able to upload and execute Invoke-Phant0m.ps1 powershell
-# script that allow users to stop logfiles creation in target.
+# to be able to upload and execute Invoke-Phant0m.ps1 powershell script
+# Invoke-Phant0m.ps1 script walks thread stacks of Event Log Service process (spesific svchost.exe)
+# and identify Event Log Threads to kill Event Log Service Threads. So the system will not be able
+# to collect logs and at the same time the Event Log Service will appear to be running.
 #
 #
 # [ MODULE OPTIONS ]
+# The session number to run this module on      => set SESSION 1
 # The full path of Invoke-Phant0m.ps1 to upload => set UPLOAD_PATH /tmp/Invoke-Phant0m.ps1
-# The full remote path were to upload           => set REMOTE_PATH %temp%/Invoke-Phant0m.ps1
+# The full remote path were to upload           => set REMOTE_PATH %temp%\\Invoke-Phant0m.ps1
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
 # Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/manage/Invoke_PhantOm.rb
 # Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/manage/Invoke_PhantOm.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/manage
+#
+#
+# [ EXPLOITATION ]
+# 1 - Exploit target to get session back (meterpreter)
+# 2 - Download Invoke-Phant0m.ps1 script
+#     https://github.com/r00t-3xp10it/Invoke-Phant0m
+# 3 - run post-module Invoke-PhantOm.rb
 #
 #
 # [ LOAD/USE AUXILIARY ]
