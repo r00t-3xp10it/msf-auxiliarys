@@ -109,7 +109,7 @@ class MetasploitModule < Msf::Post
 				{
 					'SESSION' => '1',  # Default its to run againts session 1
                                         'UPLOAD_PATH' => '/tmp/Invoke-Phant0m.ps1', # Default full path of agent to upload
-                                        'REMOTE_PATH' => '%temp%/Invoke-Phant0m.ps1', # Default full path of agent to upload 
+                                        'REMOTE_PATH' => '%temp%\\Invoke-Phant0m.ps1', # Default full path of agent to upload 
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
