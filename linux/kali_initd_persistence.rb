@@ -586,7 +586,7 @@ def run
     #
     # Check if we are running in an higth integrity context (root)
     #
-    if not runtor =~ /uid=0/
+    unless runtor =~ /uid=0/ || runtor =~ /root/
       print_error("[ABORT]: Root access is required in non-Kali distros ..")
       return nil
     end
