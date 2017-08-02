@@ -267,7 +267,7 @@ def run
     #
     # check for proper operative system (Linux)
     #
-    if (not sysinfo['OS'] =~ /Linux/)
+    if not sysinfo['OS'] =~ /Linux/
       print_error("[ABORT]: This module only works againt Linux systems")
       return nil
     end
