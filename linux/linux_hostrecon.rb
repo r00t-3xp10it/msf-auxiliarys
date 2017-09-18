@@ -8,13 +8,15 @@
 
 
 ##
-# [ linux_hostrecon.rb - target fingerprint post-module ]
+# [ linux_hostrecon.rb - target fingerprints post-module ]
 # Author: pedr0 Ubuntu [r00t-3xp10it]
 # tested on: linux Kali 2.0
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
-# This module ...
+# This module gathers target system information (linux distros), display outputs
+# and stores it into a logfile in msf4/loot folder. this module also allows users
+# to execute a single_command in bash + read/store outputs (advanced options).
 # HINT: This module requires root privileges to run in non-Kali distros ..
 #
 #
@@ -22,6 +24,7 @@
 # The session number to run this module on       => set SESSION 3
 # Store dumped data to msf4/loot folder?         => set STORE_LOOT true
 # Agressive system fingerprints scan?            => set AGRESSIVE_DUMP true
+# Execute a bash command and display output?     => set SINGLE_COMMAND uname -a
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -84,9 +87,9 @@ class MetasploitModule < Msf::Post
 #
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'linux host recon post-module (fingeprint)',
+                        'Name'          => 'linux hostrecon post-module (fingeprints)',
                         'Description'   => %q{
-                                        This module collects ..
+                                        This module gathers target system information (linux distros), display outputs and stores it into a logfile in msf4/loot folder. this module also allows users to execute a single_command in bash + read/store outputs (advanced options).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -94,7 +97,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
+                        'Version'        => '$Revision: 1.1',
                         'DisclosureDate' => 'set 17 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -106,6 +109,7 @@ class MetasploitModule < Msf::Post
                         'DefaultTarget'  => '1', # default its to run againts Kali 2.0
                         'References'     =>
                                 [
+                                         [ 'URL', 'http://goo.gl/Tm44Y2' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ]
                                 ],
@@ -125,7 +129,8 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('STORE_LOOT', [false, 'Store dumped data to msf4/loot folder?', false]),
-                                OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false])
+                                OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false]),
+                                OptString.new('SINGLE_COMMAND', [false, 'Execute a bash command and display output?'])
                         ], self.class)
  
         end
