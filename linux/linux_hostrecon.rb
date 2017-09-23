@@ -199,15 +199,16 @@ def run
       return nil
     end
 
-
       #
-      # TODO: write better outputs ..
       # Dump system information from target system (fingerprints)
+      # TODO: write better outputs ..
       #
       data_dump=''
       print_status("Executing list of commands remotelly ..")
       Rex::sleep(0.5)
+      #
       # bash commands to be executed remotelly ..
+      #
       date_out = cmd_exec("date")
       distro_uname = cmd_exec("uname -a")
       distro_release = cmd_exec("cat /etc/*-release | grep \"DISTRIB_RELEASE=\"; cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\"; cat /etc/*-release | grep \"VERSION_ID=\"; cat /etc/*-release | grep \"ID_LIKE=\"")
@@ -215,34 +216,36 @@ def run
       distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
       shell_used = cmd_exec("echo $0")
       shell_system = cmd_exec("echo \"$SHELL\"")
-      # store data into a variable to write the logfile ..
-      data_dump << date_out
-      data_dump << ""
-      data_dump << "UNAME:"
-      data_dump << "----------------"
-      data_dump << distro_uname
-      data_dump << ""
-      data_dump << "RELEASE:"
-      data_dump << "----------------"
-      data_dump << distro_release
-      data_dump << ""
-      data_dump << "HARDWARE INFO:"
-      data_dump << "----------------"
-      data_dump << distro_hardw
-      data_dump << ""
-      data_dump << "SHELL IN USE:"
-      data_dump << "----------------"
-      data_dump << shell_used
-      data_dump << ""
-      data_dump << "DEFAULT SYSTEM SHELL:"
-      data_dump << "----------------"
-      data_dump << shell_system
-      data_dump << ""
-      data_dump << "AVAILABLE SHELLS:"
-      data_dump << "----------------"
-      data_dump << distro_shells
-      data_dump << ""
-      Rex::sleep(0.5)
+        #
+        # store data into an variable to write logfile and display outputs ..
+        #
+        data_dump << date_out
+        data_dump << ""
+        data_dump << "UNAME:"
+        data_dump << "----------------"
+        data_dump << distro_uname
+        data_dump << ""
+        data_dump << "RELEASE:"
+        data_dump << "----------------"
+        data_dump << distro_release
+        data_dump << ""
+        data_dump << "HARDWARE INFO:"
+        data_dump << "----------------"
+        data_dump << distro_hardw
+        data_dump << ""
+        data_dump << "SHELL IN USE:"
+        data_dump << "----------------"
+        data_dump << shell_used
+        data_dump << ""
+        data_dump << "DEFAULT SYSTEM SHELL:"
+        data_dump << "----------------"
+        data_dump << shell_system
+        data_dump << ""
+        data_dump << "AVAILABLE SHELLS:"
+        data_dump << "----------------"
+        data_dump << distro_shells
+        data_dump << ""
+        Rex::sleep(0.5)
 
         #
         # Agressive scan results ..
@@ -250,7 +253,9 @@ def run
         if datastore['AGRESSIVE_DUMP'] == true
           print_status("Running aggressive fingerprint modules ..")
           Rex::sleep(0.5)
+          #
           # bash commands to be executed remotelly ..
+          #
           distro_packages = cmd_exec("/usr/bin/dpkg -l")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
           # Store interface in use (remote)
@@ -258,20 +263,22 @@ def run
           # Executing interface scans (essids emitting)
           essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
           Rex::sleep(0.5)
-          # store data into an variable to write the logfile ..
-          data_dump << ""
-          data_dump << "LIST OF LOGFILES FOUND:"
-          data_dump << "-----------------------"
-          data_dump << distro_logs
-          data_dump << ""
-          data_dump << "LIST OF PACKAGES FOUND:"
-          data_dump << "-----------------------"
-          data_dump << distro_packages
-          data_dump << ""
-          data_dump << "LIST OF ESSIDs EMITING:"
-          data_dump << "-----------------------"
-          data_dump << essid_out
-          data_dump << ""
+            #
+            # store data into an variable to write logfile and display outputs ..
+            #
+            data_dump << ""
+            data_dump << "LIST OF LOGFILES FOUND:"
+            data_dump << "-----------------------"
+            data_dump << distro_logs
+            data_dump << ""
+            data_dump << "LIST OF PACKAGES FOUND:"
+            data_dump << "-----------------------"
+            data_dump << distro_packages
+            data_dump << ""
+            data_dump << "LIST OF ESSIDs EMITING:"
+            data_dump << "-----------------------"
+            data_dump << essid_out
+            data_dump << ""
         end
 
         #
@@ -282,26 +289,31 @@ def run
         if not exec_bash.nil?
           print_status("Running a single bash command ..")
           Rex::sleep(0.5)
+          #
           # bash commands to be executed remotelly ..
+          #
           single_comm = cmd_exec("#{exec_bash}")
           Rex::sleep(0.5)
-          # store data into an variable to write the logfile ..
-          data_dump << ""
-          data_dump << "COMMAND EXECUTED: #{exec_bash}"
-          data_dump << "-----------------------"
-          data_dump << single_comm
-          data_dump << ""
+            #
+            # store data into an variable to write logfile and display outputs ..
+            #
+            data_dump << ""
+            data_dump << "COMMAND EXECUTED: #{exec_bash}"
+            data_dump << "-----------------------"
+            data_dump << single_comm
+            data_dump << ""
         end
 
-          #
-          # Display results on screen ..
-          #
-          print_status("Remote scans completed, building list ..")
-          print_line("")
-          Rex::sleep(1.0)
-          print_line(data_dump)
-          print_line("")
-          Rex::sleep(0.5)
+       #
+       # Display results on screen ..
+       #
+       print_status("Remote scans completed, building list ..")
+       print_line("")
+       Rex::sleep(1.0)
+       # print the contents of 'data_dump' variable ..
+       print_line(data_dump)
+       print_line("")
+       Rex::sleep(0.5)
 
      #
      # Store data into msf loot folder (local) ..
