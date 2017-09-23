@@ -218,32 +218,26 @@ def run
       # store data into a variable to write the logfile ..
       data_dump << date_out
       data_dump << ""
-      print_good("Dumping target uname ..")
       data_dump << "UNAME:"
       data_dump << "----------------"
       data_dump << distro_uname
       data_dump << ""
-      print_good("Dumping /etc/*-release ..")
       data_dump << "RELEASE:"
       data_dump << "----------------"
       data_dump << distro_release
       data_dump << ""
-      print_good("Dumping hardware info ..")
       data_dump << "HARDWARE INFO:"
       data_dump << "----------------"
       data_dump << distro_hardw
       data_dump << ""
-      print_good("Dumping shell in use ..")
       data_dump << "SHELL IN USE:"
       data_dump << "----------------"
       data_dump << shell_used
       data_dump << ""
-      print_good("Dumping system default shell ..")
       data_dump << "DEFAULT SYSTEM SHELL:"
       data_dump << "----------------"
       data_dump << shell_system
       data_dump << ""
-      print_good("Dumping system available shells ..")
       data_dump << "AVAILABLE SHELLS:"
       data_dump << "----------------"
       data_dump << distro_shells
@@ -265,18 +259,15 @@ def run
           essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
           Rex::sleep(0.5)
           # store data into an variable to write the logfile ..
-          print_good("Dumping logfiles locations ..")
           data_dump << ""
           data_dump << "LIST OF LOGFILES FOUND:"
           data_dump << "-----------------------"
           data_dump << distro_logs
           data_dump << ""
-          print_good("Dumping list of packages ..")
           data_dump << "LIST OF PACKAGES FOUND:"
           data_dump << "-----------------------"
           data_dump << distro_packages
           data_dump << ""
-          print_good("Dumping list of essids emmiting ..")
           data_dump << "LIST OF ESSIDs EMITING:"
           data_dump << "-----------------------"
           data_dump << essid_out
@@ -296,7 +287,6 @@ def run
           Rex::sleep(0.5)
           # store data into an variable to write the logfile ..
           data_dump << ""
-          print_good("Executing: #{exec_bash}")
           data_dump << "COMMAND EXECUTED: #{exec_bash}"
           data_dump << "-----------------------"
           data_dump << single_comm
