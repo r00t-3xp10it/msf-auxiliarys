@@ -212,23 +212,38 @@ def run
       distro_uname = cmd_exec("uname -a")
       distro_release = cmd_exec("cat /etc/*-release | grep \"DISTRIB_RELEASE=\"; cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\"; cat /etc/*-release | grep \"VERSION_ID=\"; cat /etc/*-release | grep \"ID_LIKE=\"")
       distro_hardw = cmd_exec("lscpu | grep \"Architecture\"; lscpu | grep \"CPU op-mode\"; lscpu | grep \"Vendor ID\"")
-      distro_shells = cmd_exec("cat /etc/shells")
-      distro_shells = cmd_exec("cat /etc/shells")
+      distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
+      shell_used = cmd_exec("echo $0")
+      shell_system = cmd_exec("echo \"$SHELL\"")
       # store data into a variable to write the logfile ..
       data_dump << date_out
       data_dump << ""
+      print_good("Dumping target uname ..")
       data_dump << "UNAME:"
       data_dump << "----------------"
       data_dump << distro_uname
       data_dump << ""
+      print_good("Dumping /etc/*-release ..")
       data_dump << "RELEASE:"
       data_dump << "----------------"
       data_dump << distro_release
       data_dump << ""
+      print_good("Dumping hardware info ..")
       data_dump << "HARDWARE INFO:"
       data_dump << "----------------"
       data_dump << distro_hardw
       data_dump << ""
+      print_good("Dumping shell in use ..")
+      data_dump << "SHELL IN USE:"
+      data_dump << "----------------"
+      data_dump << shell_used
+      data_dump << ""
+      print_good("Dumping system default shell ..")
+      data_dump << "DEFAULT SYSTEM SHELL:"
+      data_dump << "----------------"
+      data_dump << shell_system
+      data_dump << ""
+      print_good("Dumping system available shells ..")
       data_dump << "AVAILABLE SHELLS:"
       data_dump << "----------------"
       data_dump << distro_shells
@@ -250,14 +265,18 @@ def run
           essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
           Rex::sleep(0.5)
           # store data into an variable to write the logfile ..
+          print_good("Dumping logfiles locations ..")
+          data_dump << ""
           data_dump << "LIST OF LOGFILES FOUND:"
           data_dump << "-----------------------"
           data_dump << distro_logs
           data_dump << ""
+          print_good("Dumping list of packages ..")
           data_dump << "LIST OF PACKAGES FOUND:"
           data_dump << "-----------------------"
           data_dump << distro_packages
           data_dump << ""
+          print_good("Dumping list of essids emmiting ..")
           data_dump << "LIST OF ESSIDs EMITING:"
           data_dump << "-----------------------"
           data_dump << essid_out
@@ -267,17 +286,18 @@ def run
         #
         # Single_command to execute remotelly ..
         #
-        check_set = datastore['SINGLE_COMMAND']
+        exec_bash = datastore['SINGLE_COMMAND']
         # check if single_command option its configurated ..
-        if not check_set.nil?
+        if not exec_bash.nil?
           print_status("Running a single bash command ..")
           Rex::sleep(0.5)
           # bash commands to be executed remotelly ..
-          store_comm = datastore['SINGLE_COMMAND']
-          single_comm = cmd_exec("#{single_comm}")
+          single_comm = cmd_exec("#{exec_bash}")
           Rex::sleep(0.5)
           # store data into an variable to write the logfile ..
-          data_dump << "SINGLE COMMAND EXECUTED:"
+          data_dump << ""
+          print_good("Executing: #{exec_bash}")
+          data_dump << "COMMAND EXECUTED: #{exec_bash}"
           data_dump << "-----------------------"
           data_dump << single_comm
           data_dump << ""
@@ -286,7 +306,7 @@ def run
           #
           # Display results on screen ..
           #
-          print_good("Remote scans completed, building list ..")
+          print_status("Remote scans completed, building list ..")
           print_line("")
           Rex::sleep(1.0)
           print_line(data_dump)
