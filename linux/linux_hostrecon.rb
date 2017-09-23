@@ -267,7 +267,9 @@ def run
         #
         # Single_command to execute remotelly ..
         #
-        if not datastore['SINGLE_COMMAND'].nil
+        check_set = datastore['SINGLE_COMMAND']
+        # check if single_command option its configurated ..
+        if not check_set.nil?
           print_status("Running a single bash command ..")
           Rex::sleep(0.5)
           # bash commands to be executed remotelly ..
