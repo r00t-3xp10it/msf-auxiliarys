@@ -172,9 +172,6 @@ def run
 
 
     #
-    # the 'def check()' funtion that rapid7 requires to accept new modules.
-    # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
-    #
     # check for proper operative system (Linux)
     #
     unless sysinfo['OS'] =~ /Linux/ || sysinfo['OS'] =~ /linux/
@@ -199,6 +196,7 @@ def run
       return nil
     end
 
+
       #
       # Dump system information from target system (fingerprints)
       # TODO: write better outputs ..
@@ -213,12 +211,12 @@ def run
       distro_uname = cmd_exec("uname -a")
       distro_release = cmd_exec("cat /etc/*-release | grep \"DISTRIB_RELEASE=\"; cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\"; cat /etc/*-release | grep \"VERSION_ID=\"; cat /etc/*-release | grep \"ID_LIKE=\"")
       distro_hardw = cmd_exec("lscpu | grep \"Architecture\"; lscpu | grep \"CPU op-mode\"; lscpu | grep \"Vendor ID\"")
-      distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
       shell_used = cmd_exec("echo $0")
       shell_system = cmd_exec("echo \"$SHELL\"")
-      root_services = cmd_exec("ps -aux | grep '^root'")
+      distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
         #
-        # store data into an variable to write logfile and display outputs ..
+        # Store data into an variable (data_dump) ..
+        # to be able to write the logfile and display the outputs ..
         #
         data_dump << date_out
         data_dump << ""
@@ -246,44 +244,52 @@ def run
         data_dump << "----------------"
         data_dump << distro_shells
         data_dump << ""
-        data_dump << "ROOT SERVICES RUNNING:"
-        data_dump << "----------------"
-        data_dump << root_services
-        data_dump << ""
         Rex::sleep(0.5)
 
+
         #
-        # Agressive scan results ..
+        # Run agressive scans againts target ..
+        # if sellected previous in advanced options (set AGRESSIVE_DUMP true) ..
         #
         if datastore['AGRESSIVE_DUMP'] == true
-          print_status("Running aggressive fingerprint modules ..")
+          print_status("Running agressive fingerprint modules ..")
           Rex::sleep(0.5)
           #
           # bash commands to be executed remotelly ..
           #
-          distro_history = cmd_exec("ls -la /root/.*_history")
+          root_services = cmd_exec("ps -aux | grep '^root'")
           distro_packages = cmd_exec("/usr/bin/dpkg -l")
+          distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
+          cron_tasks = cmd_exec("ls -la /etc/cron*")
           # Store interface in use (remote)
           interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
           # Executing interface scans (essids emitting)
           essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
           Rex::sleep(0.5)
             #
-            # store data into an variable to write logfile and display outputs ..
+            # store data into an variable (data_dump) ..
+            # to be able to write the logfile and display the outputs ..
             #
+            data_dump << "ROOT SERVICES RUNNING:"
+            data_dump << "----------------"
+            data_dump << root_services
             data_dump << ""
-            data_dump << "LIST OF LOGFILES FOUND:"
+            data_dump << "LIST OF PACKAGES FOUND:"
             data_dump << "-----------------------"
-            data_dump << distro_logs
+            data_dump << distro_packages
             data_dump << ""
             data_dump << "LIST OF HISTORY FILES:"
             data_dump << "-----------------------"
             data_dump << distro_history
             data_dump << ""
-            data_dump << "LIST OF PACKAGES FOUND:"
+            data_dump << "LIST OF LOGFILES FOUND:"
             data_dump << "-----------------------"
-            data_dump << distro_packages
+            data_dump << distro_logs
+            data_dump << ""
+            data_dump << "CRONTAB TASKS:"
+            data_dump << "-----------------------"
+            data_dump << cron_tasks
             data_dump << ""
             data_dump << "LIST OF ESSIDs EMITING:"
             data_dump << "-----------------------"
@@ -291,8 +297,10 @@ def run
             data_dump << ""
         end
 
+
         #
-        # Single_command to execute remotelly ..
+        # Single_command to execute remotelly (user inputs) ..
+        # if sellected previous in advanced options (set SINGLE_COMMAND netstat -ano) ..
         #
         exec_bash = datastore['SINGLE_COMMAND']
         # check if single_command option its configurated ..
@@ -305,7 +313,8 @@ def run
           single_comm = cmd_exec("#{exec_bash}")
           Rex::sleep(0.5)
             #
-            # store data into an variable to write logfile and display outputs ..
+            # store data into an variable (data_dump) ..
+            # to be able to write the logfile and display the outputs ..
             #
             data_dump << ""
             data_dump << "COMMAND EXECUTED: #{exec_bash}"
@@ -315,7 +324,8 @@ def run
         end
 
        #
-       # Display results on screen ..
+       # All scans finished ..
+       # Displaying results on screen (data_dump) ..
        #
        print_status("Remote scans completed, building list ..")
        print_line("")
@@ -325,13 +335,17 @@ def run
        print_line("")
        Rex::sleep(0.5)
 
+
      #
-     # Store data into msf loot folder (local) ..
+     # Store 'data_dump' contents into msf loot folder (local) ..
+     # if sellected previous in advanced options (set STORE_LOOT true) ..
      #
      if datastore['STORE_LOOT'] == true
-       print_warning("Fingerprints stored under: ~/.msf4/loot (folder) ..")
+       print_warning("Target fingerprints stored under: ~/.msf4/loot (folder)")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
      end
+
+
    #
    # end of the 'def run()' funtion ..
    #
