@@ -225,7 +225,7 @@ def run
         #
         data_dump << "\n\n"
         data_dump << "Date/Hour: " + date_out + "\n"
-        data_dump << "----------------------------\n"
+        data_dump << "----------------------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Computer     : #{sys_info['Computer']}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
