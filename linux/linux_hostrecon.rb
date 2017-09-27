@@ -326,7 +326,7 @@ def run
         # if sellected previous in advanced options (set CREDENTIALS_DUMP true) ..
         #
         if datastore['CREDENTIALS_DUMP'] == true
-          print_status"Dumping remote credentials from target ..")
+          print_status("Dumping remote credentials from target ..")
           Rex::sleep(0.5)
           #
           # bash commands to be executed remotelly ..
