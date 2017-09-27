@@ -281,7 +281,7 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
-          list_drivers = cmd_exec("lsmod")
+          list_drivers = cmd_exec("lspci -vv")
           net_stat = cmd_exec("netstat -tulpn")
           demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
