@@ -281,6 +281,7 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
+          list_drivers = cmd_exec("lsmod")
           net_stat = cmd_exec("netstat -tulpn")
           demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
@@ -320,6 +321,10 @@ def run
             data_dump << "SMBIOS DATA (sysfs) :\n"
             data_dump << "---------------------\n"
             data_dump << demi_bios
+            data_dump << "\n\n"
+            data_dump << "LIST ALL DRIVERS :\n"
+            data_dump << "------------------\n"
+            data_dump << list_drivers
             data_dump << "\n\n"
         end
 
