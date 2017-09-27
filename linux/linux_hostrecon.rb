@@ -416,7 +416,7 @@ def run
      # IF sellected previous in advanced options (set STORE_LOOT true) ..
      #
      if datastore['STORE_LOOT'] == true
-       print_warning("Fingerprints stored under: ~/.msf4/loot")
+       print_warning("Fingerprints stored under: ~/.msf4/loot folder")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
      end
    #
