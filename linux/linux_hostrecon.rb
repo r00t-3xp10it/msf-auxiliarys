@@ -254,7 +254,6 @@ def run
         data_dump << "-------------\n"
         data_dump << current_shell
         data_dump << "\n\n"
-        data_dump << "\n\n"
         data_dump << "AVAILABLE SHELLS\n"
         data_dump << "----------------\n"
         data_dump << distro_shells
