@@ -25,7 +25,7 @@
 # Store dumped data to msf4/loot folder?   => set STORE_LOOT true
 # Agressive system fingerprints scan?      => set AGRESSIVE_DUMP true
 # Dump remote credentials from target?     => set CREDENTIALS_DUMP true
-# The bash command to execute remotly      => set SINGLE_COMMAND uname -a
+# The bash command to execute remotly      => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
 # Delete remote shell history commands?    => set DEL_SHELL_HISTORY true
 #
 #
