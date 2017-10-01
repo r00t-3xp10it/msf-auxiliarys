@@ -429,7 +429,7 @@ def run
      #
      if datastore['DEL_SHELL_HISTORY'] == true
        print_status("Deleting remote bash shell history commands list  ..")
-       Rex::sleep(0.5)
+       Rex::sleep(0.7)
      end
         data_dump << "----------------------------"
 
