@@ -425,7 +425,7 @@ def run
 
      #
      # just for showoff ..
-     # "print what we are doing before present scans to user"
+     # "print the 'advanced option' funtion msg before present scans to user"
      #
      if datastore['DEL_SHELL_HISTORY'] == true
        print_status("Deleting remote bash shell history commands list  ..")
@@ -441,14 +441,14 @@ def run
        #
        print_good("Remote scans completed, building list ..")
        Rex::sleep(2.3)
-       # print the contents of 'data_dump' variable on screen ..
+       # print the contents of (data_dump) local variable on screen ..
        print_line(data_dump)
        Rex::sleep(0.5)
 
 
 
      #
-     # Store 'data_dump' contents into msf loot folder? (local) ..
+     # Store (data_dump) contents into msf loot folder? (local) ..
      # IF sellected previous in advanced options (set STORE_LOOT true) ..
      #
      if datastore['STORE_LOOT'] == true
