@@ -230,6 +230,7 @@ def run
         # to be able to write the logfile and display the outputs ..
         #
         data_dump << "\n\n"
+        data_dump << "linux_hostrecon logfile\n"
         data_dump << "Date/Hour: " + date_out + "\n"
         data_dump << "---------------------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
