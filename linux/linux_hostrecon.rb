@@ -201,7 +201,7 @@ def run
       #
       data_dump=''
       print_status("Executing list of commands remotely ..")
-      Rex::sleep(0.4)
+      Rex::sleep(0.2)
       #
       # bash commands to be executed remotely ..
       #
@@ -251,7 +251,7 @@ def run
         data_dump << "Ruby version        : #{ruby_version}\n"
         data_dump << "Firefox version     : #{firefox_version}\n"
         data_dump << "Target interface    : #{interface}\n"
-        data_dump << "target_SSID         : #{target_ssid}"
+        data_dump << "target_SSID         : #{target_ssid}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Target gateway      : #{gateway}\n"
         data_dump << "Target localhost    : #{localhost_ip}\n"
@@ -270,7 +270,7 @@ def run
         #
         if datastore['AGRESSIVE_DUMP'] == true
           print_status("Running agressive fingerprint modules ..")
-          Rex::sleep(0.3)
+          Rex::sleep(0.5)
           #
           # bash commands to be executed remotely ..
           #
@@ -362,7 +362,7 @@ def run
         #
         if datastore['CREDENTIALS_DUMP'] == true
           print_status("Dumping remote credentials from target ..")
-          Rex::sleep(0.3)
+          Rex::sleep(0.2)
           #
           # bash commands to be executed remotely ..
           #
@@ -424,7 +424,7 @@ def run
         exec_bash = datastore['SINGLE_COMMAND']
         # check if single_command option its configurated ..
         if not exec_bash.nil?
-          print_status("Executing user inputed bash command, remotely ..")
+          print_status("Executing user inputed bash command ..")
           Rex::sleep(0.7)
           # bash command to be executed remotely ..
           single_comm = cmd_exec("#{exec_bash}")
@@ -437,21 +437,11 @@ def run
             data_dump << "+--------------------------------+\n"
             data_dump << "|    COMMAND EXECUTED REMOTELY   |\n"
             data_dump << "+--------------------------------+\n"
-            data_dump << "Execute: #{exec_bash}"
+            data_dump << "Executed: #{exec_bash}"
             data_dump << "\n\n"
             data_dump << single_comm
             data_dump << "\n\n"
         end
-
-
-     #
-     # just for showoff ..
-     # "print the 'advanced option' funtion msg before present scans to user"
-     #
-     if datastore['DEL_SHELL_HISTORY'] == true
-       print_status("Deleting remote bash shell history commands list  ..")
-       Rex::sleep(0.7)
-     end
         data_dump << "----------------------------------------------"
 
 
