@@ -231,6 +231,11 @@ def run
       distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
       user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
+      # check for GCC installation
+      check_gcc = cmd_exec("which gcc")
+        if not check_gcc.nil?
+          gcc_version = cmd_exec("gcc -dumpversion")
+        end
         #
         # Check for remote browsers installed versions ..
         #
@@ -274,6 +279,9 @@ def run
         data_dump << "Ruby version        : #{ruby_version}\n"
         data_dump << "PostgreSQL version  : #{psq_version}\n"
 
+          if not check_gcc.nil?
+            data_dump << "GCC version         : #{gcc_version}\n"
+          end
           #
           # display installed browsers versions ..
           #
