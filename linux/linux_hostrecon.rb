@@ -240,7 +240,7 @@ def run
         end
         check_chromium = cmd_exec("which chromium")
         if not check_chromium.nil?
-          chromium_version = cmd_exec("chromium-browser --product-version")
+          chromium_version = cmd_exec("chromium --product-version")
         end
         check_opera = cmd_exec("which opera")
         if not check_opera.nil?
