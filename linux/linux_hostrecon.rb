@@ -273,7 +273,7 @@ def run
             data_dump << "Chromium browser    : #{chromium_version}\n"
           end
           unless chromium_browser =~ /not found/
-            data_dump << "Chromium browser    : #{chromium_version}\n"
+            data_dump << "Chromium browser    : #{chromium_browser}\n"
           end
           unless opera_version =~ /not found/
             data_dump << "Opera browser       : #{opera_version}\n"
