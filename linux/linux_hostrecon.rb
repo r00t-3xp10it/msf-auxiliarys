@@ -263,19 +263,19 @@ def run
           #
           # Display (only) remote installed browsers versions ..
           #
-          unless firefox_version =~ /not found/
+          unless firefox_version =~ /not found/ || firefox_version.nil?
             data_dump << "Firefox browser     : #{firefox_version}\n"
           end
-          unless chrome_version =~ /not found/
+          unless chrome_version =~ /not found/ || chrome_version.nil?
             data_dump << "Chrome browser      : #{chrome_version}\n"
           end
-          unless chromium_version =~ /not found/
+          unless chromium_version =~ /not found/ || chromium_version.nil?
             data_dump << "Chromium browser    : #{chromium_version}\n"
           end
-          unless chromium_browser =~ /not found/
+          unless chromium_browser =~ /not found/ || chromium_browser.nil?
             data_dump << "Chromium browser    : #{chromium_browser}\n"
           end
-          unless opera_version =~ /not found/
+          unless opera_version =~ /not found/ || opera_version.nil?
             data_dump << "Opera browser       : #{opera_version}\n"
           end
         data_dump << "Target interface    : #{interface}\n"
