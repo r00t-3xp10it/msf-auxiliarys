@@ -209,12 +209,18 @@ def run
       #
       # bash commands to be executed remotely ..
       #
+
       date_out = cmd_exec("date")
       user_name = cmd_exec("whoami")
       py_version = cmd_exec("python -V")
       distro_uname = cmd_exec("uname -a")
+      gcc_version = cmd_exec("gcc -dumpversion")
+      opera_version = cmd_exec("opera -version")
       psq_version = cmd_exec("psql -V | awk {'print $3'}")
-      ruby_version = cmd_exec("ruby -v  | awk {'print $1,$2'}")
+      ruby_version = cmd_exec("ruby -v  | awk {'print $2'}")
+      chrome_version = cmd_exec("google-chrome --product-version")
+      chromium_version = cmd_exec("chromium-browser --product-version")
+      firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep \"default\" | awk {'print $8'}")
       hardware_bits = cmd_exec("lscpu | grep \"CPU op-mode\" | awk {'print $3'}")
@@ -222,35 +228,27 @@ def run
       sudo_version = cmd_exec("sudo -V | grep \"Sudo version\" | awk {'print $3'}")
       mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
-      mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
       sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
+      mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
+      sh_version = cmd_exec("bash --version | head -n 1 | awk {'print $4'} | cut -d '-' -f1")
       mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
-      sh_version = cmd_exec("bash --version | head -n 1 | awk {'print $2,$4'} | cut -d '-' -f1")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       target_ssid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -n 1 | awk {'print $2'}")
       distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
       user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
-      # check for GCC installation
-      check_gcc = cmd_exec("which gcc")
-        if not check_gcc.nil?
-          gcc_version = cmd_exec("gcc -dumpversion")
-        end
-        #
-        # Check for remote browsers installed versions ..
-        #
-        check_firefox = cmd_exec("which firefox")
-        if not check_firefox.nil?
-          firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
-        end
-        check_chromium = cmd_exec("which chromium")
-        if not check_chromium.nil?
-          chromium_version = cmd_exec("chromium --product-version")
-        end
-        check_opera = cmd_exec("which opera")
-        if not check_opera.nil?
-          opera_version = cmd_exec("opera -version | awk {'print $3'}")
-        end
+      #
+      # Try to determine chromium (browser) correct syntax command
+      #
+      chromium_check = cmd_exec("which chromium")
+      if chromium_check =~ /chromium/
+        chromium_version = cmd_exec("chromium --product-version")
+      end
+      check_other = cmd_exec("which chromium-browser")
+      if check_other =~ /chromium-browser/
+        chromium_version = cmd_exec("chromium-browser --product-version")
+      end
+
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
@@ -275,26 +273,25 @@ def run
         data_dump << "System language     : #{sys_lang}\n"
         data_dump << "Sudo version        : #{sudo_version}\n"
         data_dump << "Bash version        : #{sh_version}\n"
-        data_dump << "Python version      : #{py_version}\n"
         data_dump << "Ruby version        : #{ruby_version}\n"
+        data_dump << "Python version      : #{py_version}\n"
         data_dump << "PostgreSQL version  : #{psq_version}\n"
-
-          if not check_gcc.nil?
-            data_dump << "GCC version         : #{gcc_version}\n"
-          end
+        data_dump << "GCC version         : #{gcc_version}\n"
           #
           # display installed browsers versions ..
           #
-          if not check_firefox.nil?
+          unless firefox_version =~ /not/
             data_dump << "Firefox browser     : #{firefox_version}\n"
           end
-          if not check_chromium.nil?
+          unless chrome_version =~ /not/
+            data_dump << "Chrome browser      : #{chrome_version}\n"
+          end
+          unless chromium_version =~ /not/
             data_dump << "Chromium browser    : #{chromium_version}\n"
           end
-          if not check_opera.nil?
+          unless opera_version =~ /not/
             data_dump << "Opera browser       : #{opera_version}\n"
           end
-
         data_dump << "Target interface    : #{interface}\n"
         data_dump << "Target_SSID         : #{target_ssid}\n"
         data_dump << "Target IP addr      : #{host_ip}\n"
