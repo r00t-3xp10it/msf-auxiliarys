@@ -483,7 +483,7 @@ def run
        # All scans finished ..
        # Displaying results on screen (data_dump) ..
        #
-       print_warning("Remote scans completed, building list ..")
+       print_good("Remote scans completed, building list ..")
        Rex::sleep(2.3)
        # print the contents of (data_dump) local variable on screen ..
        print_line(data_dump)
