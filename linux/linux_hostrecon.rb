@@ -187,7 +187,7 @@ def run
     if not sysinfo.nil?
       print_good("Running module against: #{sys_info['Computer']}")
       Rex::sleep(0.5)
-      print_warning("  Be patience, this may take up to 40 sec to finish ..")
+      print_warning("  ::Be::Patience:: this may take up to 40 sec to finish ..")
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
@@ -459,7 +459,7 @@ def run
         # check if single_command option its configurated ..
         if not exec_bash.nil?
           print_status("Executing user inputed bash command ..")
-          Rex::sleep(1.0)
+          Rex::sleep(0.5)
           # bash command to be executed remotely ..
           single_comm = cmd_exec("#{exec_bash}")
             #
@@ -483,11 +483,11 @@ def run
        # All scans finished ..
        # Displaying results on screen (data_dump) ..
        #
-       print_good("Remote scans completed, building list ..")
+       print_warning("Remote scans completed, building list ..")
        Rex::sleep(2.3)
        # print the contents of (data_dump) local variable on screen ..
        print_line(data_dump)
-       Rex::sleep(0.5)
+       Rex::sleep(0.2)
 
 
 
@@ -498,7 +498,6 @@ def run
      if datastore['STORE_LOOT'] == true
        print_good("Session logfile stored locally in: ~/.msf4/loot folder")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
-       Rex::sleep(0.5)
      end
 
 
