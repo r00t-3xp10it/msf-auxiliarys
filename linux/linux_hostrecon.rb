@@ -232,6 +232,11 @@ def run
       distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
       user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
+
+      # VM checks
+      vm_report = cmd_exec("hostnamectl | grep \"Chassis\" | awk {'print $2'}")
+      machine_id = cmd_exec("hostnamectl | grep \"Machine ID\" | awk {'print $3'}")
+
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
@@ -244,6 +249,12 @@ def run
         data_dump << "----------------------------------------\n"
         data_dump << "Running on session  : #{datastore['SESSION']}\n"
         data_dump << "Target Computer     : #{sys_info['Computer']}\n"
+          if vm_report =~ /vm/
+            data_dump << "Target enviroment   : #{vm_report} (VirtualMachine)\n"
+          else
+            data_dump << "Target enviroment   : #{vm_report}\n"
+          end
+        data_dump << "Target Machine ID   : #{machine_id}\n"
         data_dump << "Target session PID  : #{session_pid}\n"
         data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
         data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
