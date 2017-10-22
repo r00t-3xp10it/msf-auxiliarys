@@ -217,6 +217,7 @@ def run
       chromium_browser = cmd_exec("chromium-browser --product-version")
       firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
+      icewesel_version = cmd_exec("iceweasel --version | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep \"default\" | awk {'print $8'}")
       hardware_bits = cmd_exec("lscpu | grep \"CPU op-mode\" | awk {'print $3'}")
       hardware_vendor = cmd_exec("lscpu | grep \"Vendor ID\" | awk {'print $3'}")
@@ -281,6 +282,9 @@ def run
           end
           unless chromium_browser =~ /not found/ || chromium_browser.nil?
             data_dump << "Chromium browser    : #{chromium_browser}\n"
+          end
+          unless icewesel_version =~ /not found/ || icewesel_version.nil?
+            data_dump << "Iceweasel browser   : #{icewesel_version}\n"
           end
           unless opera_version =~ /not found/ || opera_version.nil?
             data_dump << "Opera browser       : #{opera_version}\n"
