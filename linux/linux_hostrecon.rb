@@ -487,7 +487,7 @@ def run
       fap_dir=''
       fap_pic=''
       fap_vid=''
-      fap_dir = cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"adult|ass|blowjob|bobs|bitches|fuck|girls|hot|horny|nude|nudes|naked|pornography|porn|pussy|sex|sexy|striptease|slut|teens|teenagers|youporn|young|xvideos|xxx\"`; locate $di")
+      fap_dir = cmd_exec("di=`ls -ApR ~/ | egrep \"^\\..*/$\" | egrep -iw \"69|adult|ass|blowjob|bobs|bitche|bitches|blonde|doggystyle|fuck|fucking|first time|fotos|girls|girlfriend|lingerie|latina|hot|horny|milf|masturbation|nude|nudes|naked|pics|private|private pics|private fotos|playboy|pornography|porn|pussy|pussycat|sex|sexual|sexy|striptease|slut|sluts|secret|twerk|twerking|tits|teens|teenagers|threesome|virgin|youporn|young|xvideos|xxx\"`; locate $di")
       fap_pic = cmd_exec("pi=`ls -ABR ~/ | grep \"^\\.\" | egrep -i \".bmp|.png|.jpg|.jpeg|.exitf\"`; locate $pi | grep -v \"Trash\"")
       fap_vid = cmd_exec("jk=`ls -ABR ~/ | grep \"^\\.\" | egrep -i \".ogv|.mp4|.mpg|.webm\"`; du -a ~/ | grep \"$jk\" | awk {'print $2'}")
         #
