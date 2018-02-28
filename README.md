@@ -13,9 +13,9 @@ my collection of metasploit auxiliary post-modules
 - 3º - port module to metasploit database
 - 4º - reload metasploit database ..
 
-    service postgresql start
-    msfdb reinit
-    msfconsole -q -x 'db_status; reload_all'
+    service postgresql start <br />
+    msfdb reinit <br />
+    msfconsole -q -x 'db_status; reload_all' <br />
 
 <br />
 
