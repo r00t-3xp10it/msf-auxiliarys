@@ -7,11 +7,15 @@ my collection of metasploit auxiliary post-modules
     writen by me to be of assistence in post-exploitation common tasks.
 
 ## Download/Install
-    1º - Download module from github
-    2º - edit module to read the description
-    3º - port module to metasploit database
-    4º - reload metasploit database ..
-         msf > reload_all
+
+- 1º - Download module from github
+- 2º - edit module to read the description
+- 3º - port module to metasploit database
+- 4º - reload metasploit database ..
+         service postgresql start
+         msfdb reinit
+         msfconsole -q -x 'db_status; reload_all'
+
 
 [Please read my 'WIKI' for further information](https://github.com/r00t-3xp10it/msf-auxiliarys/wiki/Welcome-to-the-msf-auxiliarys-wiki!)
 
