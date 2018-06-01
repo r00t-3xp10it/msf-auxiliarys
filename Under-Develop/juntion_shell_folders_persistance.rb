@@ -144,7 +144,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('PERSIST_EXPLORER', [ false, 'Use explorer.exe to persiste your agent?' , false]),
+                                OptBool.new('PERSIST_EXPLORER', [ false, 'Use explorer.exe to persiste our agent?' , false]),
                                 OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry hive/keys (GUID)?' , false]),
                                 OptString.new('DEL_GUID', [ false, 'The GUID to be deleted e.g: 0fd30-5siO4-532a-4dte23'])
                         ], self.class) 
@@ -171,12 +171,11 @@ def run
     #
     if sysinfo['OS'] =~ /Windows 10/
       print_warning("windows 10 version its protected againts this exploit ...")
-      print_line("---------------------------------------------------------")
-      print_line("Disable 'access controled to folders' in windows defender")
-      print_line("If you wish to teste this on windows 10 version distros")
-      print_line("---------------------------------------------------------")
-      print_line("")
-      Rex::sleep(1.5)
+      print_line("-------------------------------------------------------------")
+      print_line("    Disable 'access controled to folders' in windows defender")
+      print_line("    If you wish to teste this on windows 10 version distros.")
+      print_line("-------------------------------------------------------------")
+      Rex::sleep(2.5)
     end
 
 
