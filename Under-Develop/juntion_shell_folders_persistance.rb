@@ -15,11 +15,12 @@
 #
 #
 # [ DESCRIPTION ]
-# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a
-# method in which the user can cause a redirection to another folder, this module will add a registry
-# hive in 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our
-# payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (persistence).
-# in DEMO mode it will take the full path to POC folder and payload from user inputs
+# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method
+# in which the user can cause a redirection to another folder, this module will add a registry hive in
+# 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our payload, then
+# builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode). In DEMO mode
+# it will take the full path to POC folder and payload from user inputs, Check module ADVANCED OPTIONS to use
+# the 'explorer persistence mode'.
 #
 #
 # [ MODULE OPTIONS ]
@@ -88,7 +89,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'vault7 junction folders [User-level Persistence]',
                         'Description'   => %q{
-                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder. this module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our payload (exploit demonstration mode) and it builds a folder name POC.{GUID} in sellected location that if open will trigger our application (payload). Check module ADVANCED OPTIONS to use the 'explorer persistence mechanism'.
+                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder, this module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode). In DEMO mode it will take the full path to POC folder and payload from user inputs, Check module ADVANCED OPTIONS to use the 'explorer persistence mode'.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
