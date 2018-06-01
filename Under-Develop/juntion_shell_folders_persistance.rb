@@ -120,8 +120,9 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',                                 # Default its to run againts session 1
-                                         'APPL_PATH' => 'C:\\Windows\\System32\\calc.exe', # Default appl (payload) to run
+                                         'SESSION' => '1',                                       # Default its to run againts session 1
+                                         'APPL_PATH' => 'C:\\Windows\\System32\\calc.exe',       # Default appl (payload) to run
+                                         'FOLDER_PATH' => 'C:\\Users\\%username%\\Desktop\\POC', # Default folder path (demo)
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
