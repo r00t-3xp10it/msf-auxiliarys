@@ -249,7 +249,7 @@ def run
      #
      # List of registry keys to add to target regedit ..
      #
-     if datastore['PERSIST_EXPLORER'] == true
+     if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
        print_status("Persiste in Explorer selected ..")
        Rex::sleep(1.0)
        hacks = [
