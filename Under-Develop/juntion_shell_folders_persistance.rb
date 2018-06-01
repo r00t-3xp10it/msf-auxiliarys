@@ -120,7 +120,7 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
                                          'SESSION' => '1',                                       # Default its to run againts session 1
-                                         'APPL_PATH' => 'C:\\Windows\\System32\\calc.exe',       # Default appl (payload) to run
+                                         'APPL_PATH' => '%windir%\\System32\\calc.exe',          # Default appl (payload) to run
                                          'FOLDER_PATH' => 'C:\\Users\\%username%\\Desktop\\POC', # Default folder path (demo)
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
@@ -170,8 +170,8 @@ def run
 
 
   # variable declarations ..
-  app_path = datastore['APP_PATH'] # /root/payload.exe
-  fol_path = datastore['FOLDER_PATH'] # C:\\Users\<username>\Desktop\POC
+  app_path = datastore['APP_PATH']    # %windir%\\System32\\calc.exe
+  fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
   hive_key = "HKCU\\Software\\Classes\\CLSID\\" # uac hive key (CLSID)
   #
   # check for proper config settings enter
