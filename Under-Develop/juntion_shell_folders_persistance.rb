@@ -308,7 +308,7 @@ def run
          print_line("    Trigger exploit: #{folder_poc}")
          print_line("")
          print_line("    To delete all changes made:")
-         print_line("    cmd.exe /R REG DELETE #{hive_key}\\#{new_GUID}")
+         print_line("    cmd.exe /c REG DELETE #{hive_key}\\#{new_GUID}")
          print_line("--------------------------------")
          Rex::sleep(1.0)
        else
@@ -317,7 +317,7 @@ def run
          print_line("    Trigger exploit: #{fol_path}")
          print_line("")
          print_line("    To delete all changes made:")
-         print_line("    cmd.exe /R REG DELETE #{hive_key}\\#{new_GUID}")
+         print_line("    cmd.exe /c REG DELETE #{hive_key}\\#{new_GUID}")
          print_line("--------------------------------")
          Rex::sleep(1.0)
        end
