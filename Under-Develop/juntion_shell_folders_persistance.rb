@@ -20,6 +20,7 @@
 # method in which the user can cause a redirection to another folder, this module will add a registry
 # hive in 'HKCU\software\Classes\CLSID\{GUID}' and use sub-key '\Shell\Manage\Command' to execute our
 # payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (persistence).
+# in DEMO mode it will take the full path to POC folder and payload from user inputs
 #
 #
 # [ MODULE OPTIONS ]
