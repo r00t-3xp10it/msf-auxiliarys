@@ -154,6 +154,7 @@ def run
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
     # check for proper operating system (windows-not-wine)
+    oscheck = client.fs.file.expand_path("%OS%")
     if not oscheck == "Windows_NT"
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
