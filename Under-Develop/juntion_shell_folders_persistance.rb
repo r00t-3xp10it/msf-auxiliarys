@@ -201,14 +201,14 @@ def run
 
 
   # variable declarations ..
-  app_path = datastore['APP_PATH']    # %windir%\\System32\\calc.exe
+  app_path = datastore['APPL_PATH']    # %windir%\\System32\\calc.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
   hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
-  if datastore['APP_PATH'] == 'nil' || datastore['FOLDER_PATH'] == 'nil'
+  if datastore['APPL_PATH'] == 'nil' || datastore['FOLDER_PATH'] == 'nil'
     print_error("Options not configurated correctly ..")
     print_warning("Please set APP_PATH | FOLDER_PATH!")
     return nil
