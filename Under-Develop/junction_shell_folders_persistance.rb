@@ -161,6 +161,9 @@ def run
   runtor = client.sys.config.getuid
   runsession = client.session_host
   directory = client.fs.dir.pwd
+  # elevate session privileges befor runing options
+  client.sys.config.getprivs.each do |priv|
+  end
   #
   # MODULE BANNER
   #
