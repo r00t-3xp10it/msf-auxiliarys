@@ -210,7 +210,7 @@ def run
   hacks = []
   app_path = datastore['APPL_PATH']   # %windir%\\System32\\calc.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
-  hive_key = "HKEY_CURRENT_USER\\Software\\Classes\\CLSID" # uac hive key (CLSID)
+  hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
