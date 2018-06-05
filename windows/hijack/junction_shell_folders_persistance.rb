@@ -174,8 +174,8 @@ def run
   print_line("")
   print_line("    Running on session  : #{datastore['SESSION']}")
   print_line("    Computer            : #{sysnfo['Computer']}")
-  print_line("    Operative System    : #{sysnfo['OS']}")
   print_line("    Target IP addr      : #{runsession}")
+  print_line("    Operative System    : #{sysnfo['OS']}")
   print_line("    Payload directory   : #{directory}")
   print_line("    Client UID          : #{runtor}")
   print_line("")
@@ -307,7 +307,7 @@ def run
 
 
          #
-         # LOOP funtion (not windows10)
+         # LOOP funtion to add reg keys
          #
          session.response_timeout=120
          hacks.each do |cmd|
