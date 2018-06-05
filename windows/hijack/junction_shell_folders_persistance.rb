@@ -169,7 +169,7 @@ def run
   #
   print_line("    +------------------------------------------------+")
   print_line("    | junction Shell Folders (User-Land Persistence) |")
-  print_line("    |           Author : r00t-3xp10it (SSA)          |")
+  print_line("    |            Author : r00t-3xp10it (SSA)         |")
   print_line("    +------------------------------------------------+")
   print_line("")
   print_line("    Running on session  : #{datastore['SESSION']}")
@@ -272,7 +272,7 @@ def run
        print_status("Creating new GUID value ..")
        Rex::sleep(1.0)
        rep_GUID = cmd_exec("powershell.exe -ep -C \"[guid]::NewGuid().Guid\"")
-       print_good("New GUID  : #{rep_GUID}")
+       print_good("New GUID: #{rep_GUID}")
        # add parentesis to GUID value
        new_GUID = "{#{rep_GUID}}"
        Rex::sleep(1.0)
@@ -369,20 +369,17 @@ def run
   if datastore['PERSIST_EXPLORER'] == true
     print_line("---------------------------------------------------")
     print_line("Trigger exploit: #{folder_poc}")
-    print_line("")
     print_line("Resource file  : #{loot_folder}/#{rand}.rc")
     print_line("---------------------------------------------------")
   elsif datastore['RENAME_PERSIST'] == true
     print_line("---------------------------------------------------")
     print_line("Trigger exploit: #{ren_per}")
-    print_line("")
     print_line("Resource file  : #{loot_folder}/#{rand}.rc")
     print_line("Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
     print_line("---------------------------------------------------")
   else
     print_line("---------------------------------------------------")
     print_line("Trigger exploit: #{fol_path}")
-    print_line("")
     print_line("Resource file  : #{loot_folder}/#{rand}.rc")
     print_line("---------------------------------------------------")
   end
