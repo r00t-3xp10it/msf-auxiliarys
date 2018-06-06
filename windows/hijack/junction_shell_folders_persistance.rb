@@ -366,18 +366,18 @@ def run
   if datastore['PERSIST_EXPLORER'] == true
     print_line("---------------------------------------------------")
     print_line("Trigger exploit: #{folder_poc}")
-    print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+    print_line("Resource file  : #{loot_folder}/Clean_#{rand}.rc")
     print_line("---------------------------------------------------")
   elsif datastore['RENAME_PERSIST'] == true
     print_line("---------------------------------------------------")
     print_line("Trigger exploit: #{ren_per}")
-    print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+    print_line("Resource file  : #{loot_folder}/Clean_#{rand}.rc")
     print_line("Rename folder  : cmd.exe /c rename #{ren_per}.{new_GUID} #{ren_per}")
     print_line("---------------------------------------------------")
   else
     print_line("---------------------------------------------------")
     print_line("Trigger exploit: #{fol_path}")
-    print_line("Resource file  : #{loot_folder}/#{rand}.rc")
+    print_line("Resource file  : #{loot_folder}/Clean_#{rand}.rc")
     print_line("---------------------------------------------------")
   end
 
