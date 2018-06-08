@@ -214,7 +214,7 @@ def run
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
-  if datastore['PERSIST_EXPLORER'] == 'nil' || datastore['FOLDER_PATH'] == 'nil'
+  if datastore['APPL_PATH'] == 'nil' || datastore['FOLDER_PATH'] == 'nil'
     print_error("Options not configurated correctly ..")
     print_warning("Please set APPL_PATH | FOLDER_PATH!")
     return nil
