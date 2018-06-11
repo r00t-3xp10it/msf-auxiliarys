@@ -236,7 +236,6 @@ def run
       print_warning("Hive key: HKCU\\Software\\Classes\\CLSID")
       print_error("[ABORT]: module cant find the registry hive key needed ..")
       print_error("System does not appear to be vulnerable to the exploit code!")
-      print_line("")
       Rex::sleep(1.0)
       return nil
     end
@@ -251,7 +250,6 @@ def run
         print_error("Not found: #{app_path}")
         print_warning("Deploy your [payload] before using this module ..")
         print_warning("OR point to one existing application full path ..")
-        print_line("")
         Rex::sleep(1.0)
         return nil
       end
@@ -321,7 +319,7 @@ def run
                 r.close
               # error exception funtion
               rescue ::Exception => e
-              print_error(" Error Running Command: #{e.class} #{e}")
+              print_error("Error Running Command: #{e.class} #{e}")
             end
          end
 
