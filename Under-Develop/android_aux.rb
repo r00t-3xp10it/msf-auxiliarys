@@ -158,7 +158,7 @@ def run
     id = cmd_exec('id')
     unless id =~ /root/
       print_error("[ABORT]: This module requires root permissions")
-      return
+      return nil
     end
     #
     # check for proper session (meterpreter)
@@ -190,8 +190,9 @@ def run
             data_dump << "Executing: #{exec_comm}\n"
             data_dump << single_comm
             data_dump << "\n\n"
-            # print data onscreen
+            # print data on screen
             print_line(single_comm)
+            print_line("")
             Rex::sleep(0.2)
         end
 
