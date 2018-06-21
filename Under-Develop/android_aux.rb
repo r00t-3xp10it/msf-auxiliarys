@@ -109,7 +109,7 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
 					'SESSION' => '1',   # Default its to run againts session 1
-                                        'EXEC_COMMAND' => 'ls -AR SD card/Pictures', # command to execute remote
+                                        'EXEC_COMMAND' => 'ls -A', # command to execute remote
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
