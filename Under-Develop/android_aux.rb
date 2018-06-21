@@ -24,7 +24,7 @@
 # The session number to run this module on     => set SESSION 3
 # Store dumped data to msf4/loot folder?       => set STORE_LOOT true
 # The bash command to be executed remotely     => set EXEC_COMMAND <command>
-# example: set EXEC_COMMAND ls -A Download
+# example: set EXEC_COMMAND ls -AR SD card/Pictures
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -109,7 +109,7 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
 					'SESSION' => '1',   # Default its to run againts session 1
-                                        'EXEC_COMMAND' => 'ls -A Download', # command to execute remote
+                                        'EXEC_COMMAND' => 'ls -AR SD card/Pictures', # command to execute remote
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
