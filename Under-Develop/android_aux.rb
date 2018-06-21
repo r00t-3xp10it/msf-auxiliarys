@@ -23,7 +23,7 @@
 # [ MODULE OPTIONS ]
 # The session number to run this module on     => set SESSION 3
 # Store dumped data to msf4/loot folder?       => set STORE_LOOT true
-# Agressive system fingerprints scan?          => set EXEC_COMMAND <command>
+# The bash command to be executed remotely     => set EXEC_COMMAND <command>
 # example: set EXEC_COMMAND ls -A Download
 #
 #
@@ -119,7 +119,7 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptBool.new('STORE_LOOT', [false, 'Store dumped data into ~/.msf4/loot folder?', false]),
-                                OptString.new('EXEC_COMMAND', [true, 'Input one bash command to be executed remotely'])
+                                OptString.new('EXEC_COMMAND', [true, 'The bash command to be executed remotely'])
                         ], self.class)
 
         end
