@@ -28,14 +28,14 @@
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
-# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/linux/gather/android_aux.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/linux/gather/android_aux.rb
-# Manually Path Search: root@kali:~# locate modules/post/linux/gather
+# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/android/manage/android_aux.rb
+# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/android/manage/android_aux.rb
+# Manually Path Search: root@kali:~# locate modules/post/android/manage
 #
 #
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
-# msf exploit(handler) > use post/linux/gather/android_aux
+# msf exploit(handler) > use post/android/manage/android_aux
 # msf post(android_aux) > info
 # msf post(android_aux) > show options
 # msf post(android_aux) > show advanced options
