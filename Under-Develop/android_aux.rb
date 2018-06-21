@@ -15,7 +15,9 @@
 #
 #
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
-# This module ...
+# Android/meterpeter payloads does not allow users to manipulate target file system. This msf post-exploitation
+# module will allow users to input/execute remotely commands in target system, display on screen the command outputs
+# and stores the command outputs into ~/msf4/loot folder for later review .
 #
 #
 # [ MODULE OPTIONS ]
@@ -79,7 +81,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'android auxiliary post-module',
                         'Description'   => %q{
-                                        This module...
+                                        Android/meterpeter payloads does not allow users to manipulate target file system. This msf post-exploitation module will allow users to input/execute remotely commands in target system, display on screen the command outputs and stores the command outputs into ~/msf4/loot folder for later review .
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -87,8 +89,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author :D
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => '20 jun 2018',
+                        'Version'        => '$Revision: 1.1',
+                        'DisclosureDate' => '21 jun 2018',
                         'Platform'       => 'android',
                         'Arch'           => ARCH_DALVIK,
                         'Privileged'     => 'true',  # root privileges required?
@@ -106,6 +108,7 @@ class MetasploitModule < Msf::Post
 			'DefaultOptions' =>
 				{
 					'SESSION' => '1',   # Default its to run againts session 1
+                                        'EXEC_COMMAND' => 'ls Download', # command to execute remote
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -188,7 +191,7 @@ def run
             data_dump << single_comm
             data_dump << "\n\n"
             # print data onscreen
-            print_line(data_dump)
+            print_line(single_comm)
             Rex::sleep(0.2)
         end
 
