@@ -103,9 +103,9 @@ class MetasploitModule < Msf::Post
                         'DefaultTarget'  => '1', # default its to run againts android targets
                         'References'     =>
                                 [
-                                         [ 'URL', 'http://goo.gl/RzP3DM' ],
                                          [ 'URL', 'https://github.com/r00t-3xp10it/msf-auxiliarys' ],
-                                         [ 'URL', 'http://rapid7.github.io/metasploit-framework/api/' ]
+                                         [ 'URL', 'http://rapid7.github.io/metasploit-framework/api/' ],
+                                         [ 'URL', 'https://resources.infosecinstitute.com/lab-android-exploitation-with-kali/' ]
                                 ],
 			'DefaultOptions' =>
 				{
