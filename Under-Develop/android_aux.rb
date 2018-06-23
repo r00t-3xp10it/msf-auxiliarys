@@ -180,7 +180,7 @@ def run
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
-    if not sysinfo.nil?
+    unless sysinfo.nil?
       android_version = Gem::Version.new(build_prop['ro.build.version.release'])
       print_status("Running module against: android #{android_version}")
       Rex::sleep(0.5)
@@ -227,18 +227,18 @@ def run
         print_status("Writing session logfile!")
         Rex::sleep(1.0)
           unless datastore['LOOT_FOLDER'] == 'nil'
-          # generating random logfile name (6 chars)
-          rand = Rex::Text.rand_text_alpha(6)
-          loot_folder = datastore['LOOT_FOLDER']
-          # create session output logfile
-          File.open("#{loot_folder}/android_#{rand}.txt", "w") do |f|
-          f.write("#{data_dump}")
-          f.close
-          print_status("Logfile: #{loot_folder}/android_#{rand}.txt")
-        else
-          print_error("[ABORT]: Options not configurated correctly!")
-          print_warning("Please set LOOT_FOLDER <full path>")
-        end
+            # generating random logfile name (6 chars)
+            rand = Rex::Text.rand_text_alpha(6)
+            loot_folder = datastore['LOOT_FOLDER']
+            # create session output logfile
+            File.open("#{loot_folder}/android_#{rand}.txt", "w") do |f|
+            f.write("#{data_dump}")
+            f.close
+            print_status("Logfile: #{loot_folder}/android_#{rand}.txt")
+          else
+            print_error("[ABORT]: Options not configurated correctly!")
+            print_warning("Please set LOOT_FOLDER <full path>")
+          end
       end
 
 
