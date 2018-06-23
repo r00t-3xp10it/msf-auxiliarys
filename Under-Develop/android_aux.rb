@@ -121,7 +121,7 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', '1']),
                                 OptBool.new('STORE_LOOT', [false, 'Store dumped data into ~/.msf4/loot folder?', false]),
-                                OptString.new('LOOT_FOLDER', [ false, 'The full path [local] where to store logfiles', '/root'])
+                                OptString.new('LOOT_FOLDER', [ false, 'The full path [local] where to store logfiles', '/root']),
                                 OptString.new('EXEC_COMMAND', [true, 'The bash command to be executed remotely', 'ls -A'])
                         ], self.class)
 
