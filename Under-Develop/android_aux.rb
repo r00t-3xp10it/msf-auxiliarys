@@ -202,7 +202,7 @@ def run
           single_comm = cmd_exec("#{exec_comm}")
             # print data on screen
             print_line("***************************************")
-            print_line(single_comm)
+            print_line("#{single_comm}")
             print_line("***************************************")
             Rex::sleep(0.2)
           #
@@ -210,39 +210,39 @@ def run
           # to be able to write the logfile later.
           #
           data_dump = []
-          data_dump << "***************************************\n"
           data_dump << "Executing: #{exec_comm}\n"
           data_dump << "***************************************\n"
           data_dump << single_comm
-          data_dump << "\n\n"
+          data_dump << "***************************************\n"
         end
 
 
-      #
-      # Store (data_dump) contents into loot folder? (local) ..
-      # IF sellected previous the option (set STORE_LOOT true)
-      #
-      if datastore['STORE_LOOT'] == true
-        print_status("Writing session logfile!")
-        Rex::sleep(1.0)
-          unless datastore['LOOT_FOLDER'] == 'nil'
-            # generating random logfile name (6 chars)
-            rand = Rex::Text.rand_text_alpha(6)
-            loot_folder = datastore['LOOT_FOLDER']
-            # create session output logfile
-            File.open("#{loot_folder}/android_#{rand}.txt", "w") do |f|
-            f.write("#{data_dump}")
-            f.close
-            print_good("Logfile: #{loot_folder}/android_#{rand}.txt")
-          else
-            print_error("[ABORT]: Options not configurated correctly!")
-            print_warning("Please set LOOT_FOLDER <full path>")
-          end
-      end
+    #
+    # Store (data_dump) contents into loot folder? (local) ..
+    # IF sellected previous the option (set STORE_LOOT true)
+    #
+    if datastore['STORE_LOOT'] == true
+      print_status("Writing session logfile!")
+      Rex::sleep(1.0)
+        unless datastore['LOOT_FOLDER'] == 'nil'
+        # generating random logfile name (6 chars)
+           rand = Rex::Text.rand_text_alpha(6)
+           loot_folder = datastore['LOOT_FOLDER']
+           # create session output logfile
+           File.open("#{loot_folder}/android_#{rand}.log", "w") do |f|
+           f.write("#{data_dump}")
+           f.close
+           print_good("Logfile: #{loot_folder}/android_#{rand}.log")
+        else
+          print_error("[ABORT]: Options not configurated correctly!")
+          print_warning("Please set LOOT_FOLDER <full path>")
+        end
+    end
 
-
-   # end of the 'def run()' funtion ..
-   end
+  #
+  # end of the 'def run()' funtion ..
+  #
+  end
 
 # exit module execution (_EOF) ..
 end
