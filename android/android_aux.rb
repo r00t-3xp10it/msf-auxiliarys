@@ -233,6 +233,7 @@ def run
            f.write("#{data_dump}")
            f.close
            print_good("Logfile: #{loot_folder}/android_#{rand}.log")
+           end
         else
           print_error("[ABORT]: Options not configurated correctly!")
           print_warning("Please set LOOT_FOLDER <full path>")
