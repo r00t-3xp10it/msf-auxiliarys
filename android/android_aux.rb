@@ -91,14 +91,14 @@ class MetasploitModule < Msf::Post
                                         'Module Author: r00t-3xp10it', # post-module author :D
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
-                        'DisclosureDate' => '23 jun 2018',
+                        'Version'        => '$Revision: 1.4',
+                        'DisclosureDate' => '26 jun 2018',
                         'Platform'       => 'android',
                         'Arch'           => ARCH_DALVIK,
                         'Privileged'     => 'false',  # root privileges required?
                         'Targets'        =>
                                 [
-                                         [ 'android' ]
+                                         [ 'android', 'linux' ]
                                 ],
                         'DefaultTarget'  => '1', # default its to run againts android targets
                         'References'     =>
@@ -209,10 +209,9 @@ def run
           # store data into a local variable (data_dump) ..
           # to be able to write the logfile later.
           #
-          data_dump = []
           data_dump << "Executing: #{exec_comm}\n"
           data_dump << "***************************************\n"
-          data_dump << single_comm
+          data_dump << "#{single_comm}\n"
           data_dump << "***************************************\n"
         end
 
