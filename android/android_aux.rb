@@ -98,7 +98,7 @@ class MetasploitModule < Msf::Post
                         'Privileged'     => 'false',  # root privileges required?
                         'Targets'        =>
                                 [
-                                         [ 'android', 'linux' ]
+                                         [ 'android' ]
                                 ],
                         'DefaultTarget'  => '1', # default its to run againts android targets
                         'References'     =>
@@ -152,8 +152,8 @@ def run
   print_line("")
   print_line("    Running on session  : #{datastore['SESSION']}")
   print_line("    Target IP addr      : #{runsession}")
-  print_line("    Operative System    : #{sysnfo['OS']}")
   print_line("    Payload directory   : #{directory}")
+  print_line("    Operative System    : #{sysnfo['OS']}")
   print_line("    Client UID          : #{runtor}")
   print_line("")
   print_line("")
@@ -209,10 +209,11 @@ def run
           # store data into a local variable (data_dump) ..
           # to be able to write the logfile later.
           #
+          data_dump=''
           data_dump << "Executing: #{exec_comm}\n"
           data_dump << "***************************************\n"
-          data_dump << "#{single_comm}\n"
-          data_dump << "***************************************\n"
+          data_dump << single_comm
+          data_dump << "***************************************\n\n"
         end
 
 
@@ -221,7 +222,7 @@ def run
     # IF sellected previous the option (set STORE_LOOT true)
     #
     if datastore['STORE_LOOT'] == true
-      print_status("Writing session logfile!")
+      print_warning("Writing session logfile!")
       Rex::sleep(1.0)
         unless datastore['LOOT_FOLDER'] == 'nil'
         # generating random logfile name (6 chars)
