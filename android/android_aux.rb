@@ -69,6 +69,7 @@ require 'msf/core/post/common'
 class MetasploitModule < Msf::Post
       Rank = ExcellentRanking
 
+        include Msf::Post::File
         include Msf::Post::Common
         include Msf::Post::Android
         include Msf::Post::Android::System
