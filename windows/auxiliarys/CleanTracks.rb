@@ -577,7 +577,7 @@ def ls_revert
        def run
        session = client
        # Check for proper target Platform
-       unsupported if client.platform !~ /win32|win64/i
+       unsupported if client.platform !~ /win32|win64|windows/i 
 
          # Variable declarations (msf API calls)
          sysnfo = session.sys.config.sysinfo
