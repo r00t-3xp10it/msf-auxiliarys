@@ -339,7 +339,7 @@ def run
      if datastore['LOG_OFF'] == true
        print_warning("LogOff #{sysnfo['Computer']} to force registry refresh.")
        Rex::sleep(1.5)
-       cmd_exec("shutdown /r /t 0")
+       cmd_exec("shutdown /h /f")
      end
 
 
