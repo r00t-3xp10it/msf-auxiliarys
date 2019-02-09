@@ -105,7 +105,7 @@ class MetasploitModule < Msf::Post
                                          # Affected systems are.
                                          [ 'Windows 2008', 'Windows xp', 'windows vista', 'windows 7', 'windows 9', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '5', # Default its to run againts windows 10
+                        'DefaultTarget'  => '6', # Default its to run againts windows 10
                         'References'     =>
                                 [
                                          [ 'URL', 'https://attack.mitre.org/techniques/T1180/' ],
