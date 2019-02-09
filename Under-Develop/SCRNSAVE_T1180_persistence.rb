@@ -318,6 +318,7 @@ def run
          rand = Rex::Text.rand_text_alpha(5)
          loot_folder = datastore['LOOT_FOLDER']
          File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+           f.write("## To revert hack execute the follow commands into a meterpreter prompt")
            f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveActive -t REG_SZ -d 1")
            f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaverIsSecure -t REG_SZ -d #{scrnsave_issecure}")
            f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveTimeOut -t REG_SZ -d #{scrnsave_timeout}")
