@@ -128,12 +128,12 @@ class MetasploitModule < Msf::Post
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', 1]),
                                 OptString.new('TIME_OUT', [ true, 'Set inactivity timeout before screensaver runs', 10]),
-                                OptString.new('APPL_PATH', [ true, 'Set absoluct path of malicious PE or application to run'])
+                                OptString.new('APPL_PATH', [ true, 'Set absoluct path of malicious PE/Appl to run'])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptBool.new('LOG_OFF', [ false, 'LogOff current user to force registry refresh?', false]),
+                                OptBool.new('LOG_OFF', [ false, 'Logoff current user to force registry refresh?', false]),
                                 OptString.new('LOOT_FOLDER', [ true, 'Set the absoluct path where to store logfiles (local)'])
                         ], self.class)
 
