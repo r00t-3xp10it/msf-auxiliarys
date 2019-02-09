@@ -92,6 +92,7 @@ class MetasploitModule < Msf::Post
                         'Author'        =>
                                 [
                                         'Module Author: r00t-3xp10it',
+                                        'Special Thanks: shanty damayanti',
                                 ],
  
                         'Version'        => '$Revision: 1.0',
