@@ -313,12 +313,16 @@ def run
        #
        # create revert resource file [local PC]
        #
-       print_status("Writing revert.rc resource file (local).")
+       rand = Rex::Text.rand_text_alpha(5)
+       print_status("Writing revert_#{rand}.rc resource file (local).")
        Rex::sleep(1.0)
-         rand = Rex::Text.rand_text_alpha(5)
-         loot_folder = datastore['LOOT_FOLDER']
+         loot_folder = datastore['LOOT_FOLDER'] # /root/.msf4/loot
          File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
-           f.write("## To revert hack execute the follow commands into a meterpreter prompt")
+           f.write("###")
+           f.write("## SCRNSAVE mitre ATT&CK T1180 - revert to default script.")
+           f.write("## Computer: #{sysnfo['Computer']} | Payload: #{app_path}")
+           f.write("## To revert hack execute in a meterpreter prompt: resource #{loot_folder}/revert_#{rand}.rc")
+           f.write("###")
            f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveActive -t REG_SZ -d 1")
            f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaverIsSecure -t REG_SZ -d #{scrnsave_issecure}")
            f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveTimeOut -t REG_SZ -d #{scrnsave_timeout}")
