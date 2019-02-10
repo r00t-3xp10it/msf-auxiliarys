@@ -105,7 +105,7 @@ class MetasploitModule < Msf::Post
                                          # Affected systems are.
                                          [ 'Windows 2008', 'Windows xp', 'windows vista', 'windows 7', 'windows 9', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '6', # Default its to run againts windows 10
+                        'DefaultTarget'  => '5', # Default its to run againts windows 10
                         'References'     =>
                                 [
                                          [ 'URL', 'https://attack.mitre.org/techniques/T1180/' ],
@@ -246,6 +246,20 @@ def run
     print_status("Retriving default ScreenSaveActive registry value data.")
     scrnsave_active = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaveActive')
     Rex::sleep(1.0)
+
+
+    #
+    # make sure retrieve values are not empty strings
+    #
+    if scrnsave_timeout.nil? || scrnsave_timeout == 0
+      scrnsave_timeout = "180"
+    end
+    if scrnsave_issecure.nil? || scrnsave_issecure == 0
+      scrnsave_issecure = "0"
+    end
+    if scrnsave_active.nil? || scrnsave_active == 0
+      scrnsave_active = "1"
+    end
 
 
     #
