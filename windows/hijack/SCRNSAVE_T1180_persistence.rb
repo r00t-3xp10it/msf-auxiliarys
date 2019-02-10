@@ -105,7 +105,7 @@ class MetasploitModule < Msf::Post
                                          # Affected systems are.
                                          [ 'Windows 2008', 'Windows xp', 'windows vista', 'windows 7', 'windows 9', 'Windows 10' ]
                                 ],
-                        'DefaultTarget'  => '5', # Default its to run againts windows 10
+                        'DefaultTarget'  => '6', # Default its to run againts windows 10
                         'References'     =>
                                 [
                                          [ 'URL', 'https://attack.mitre.org/techniques/T1180/' ],
@@ -251,13 +251,16 @@ def run
     #
     # make sure retrieve values are not empty strings
     #
-    if scrnsave_timeout.nil? || scrnsave_timeout == 0
+    if scrnsave_data.nil? || scrnsave_data == '' || scrnsave_data == ' '
+      scrnsave_data = 'C:\\\Windows\\\System32\\\Mystify.src'
+    end
+    if scrnsave_timeout.nil? || scrnsave_timeout == '' || scrnsave_timeout == ' '
       scrnsave_timeout = "180"
     end
-    if scrnsave_issecure.nil? || scrnsave_issecure == 0
+    if scrnsave_issecure.nil? || scrnsave_issecure == '' || scrnsave_issecure == ' '
       scrnsave_issecure = "0"
     end
-    if scrnsave_active.nil? || scrnsave_active == 0
+    if scrnsave_active.nil? || scrnsave_active == '' || scrnsave_active == ' '
       scrnsave_active = "1"
     end
 
