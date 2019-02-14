@@ -96,7 +96,7 @@ class MetasploitModule < Msf::Post
                                 ],
  
                         'Version'        => '$Revision: 1.2',
-                        'DisclosureDate' => 'Fev 11 2019',
+                        'DisclosureDate' => '02 11 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # Thats no need for privilege escalation.
@@ -363,8 +363,8 @@ def run
      #
      if datastore['LOG_OFF'] == true
        print_warning("Trying to LogOff #{sysnfo['Computer']} to force registry refresh.")
-       Rex::sleep(1.5)
-       cmd_exec("shutdown /h /f")
+       Rex::sleep(1)
+       cmd_exec("shutdown -L")
      end
 
 
