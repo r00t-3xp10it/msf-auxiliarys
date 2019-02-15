@@ -96,7 +96,7 @@ class MetasploitModule < Msf::Post
                                 ],
  
                         'Version'        => '$Revision: 1.2',
-                        'DisclosureDate' => '02 11 2019',
+                        'DisclosureDate' => '11 02 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # Thats no need for privilege escalation.
