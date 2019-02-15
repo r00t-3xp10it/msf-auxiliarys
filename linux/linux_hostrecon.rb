@@ -561,6 +561,7 @@ def run
      # mitre ATT&CK T1113 - Screen capture (remote desktop)
      #
      if datastore['SCREEN_CAPTURE'] == true
+       print_line("")
        print_status("Taking a screenshot of: #{sys_info['Computer']}")
        cmd_exec("xwd -root -out /tmp/ScreenShot.xwd")
        Rex::sleep(1)
