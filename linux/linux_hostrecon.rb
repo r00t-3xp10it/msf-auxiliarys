@@ -567,13 +567,13 @@ def run
          # make sure that file was build
          path="/tmp/ScreenShot.xwd"
          if not session.fs.file.exist?(path)
-           print_error("module can not create Screenshot.xwd in /tmp remote folder")
+           print_error("module can not create ScreenShot.xwd in /tmp remote folder")
            return nil
          end
        # download remote file
        client.fs.file.download("/root/ScreenShot.xwd","/tmp/ScreenShot.xwd")
        print_status("ScreenShot stored in: /root/ScreenShot.xwd")
-       print_status("To view screenshot use: xwud -in /root/ScreenShot.xwd")
+       print_warning("To view screenshot use: xwud -in /root/ScreenShot.xwd")
        Rex::sleep(1)
        # delete remote file
        client.fs.file.rm("/tmp/ScreenShot.xwd")
