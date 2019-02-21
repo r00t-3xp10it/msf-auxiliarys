@@ -425,7 +425,7 @@ Rex::sleep(1.0)
     serv_file = datastore['CRON_PATH'] # /etc/crontab
     if session.fs.file.exist?(serv_file)
       print_status("Remote path: #{serv_file} found.")
-      Rex::sleep)1.0)
+      Rex::sleep(1.0)
     else
       print_error("Remote path: #{serv_file} not found.")
       return nil
