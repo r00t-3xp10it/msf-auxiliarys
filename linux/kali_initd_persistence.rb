@@ -151,11 +151,11 @@ class MetasploitModule < Msf::Post
                 register_advanced_options(
                         [
                                 OptString.new('CRON_PATH', [ false, 'The absoluct path of crontab file']),
-                                OptString.new('INIT_PATH', [ false, 'The absoluct path of init.d directory'])
+                                OptString.new('INIT_PATH', [ false, 'The absoluct path of init.d directory']),
                                 OptString.new('RPATH_SYSTEMD', [ false, 'The absoluct path of systemd directory']),
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)' , false]),
                                 OptString.new('SINGLE_COM', [ false, 'Execute one simple bash command (eg uname -a)']),
-                                OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence scripts/configurations?' , false]),
+                                OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence scripts/configurations?' , false])
                         ], self.class) 
 
         end
@@ -614,7 +614,7 @@ end
       Rex::sleep(1.0)
       print_status("Agent absoluct path: #{remote_path}")
       Rex::sleep(1.0)
-      print_status("Executing: sed -i \\"s|@reboot \\\\* \\\\* \\\\* \\\\* root #{remote_path}||\\" #{serv_file}")
+      print_status("Executing: sed -i \\'s|@reboot \\\\* \\\\* \\\\* \\\\* root [remote_path]||\\' #{serv_file}")
       # we need to escape * because sed see them as special chars.
       cmd_exec("sed -i \"s|@reboot \* \* \* \* root #{remote_path}||\" #{serv_file}")
       # we need to escape the remote_path var because sed command uses /// as command separator
