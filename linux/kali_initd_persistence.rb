@@ -760,9 +760,6 @@ def run
       print_error("[ABORT]: This module only works in meterpreter sessions!")
       return nil
     end
-    # elevate session privileges befor runing
-    client.sys.config.getprivs.each do |priv|
-    end
 
 
 # --------------------------------------------
