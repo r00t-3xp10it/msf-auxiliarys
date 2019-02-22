@@ -217,10 +217,12 @@ def run
       chromium_browser = cmd_exec("chromium-browser --product-version")
       firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
+      system_lang = cmd_exec("set | egrep '^(LANG|LC_)' | cut -d '=' -f2")
       iceweasel_version = cmd_exec("iceweasel --version | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep \"default\" | awk {'print $8'}")
       hardware_vendor = cmd_exec("lscpu | grep \"Vendor ID\" | awk {'print $3'}")
       sudo_version = cmd_exec("sudo -V | grep \"Sudo version\" | awk {'print $3'}")
+      xdg_desktop = cmd_exec("set | grep \"XDG_SESSION_DESKTOP\" | cut -d '=' -f2")
       hardware_bits = cmd_exec("lscpu | grep \"CPU op-mode\" | awk {'print $3,$4'}")
       mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
@@ -231,7 +233,6 @@ def run
       mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
       vm_report = cmd_exec("dmidecode | grep -m 2 \"Type\" | tail -n 1 | cut -d ':' -f2 | tr -d ' '")
-      system_lang = cmd_exec("printenv | egrep -m 1 '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       target_ssid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -n 1 | awk {'print $2'}")
       distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
       user_privs = cmd_exec("cat /etc/sudoers | grep \"#{user_name}\" | grep -v \"#\" | awk {'print $2,$3'}")
@@ -261,11 +262,8 @@ def run
         data_dump << "Target mem free      : #{mem_free}\n"
         data_dump << "Target mem available : #{mem_available}\n"
         data_dump << "Target mem dirty     : #{mem_dirty}\n"
-          if system_lang =~ /C/ || system_lang =~ /'C'/     # strange bug under my distro :(
-            data_dump << "System language      : pt_PT\n"
-          else
-            data_dump << "System language      : #{system_lang}\n"
-          end
+        data_dump << "XDG_session_desktop  : #{xdg_desktop}\n"
+        data_dump << "System language      : #{system_lang}\n"
         data_dump << "Sudo version         : #{sudo_version}\n"
         data_dump << "Bash version         : #{sh_version}\n"
         data_dump << "Ruby version         : #{ruby_version}\n"
@@ -332,6 +330,7 @@ def run
           distro_shells = cmd_exec("grep '^[^#]' /etc/shells")
           distro_history = cmd_exec("ls -la /root/.*_history")
           distro_logs = cmd_exec("find /var/log -type f -perm -4")
+          last_login = cmd_exec("last -i | grep \"still logged in\"")
           net_established = cmd_exec("netstat -atnp | grep \"ESTABLISHED\"")
           default_shell = cmd_exec("ps -p $$ | tail -n 1 | awk '{ print $4 }'")
           sudo_ers = cmd_exec("cat /etc/sudoers | grep -v -e \"^$\" | grep -v \"Defaults\" | grep -v \"#\"")
@@ -386,6 +385,10 @@ def run
             data_dump << "ESTABLISHED CONNECTIONS :\n"
             data_dump << "-------------------------\n"
             data_dump << net_established
+            data_dump << "\n\n"
+            data_dump << "LAST LOGIN USERS        :\n"
+            data_dump << "-------------------------\n"
+            data_dump << last_login
             data_dump << "\n\n"
             data_dump << "LIST OF ESSIDS AVAILABLE :\n"
             data_dump << "--------------------------\n"
