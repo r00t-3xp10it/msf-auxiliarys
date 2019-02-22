@@ -211,23 +211,26 @@ def run
       psq_version = cmd_exec("psql -V | awk {'print $3'}")
       ruby_version = cmd_exec("ruby -v  | awk {'print $2'}")
       chromium_version = cmd_exec("chromium --product-version")
+      pc_prodname = cmd_exec("dmidecode -s system-product-name")
       chrome_version = cmd_exec("google-chrome --product-version")
+      pc_manufacture = cmd_exec("dmidecode -s system-manufacturer")
       chromium_browser = cmd_exec("chromium-browser --product-version")
       firefox_version = cmd_exec("firefox --version | awk {'print $3'}")
       gateway = cmd_exec("netstat -r | grep \"255.\" | awk {'print $3'}")
       iceweasel_version = cmd_exec("iceweasel --version | awk {'print $3'}")
       interface = cmd_exec("netstat -r | grep \"default\" | awk {'print $8'}")
-      vm_report = cmd_exec("hostnamectl | grep \"Chassis\" | awk {'print $2'}")
       hardware_vendor = cmd_exec("lscpu | grep \"Vendor ID\" | awk {'print $3'}")
       sudo_version = cmd_exec("sudo -V | grep \"Sudo version\" | awk {'print $3'}")
       hardware_bits = cmd_exec("lscpu | grep \"CPU op-mode\" | awk {'print $3,$4'}")
       mem_dirty = cmd_exec("cat /proc/meminfo | grep \"Dirty\" | awk {'print $2,$3'}")
       mem_free = cmd_exec("cat /proc/meminfo | grep \"MemFree\" | awk {'print $2,$3'}")
+      number_processsores = cmd_exec("dmidecode -t4 |awk '/Populated/ {print $2}'|wc -l")
       mem_total = cmd_exec("cat /proc/meminfo | grep \"MemTotal\" | awk {'print $2,$3'}")
       httpd_version = cmd_exec("apache2 -v | head -n 1 | awk {'print $3'} | cut -d '/' -f2")
       sh_version = cmd_exec("bash --version | head -n 1 | awk {'print $4'} | cut -d '-' -f1")
       mem_available = cmd_exec("cat /proc/meminfo | grep \"MemAvailable\" | awk {'print $2,$3'}")
       model_name = cmd_exec("lscpu | grep \"Model name:\" | awk {'print $3,$4,$5,$6,$7,$8,$9,$10'}")
+      vm_report = cmd_exec("dmidecode | grep -m 2 \"Type\" | tail -n 1 | cut -d ':' -f2 | tr -d ' '")
       system_lang = cmd_exec("printenv | egrep -m 1 '^(LANG|LC_)' | cut -d '=' -f2 | cut -d '.' -f1")
       target_ssid = cmd_exec("iw dev #{interface} scan | grep \"SSID\" | head -n 1 | awk {'print $2'}")
       distro_description = cmd_exec("cat /etc/*-release | grep \"DISTRIB_DESCRIPTION=\" | cut -d '=' -f2")
@@ -243,67 +246,65 @@ def run
         data_dump << "linux_hostrecon logfile\n"
         data_dump << "Date/Hour: " + date_out + "\n"
         data_dump << "----------------------------------------\n"
-        data_dump << "Running on session  : #{datastore['SESSION']}\n"
-        data_dump << "Target Computer     : #{sys_info['Computer']}\n"
-          # display target enviroment in use (VM, laptop, etc)
-          if vm_report =~ /vm/
-            data_dump << "Target enviroment   : #{vm_report} (VirtualMachine)\n"
-          else
-            data_dump << "Target enviroment   : #{vm_report}\n"
-          end
-        data_dump << "Target session PID  : #{session_pid}\n"
-        data_dump << "Target Architecture : #{sys_info['Architecture']}\n"
-        data_dump << "Target Arch (bits)  : #{hardware_bits}\n"
-        data_dump << "Target Arch (vendor): #{hardware_vendor}\n"
-        data_dump << "CPU (Model name)    : #{model_name}\n"
-        data_dump << "Target mem total    : #{mem_total}\n"
-        data_dump << "Target mem free     : #{mem_free}\n"
-        data_dump << "Target mem available: #{mem_available}\n"
-        data_dump << "Target mem dirty    : #{mem_dirty}\n"
+        data_dump << "Running on session   : #{datastore['SESSION']}\n"
+        data_dump << "Number-Of-Processores: #{number_processsores}\n"
+        data_dump << "Target Computer      : #{sys_info['Computer']}\n"
+        data_dump << "Target enviroment    : #{vm_report}\n"
+        data_dump << "Target session PID   : #{session_pid}\n"
+        data_dump << "Target Architecture  : #{sys_info['Architecture']}\n"
+        data_dump << "Target Arch (bits)   : #{hardware_bits}\n"
+        data_dump << "Target Arch (vendor) : #{hardware_vendor}\n"
+        data_dump << "Manufacturer         : #{pc_manufacture}\n"
+        data_dump << "Product-Name         : #{pc_prodname}\n"
+        data_dump << "CPU (Model name)     : #{model_name}\n"
+        data_dump << "Target mem total     : #{mem_total}\n"
+        data_dump << "Target mem free      : #{mem_free}\n"
+        data_dump << "Target mem available : #{mem_available}\n"
+        data_dump << "Target mem dirty     : #{mem_dirty}\n"
           if system_lang =~ /C/ || system_lang =~ /'C'/     # strange bug under my distro :(
-            data_dump << "System language     : pt_PT\n"
+            data_dump << "System language      : pt_PT\n"
           else
-            data_dump << "System language     : #{system_lang}\n"
+            data_dump << "System language      : #{system_lang}\n"
           end
-        data_dump << "Sudo version        : #{sudo_version}\n"
-        data_dump << "Bash version        : #{sh_version}\n"
-        data_dump << "Ruby version        : #{ruby_version}\n"
-        data_dump << "Python version      : #{py_version}\n"
-        data_dump << "PostgreSQL version  : #{psq_version}\n"
-        data_dump << "GCC version         : #{gcc_version}\n"
-        data_dump << "Apache2 version     : #{httpd_version}\n"
+        data_dump << "Sudo version         : #{sudo_version}\n"
+        data_dump << "Bash version         : #{sh_version}\n"
+        data_dump << "Ruby version         : #{ruby_version}\n"
+        data_dump << "Python version       : #{py_version}\n"
+        data_dump << "PostgreSQL version   : #{psq_version}\n"
+        data_dump << "GCC version          : #{gcc_version}\n"
+        data_dump << "Apache2 version      : #{httpd_version}\n"
           #
           # Display (only) remote installed browsers versions ..
           #
           unless firefox_version =~ /not found/ || firefox_version.nil?
-            data_dump << "Firefox browser     : #{firefox_version}\n"
+            data_dump << "Firefox browser      : #{firefox_version}\n"
           end
           unless chrome_version =~ /not found/ || chrome_version.nil?
-            data_dump << "Chrome browser      : #{chrome_version}\n"
+            data_dump << "Chrome browser       : #{chrome_version}\n"
           end
           unless chromium_version =~ /not found/ || chromium_version.nil?
-            data_dump << "Chromium browser    : #{chromium_version}\n"
+            data_dump << "Chromium browser     : #{chromium_version}\n"
           end
           unless chromium_browser =~ /not found/ || chromium_browser.nil?
-            data_dump << "Chromium browser    : #{chromium_browser}\n"
+            data_dump << "Chromium browser     : #{chromium_browser}\n"
           end
           unless iceweasel_version =~ /not found/ || iceweasel_version.nil?
-            data_dump << "Iceweasel browser   : #{iceweasel_version}\n"
+            data_dump << "Iceweasel browser    : #{iceweasel_version}\n"
           end
           unless opera_version =~ /not found/ || opera_version.nil?
-            data_dump << "Opera browser       : #{opera_version}\n"
+            data_dump << "Opera browser        : #{opera_version}\n"
           end
-        data_dump << "Target interface    : #{interface}\n"
-        data_dump << "Target_SSID         : #{target_ssid}\n"
-        data_dump << "Target IP addr      : #{host_ip}\n"
-        data_dump << "Target gateway      : #{gateway}\n"
-        data_dump << "Target localhost    : #{localhost_ip}\n"
-        data_dump << "Payload directory   : #{payload_path}\n"
-        data_dump << "Client UID          : #{target_uid}\n"
-        data_dump << "User r/w Privileges : #{user_name}  #{user_privs}\n"
-        data_dump << "Distro description  : #{distro_description}\n"
-        data_dump << "Operative System    : #{sys_info['OS']}\n"
-        data_dump << "Distro uname        : #{distro_uname}\n"
+        data_dump << "Target interface     : #{interface}\n"
+        data_dump << "Target_SSID          : #{target_ssid}\n"
+        data_dump << "Target IP addr       : #{host_ip}\n"
+        data_dump << "Target gateway       : #{gateway}\n"
+        data_dump << "Target localhost     : #{localhost_ip}\n"
+        data_dump << "Payload directory    : #{payload_path}\n"
+        data_dump << "Client UID           : #{target_uid}\n"
+        data_dump << "User r/w Privileges  : #{user_name}  #{user_privs}\n"
+        data_dump << "Distro description   : #{distro_description}\n"
+        data_dump << "Operative System     : #{sys_info['OS']}\n"
+        data_dump << "Distro uname         : #{distro_uname}\n"
         data_dump << "\n\n"
 
 
@@ -323,6 +324,7 @@ def run
           storage_mont = cmd_exec("lsblk -m")
           current_shell = cmd_exec("echo $0")
           list_drivers = cmd_exec("lspci -v")
+          cpu_stats = cmd_exec("sudo mpstat")
           net_stat = cmd_exec("netstat -tulpn")
           demi_bios = cmd_exec("dmidecode -t bios")
           cron_tasks = cmd_exec("ls -la /etc/cron*")
@@ -401,6 +403,11 @@ def run
             data_dump << "------------------\n"
             data_dump << list_drivers
             data_dump << "\n\n"
+            data_dump << "CPU STATATISTICS :\n"
+            data_dump << "------------------\n"
+            data_dump << cpu_stats
+            data_dump << "\n\n"
+
         end
 
 
