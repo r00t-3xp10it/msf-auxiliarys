@@ -36,6 +36,7 @@
 # Delete persistence script/configurations        => set DEL_PERSISTENCE true
 # Execute one simple remote bash command          => set SINGLE_COM cat /etc/crontab
 # Masquerade payload.sh as cron daemon? (T1036)   => set CRON_MASQUERADE true
+# Set the absoluct path where to store logs       => set LOOT_FOLDER /root
 # Use agents with shebang? (eg #!/usr/bin/python) => set SHEBANG true
 # ---
 # If sellected 'SHEBANG true' then agent execution will be based on is shebang
@@ -131,6 +132,7 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
+                                         'LOOT_FOLDER' => '~/.msf4/loot', # Default loot folder absoluct path
                                          'INIT_PATH' => '/etc/init.d',  # Default init.d directory full path
                                          'CRON_PATH' => '/etc/crontab', # Default crontab directory  full path
                                          'RPATH_SYSTEMD' => '/etc/systemd/system', # Default systemd directory full path
@@ -153,6 +155,7 @@ class MetasploitModule < Msf::Post
                                 OptString.new('CRON_PATH', [ false, 'The absoluct path of crontab file']),
                                 OptString.new('INIT_PATH', [ false, 'The absoluct path of init.d directory']),
                                 OptString.new('RPATH_SYSTEMD', [ false, 'The absoluct path of systemd directory']),
+                                OptString.new('LOOT_FOLDER', [ false, 'Set the absoluct path where to store logs']),
                                 OptBool.new('SHEBANG', [ false, 'Use agents with [shebang]? (eg #!/bin/sh)', false]),
                                 OptString.new('SINGLE_COM', [ false, 'Execute one simple bash command (eg uname -a)']),
                                 OptString.new('START_TIME', [ false, 'Time to wait for the agent to start (in seconds)', 8]),
@@ -265,6 +268,23 @@ Rex::sleep(1.0)
         print_warning("Persistence on: #{sysnfo['Computer']} not achieved.")
         return nil
       end
+
+
+    #
+    # build logfile
+    #
+    f = []
+    rand = Rex::Text.rand_text_alpha(5)
+    loot_folder = datastore['LOOT_FOLDER']
+    File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+      f.write("# kali_initd_persistence\n")
+      f.write("####\n")
+      f.write("service: init.d\n")
+      f.write("service path: #{serv_file}\n")
+      f.write("payload: #{remote_path}")
+      f.close
+    end
+    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.rc")
 end
 
 
@@ -397,6 +417,23 @@ Rex::sleep(1.0)
         print_warning("Persistence on: #{sysnfo['Computer']} not achieved.")
         return nil
       end
+
+
+    #
+    # build logfile
+    #
+    f = []
+    rand = Rex::Text.rand_text_alpha(5)
+    loot_folder = datastore['LOOT_FOLDER']
+    File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+      f.write("# kali_initd_persistence\n")
+      f.write("####\n")
+      f.write("service: systemd\n")
+      f.write("service path: #{script_check}\n")
+      f.write("payload: #{remote_path}")
+      f.close
+    end
+    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.rc")
 end
 
 
@@ -486,11 +523,21 @@ Rex::sleep(1.0)
     Rex::sleep(1.0)
 end
 
-  #
-  # error exception funtion
-  #
-  rescue ::Exception => e
-  print_error("Error: #{e.class} #{e}")
+    #
+    # build logfile
+    #
+    f = []
+    rand = Rex::Text.rand_text_alpha(5)
+    loot_folder = datastore['LOOT_FOLDER']
+    File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+      f.write("# kali_initd_persistence\n")
+      f.write("####\n")
+      f.write("service: crontab\n")
+      f.write("service path: #{serv_file}\n")
+      f.write("payload: #{remote_path}")
+      f.close
+    end
+    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.rc")
 end
 
 
@@ -807,3 +854,4 @@ def run
     end
   end
 end
+
