@@ -112,7 +112,7 @@ class MetasploitModule < Msf::Post
                                         'Module Author: pedr0 Ubuntu [r00t-3xp10it]', # post-module author
                                 ],
  
-                        'Version'        => '$Revision: 1.9',
+                        'Version'        => '$Revision: 2.0',
                         'DisclosureDate' => 'jun 2 2017',
                         'Platform'       => 'linux',
                         'Arch'           => 'x86_x64',
@@ -279,7 +279,7 @@ Rex::sleep(1.0)
     File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
       f.write("# kali_initd_persistence\n")
       f.write("####\n")
-      f.write("service: init.d\n")
+      f.write("service: systemd\n")
       f.write("service path: #{serv_file}\n")
       f.write("payload: #{remote_path}")
       f.close
@@ -428,7 +428,7 @@ Rex::sleep(1.0)
     File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
       f.write("# kali_initd_persistence\n")
       f.write("####\n")
-      f.write("service: systemd\n")
+      f.write("service: init.d\n")
       f.write("service path: #{script_check}\n")
       f.write("payload: #{remote_path}")
       f.close
