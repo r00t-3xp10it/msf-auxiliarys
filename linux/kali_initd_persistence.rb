@@ -276,7 +276,7 @@ Rex::sleep(1.0)
     f = []
     rand = Rex::Text.rand_text_alpha(5)
     loot_folder = datastore['LOOT_FOLDER']
-    File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+    File.open("#{loot_folder}/revert_#{rand}.log", "w") do |f|
       f.write("# kali_initd_persistence\n")
       f.write("####\n")
       f.write("service: systemd\n")
@@ -284,7 +284,7 @@ Rex::sleep(1.0)
       f.write("payload: #{remote_path}")
       f.close
     end
-    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.rc")
+    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.log")
 end
 
 
@@ -425,7 +425,7 @@ Rex::sleep(1.0)
     f = []
     rand = Rex::Text.rand_text_alpha(5)
     loot_folder = datastore['LOOT_FOLDER']
-    File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+    File.open("#{loot_folder}/revert_#{rand}.log", "w") do |f|
       f.write("# kali_initd_persistence\n")
       f.write("####\n")
       f.write("service: init.d\n")
@@ -433,7 +433,7 @@ Rex::sleep(1.0)
       f.write("payload: #{remote_path}")
       f.close
     end
-    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.rc")
+    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.log")
 end
 
 
@@ -529,7 +529,7 @@ end
     f = []
     rand = Rex::Text.rand_text_alpha(5)
     loot_folder = datastore['LOOT_FOLDER']
-    File.open("#{loot_folder}/revert_#{rand}.rc", "w") do |f|
+    File.open("#{loot_folder}/revert_#{rand}.log", "w") do |f|
       f.write("# kali_initd_persistence\n")
       f.write("####\n")
       f.write("service: crontab\n")
@@ -537,7 +537,7 @@ end
       f.write("payload: #{remote_path}")
       f.close
     end
-    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.rc")
+    print_warning("logfile stored: #{loot_folder}/revert_#{rand}.log")
 end
 
 
