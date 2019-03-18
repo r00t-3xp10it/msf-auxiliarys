@@ -258,6 +258,8 @@ def run
         print_warning("Reg value contains empty data, set module default data.")
         scrnsave_data = '%windir%\\\\System32\\\\Mystify.src' # windows 10 default data
         Rex::sleep(0.5)
+      else
+        scrnsave_data = '%windir%\\\\System32\\\\Mystify.src' # windows 10 default data
       end
     print_status("Retriving default ScreenSaveTimeOut registry value data.")
     scrnsave_timeout = registry_getvaldata('HKCU\Control Panel\Desktop','ScreenSaveTimeOut')
