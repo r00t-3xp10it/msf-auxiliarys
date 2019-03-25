@@ -9,11 +9,13 @@
 ##
 # Exploit Title  : enum_protections.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
-# Affected system: Windows
+# Affected system: Windows (all)
 #
 #
 # [ DESCRIPTION ]
-# This post-module enumerates AVs present in target process task manager (windows platforms).
+# This post-module enumerates AVs present in taret process task manager (windows platforms).
+# Presents process name(s), pid(s) and process absoluct path(s) to attacker and store results
+# data into ~/.msf4/loot local directory (set STORE_LOOT true).
 #
 #
 # [ MODULE OPTIONS ]
@@ -67,12 +69,12 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Windows Gather Protection Enumeration',
                         'Description'   => %q{
-                                        This post-module enumerates AVs present in target process task manager (windows platforms).
+                                        This post-module enumerates AVs present in taret process task manager (windows platforms). Presents process name(s), pid(s) and process absoluct path(s) to attacker and store results data into ~/.msf4/loot local directory (set STORE_LOOT true).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
-                                        'Module Author: r00t-3xp10it',
+                                        'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
                         'Version'        => '$Revision: 1.0',
@@ -119,7 +121,7 @@ def run
 ## MODULE BANNER
 if datastore['BANNER'] == true
   print_line("    +--------------------------------------------+")
-  print_line("    |       Enum AVs presence in processes       |")
+  print_line("    |     Enumerate AVs presence in processes    |")
   print_line("    |        Author : r00t-3xp10it (SSA)         |")
   print_line("    +--------------------------------------------+")
   print_line("")
@@ -138,7 +140,7 @@ end
   ## Post-Module variable declarations
   av_list = []
   data_dump=''
-  print_status("Searching for AVs names in task manager.")
+  print_status("Query: #{sysnfo['Computer']} task manager.")
   Rex::sleep(1.5)
 
      ## check for proper operative system version
@@ -176,6 +178,7 @@ end
   ashwebsv.exe
   aswupdsv.exe
   atrack.exe
+  avast.exe
   avgagent.exe
   avgamsvr.exe
   avgcc.exe
@@ -399,12 +402,13 @@ end
         end
      end
 
-
+ 
      ## Store (data_dump) contents into msf loot folder? (local) ..
      if datastore['STORE_LOOT'] == true
        print_warning("Session logfile stored in: ~/.msf4/loot folder")
        store_loot("enum_protections", "text/plain", session, data_dump, "enum_protections.txt", "enum_protections")
      end
+
 
    #
    # end of the 'def run()' funtion (exploit code) ..
