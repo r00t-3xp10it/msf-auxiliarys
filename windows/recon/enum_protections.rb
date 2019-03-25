@@ -138,8 +138,7 @@ end
   ## Post-Module variable declarations
   av_list = []
   data_dump=''
-  scrnsave_timeout=''
-  print_good("Searching for AVs names in task manager.")
+  print_status("Searching for AVs names in task manager.")
   Rex::sleep(1.5)
 
      ## check for proper operative system version
@@ -390,17 +389,15 @@ end
      }
 
 
-     print_line("")
      ## Query target process list for AVs exec names
      data_dump << "List of AVs found in: #{sysnfo['Computer']}\n\n"
      data_dump << "-------------------------------------------\n"
      session.sys.process.get_processes().each do |x|
         if (av_list.index(x['name']))
-           print_line("    Found - PID: #{x['pid']}   NAME: #{x['name']}   PATH: #{x['path']}")
+           print_good("Found - PID: #{x['pid']}   NAME: #{x['name']}   PATH: #{x['path']}")
            data_dump << "PID: #{x['pid']}   NAME: #{x['name']}   PATH: #{x['path']}\n"
         end
      end
-     print_line("")
 
 
      ## Store (data_dump) contents into msf loot folder? (local) ..
