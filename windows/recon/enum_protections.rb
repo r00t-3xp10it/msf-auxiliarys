@@ -199,28 +199,28 @@ def run
 
         ## Determining DEP status/level
         if depstatus =~ /TRUE/
-           print_line("depStatus          : enable")
-           data_dump << "depStatus          : enable\n"
+           print_line("depStatus                : enable")
+           data_dump << "depStatus                : enable\n"
         else
-           print_line("depStatus                : disable")
-           data_dump << "depStatus                : disable\n"
+           print_line("depStatus                      : disable")
+           data_dump << "depStatus                      : disable\n"
         end
 
         if depmode =~ /0/
-           print_line("levelDescription   : DEP is off for the whole system.")
-           data_dump << "levelDescription   : DEP is off for the whole system.\n"
+           print_line("levelDescription         : DEP is off for the whole system.")
+           data_dump << "levelDescription         : DEP is off for the whole system.\n"
         elsif depmode =~ /1/
-           print_line("levelDescription   : Full DEP coverage for the whole system with no exceptions.")
-           data_dump << "levelDescription   : Full DEP coverage for the whole system with no exceptions.\n"
+           print_line("levelDescription         : Full DEP coverage for the whole system with no exceptions.")
+           data_dump << "levelDescription         : Full DEP coverage for the whole system with no exceptions.\n"
         elsif depmode =~ /2/
-           print_line("levelDescription   : DEP is limited to Windows system binaries.")
-           data_dump << "levelDescription   : DEP is limited to Windows system binaries.\n"
+           print_line("levelDescription         : DEP is limited to Windows system binaries.")
+           data_dump << "levelDescription         : DEP is limited to Windows system binaries.\n"
         elsif depmode =~ /3/
-           print_line("levelDescription   : DEP is on for all programs and services.")
-           data_dump << "levelDescription   : DEP is on for all programs and services.\n"
+           print_line("levelDescription         : DEP is on for all programs and services.")
+           data_dump << "levelDescription         : DEP is on for all programs and services.\n"
         else
-           print_line("levelDescription   :")
-           data_dump << "levelDescription   :\n"
+           print_line("levelDescription         :")
+           data_dump << "levelDescription         :\n"
         end
 
 
@@ -426,6 +426,7 @@ av_list = %W{
   scheduler daemon.exe
   sdhelp.exe
   serv95.exe
+  SecurityHealthService.exe
   sgbhp.exe
   sgmain.exe
   slee503.exe
