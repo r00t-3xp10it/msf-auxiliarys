@@ -14,14 +14,14 @@
 #
 # [ DESCRIPTION ]
 # This post-module enumerates AV(s) process names active on remote task manager (windows platforms).
-# Presents process name(s), pid(s) and process absoluct path(s), Checks remote UAC settings, DEP Policy
-# settings, Built-in firewall settings, Shares and store results into ~/.msf4/loot local directory.
+# Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings,
+# Built-in firewall settings, Shares and stores results into ~/.msf4/loot local directory (setg STORE_LOOT true).
 #
 #
 # [ MODULE OPTIONS ]
 # Display enum_protections module banner?   => set BANNER false
 # The session number to run this module on  => set SESSION 1
-# Store session logfiles (local)            => set STORE_LOOT true 
+# Store session logfiles (local PC)         => set STORE_LOOT true 
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE (execute in terminal) ]
@@ -49,14 +49,14 @@
 
 
 
-## Metasploit Module librarys
+## Metasploit libraries
 require 'rex'
 require 'msf/core'
 require 'msf/core/post/common'
 require 'msf/core/post/windows/registry'
 
 
-## Metasploit Class name and mixins ..
+## Metasploit Class name and mixins
 class MetasploitModule < Msf::Post
       Rank = ExcellentRanking
 
@@ -69,7 +69,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Windows Gather Protection Enumeration',
                         'Description'   => %q{
-                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Presents process name(s), pid(s) and process absoluct path(s), Checks remote UAC settings, DEP Policy settings, Built-in firewall settings, Shares and store results into ~/.msf4/loot local directory.
+                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings, Built-in firewall settings, Shares and stores results into ~/.msf4/loot local directory (setg STORE_LOOT true).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -77,7 +77,7 @@ class MetasploitModule < Msf::Post
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
-                        'Version'        => '$Revision: 1.2',
+                        'Version'        => '$Revision: 1.3',
                         'DisclosureDate' => '26 03 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -119,10 +119,10 @@ def run
   directory = client.fs.dir.pwd
 
 
-  ## POST MODULE BANNER
+  ## POST MODULE BANNER (setg BANNER true)
   if datastore['BANNER'] == true
      print_line("    +--------------------------------------------+")
-     print_line("    |     Enumerate protections of remote PC     |")
+     print_line("    |     Enumerate protections on remote PC     |")
      print_line("    |        Author : r00t-3xp10it (SSA)         |")
      print_line("    +--------------------------------------------+")
      print_line("")
@@ -136,8 +136,6 @@ def run
      print_line("")
      print_line("")
   end
-
-
   print_status("Enumerating #{runsession} remote protections")
   Rex::sleep(1.5)
 
@@ -148,20 +146,19 @@ def run
      end
 
 
-     data_dump=''
      av_list = []
-     ## Query UAC remote settings (regedit)
+     data_dump=''
      print_line("")
      print_line("")
      print_line("UAC - DEP Settings")
      print_line("------------------")
      data_dump << "\nUAC - DEP Settings\n"
      data_dump << "------------------\n"
-
+     ## Query UAC remote settings (regedit)
      uac_check = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","EnableLUA")
      reg_key = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","ConsentPromptBehaviorAdmin")
 
-        ## Query remote registry (UAC)
+        ## determining UAC status/level
         if uac_check == 1
            print_line("uacStatus                : enable")
            data_dump << "uacStatus                : enable\n"
@@ -188,6 +185,9 @@ def run
         elsif reg_key == 5
            print_line("levelDescription         : prompts for consent for non-Windows binaries")
            data_dump << "levelDescription         : prompts for consent for non-Windows binaries\n"
+        else
+           print_line("levelDescription         :")
+           data_dump << "levelDescription         :\n"
         end
 
 
@@ -197,6 +197,7 @@ def run
      depmode = cmd_exec("wmic OS Get DataExecutionPrevention_SupportPolicy")
      depstatus = cmd_exec("wmic OS Get DataExecutionPrevention_Available")
 
+        ## Determining DEP status/level
         if depstatus =~ /TRUE/
            print_line("depStatus          : enable")
            data_dump << "depStatus          : enable\n"
@@ -217,25 +218,30 @@ def run
         elsif depmode =~ /3/
            print_line("levelDescription   : DEP is on for all programs and services.")
            data_dump << "levelDescription   : DEP is on for all programs and services.\n"
+        else
+           print_line("levelDescription   :")
+           data_dump << "levelDescription   :\n"
         end
-        data_dump << "\n\n"
 
 
-        ## AV Install detection
         Rex::sleep(1.0)
         print_line("")
         print_line("")
         print_line("AV Detection")
         print_line("------------")
-        av_install = cmd_exec("Powershell /C Get-CimInstance -ClassName AntivirusProduct -NameSPace root\\securitycenter2")
+        ## AV Install detection function (powershell command)
+        av_install = cmd_exec("Powershell.exe Get-CimInstance -ClassName AntivirusProduct -NameSPace root\\securitycenter2")
         print_line(av_install)
+        data_dump << "\n\n"
         data_dump << "AV Detection\n"
         data_dump << "------------\n"
         data_dump << "#{av_install}\n"
 
 
-     ## List of AVs exec names
-     av_list = %W{
+## List of AVs process names
+# WARNING: This function its 'CASE SENSITIVE'
+# If needed, change process name to suite your needs.
+av_list = %W{
   a2adguard.exe
   a2adwizard.exe
   a2antidialer.exe
@@ -473,7 +479,7 @@ def run
   xp-antispy.exe
   zegarynka.exe
   zlclient.exe
-     }
+}
 
 
      ## Query target task manager for AV process names
@@ -493,31 +499,28 @@ def run
            print_line("")
         end
      end
-     data_dump << "\n"
-
 
 
      output = ""
      Rex::sleep(1.0)
+     print_line("")
+     print_line("")
      ## Get the configurations of the built-in Windows Firewall
-     print_line("")
-     print_line("")
      output = cmd_exec("netsh firewall show opmode")
      print_line(output)
 
+     data_dump << "\n"
      ## Store captured data in 'data_dump'
      data_dump << "Built-in firewall settings\n"
      data_dump << "--------------------------\n"
      data_dump << "#{output}\n\n"
 
  
-   ## Store (data_dump) contents into msf loot folder? (local) ..
-   if datastore['STORE_LOOT'] == true
-     print_warning("Session logfile stored in: ~/.msf4/loot folder")
-     store_loot("enum_protections", "text/plain", session, data_dump, "enum_protections.txt", "enum_protections")
-   end
-
-
+     ## Store (data_dump) contents into msf loot folder? (local) ..
+     if datastore['STORE_LOOT'] == true
+       print_warning("Session logfile stored in: ~/.msf4/loot folder")
+       store_loot("enum_protections", "text/plain", session, data_dump, "enum_protections.txt", "enum_protections")
+     end
    ## End of the 'def run()' funtion..
    end
 end
