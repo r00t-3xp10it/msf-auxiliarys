@@ -10,12 +10,14 @@
 # Exploit Title  : enum_protections.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Affected system: Windows (all)
+# Rapid7 as deprecated  meterpreter scripts like 'getcontrameasures.rb' by @darkoperator
+# This metasploit post-module cames replaces getcontrameasures deprecated script.
 #
 #
 # [ DESCRIPTION ]
 # This post-module enumerates AV(s) process names active on remote task manager (windows platforms).
 # Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings,
-# Built-in firewall settings, Shares and stores results into ~/.msf4/loot local directory (setg STORE_LOOT true).
+# ASLR settings, Built-in firewall settings, and stores results into ~/.msf4/loot directory (setg STORE_LOOT true).
 #
 #
 # [ MODULE OPTIONS ]
@@ -69,7 +71,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Windows Gather Protection Enumeration',
                         'Description'   => %q{
-                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings, Built-in firewall settings, Shares and stores results into ~/.msf4/loot local directory (setg STORE_LOOT true).
+                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings, ASLR settings, Built-in firewall settings, and stores results into ~/.msf4/loot directory (setg STORE_LOOT true).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -77,7 +79,7 @@ class MetasploitModule < Msf::Post
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
-                        'Version'        => '$Revision: 1.3',
+                        'Version'        => '$Revision: 1.4',
                         'DisclosureDate' => '26 03 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -119,7 +121,7 @@ def run
   directory = client.fs.dir.pwd
 
 
-  ## POST MODULE BANNER (setg BANNER true)
+  ## POST MODULE BANNER (set BANNER true)
   if datastore['BANNER'] == true
      print_line("    +--------------------------------------------+")
      print_line("    |     Enumerate protections on remote PC     |")
@@ -145,49 +147,55 @@ def run
         return nil
      end
 
+    ## check for proper session.
+    if sysinfo.nil? or sysinfo == ''
+       print_error("ABORT]: This post-module only works in meterpreter sessions")
+       return nil
+    end
+
 
      av_list = []
      data_dump=''
      print_line("")
      print_line("")
-     print_line("UAC - DEP Settings")
-     print_line("------------------")
-     data_dump << "\nUAC - DEP Settings\n"
-     data_dump << "------------------\n"
+     print_line("Prevention Mechanisms")
+     print_line("---------------------")
+     data_dump << "\nPrevention Mechanisms\n"
+     data_dump << "---------------------\n"
      ## Query UAC remote settings (regedit)
      uac_check = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","EnableLUA")
      reg_key = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","ConsentPromptBehaviorAdmin")
 
         ## determining UAC status/level
         if uac_check == 1
-           print_line("uacStatus                : enable")
-           data_dump << "uacStatus                : enable\n"
+           print_line("UAC status               : enabled")
+           data_dump << "UAC status               : enabled\n"
         else
-           print_line("uacStatus                : disable")
-           data_dump << "uacStatus                : disable\n"
+           print_line("UAC status               : disabled")
+           data_dump << "UAC status               : disabled\n"
         end
 
         if reg_key == 0
-           print_line("levelDescription         : Elevation without consent")
-           data_dump << "levelDescription         : Elevation without consent\n"
+           print_line("Level Description        : Elevation without consent")
+           data_dump << "Level Description        : Elevation without consent\n"
         elsif reg_key == 1
-           print_line("levelDescription         : enter username and password when operations require elevated privileges")
-           data_dump << "levelDescription         : enter username and password when operations require elevated privileges\n"
+           print_line("Level Description        : enter username and password when operations require elevated privileges")
+           data_dump << "Level Description        : enter username and password when operations require elevated privileges\n"
         elsif reg_key == 2
-           print_line("levelDescription         : displays the UAC prompt that needs to be permitted or denied on a secure desktop")
-           data_dump << "levelDescription         : displays the UAC prompt that needs to be permitted or denied on a secure desktop\n"
+           print_line("Level Description        : displays the UAC prompt that needs to be permitted or denied on a secure desktop")
+           data_dump << "Level Description        : displays the UAC prompt that needs to be permitted or denied on a secure desktop\n"
         elsif reg_key == 3
-           print_line("levelDescription         : prompts for credentials.")
-           data_dump << "levelDescription         : prompts for credentials.\n"
+           print_line("Level Description        : prompts for credentials.")
+           data_dump << "Level Description        : prompts for credentials.\n"
         elsif reg_key == 4
-           print_line("levelDescription         : prompts for consent by displaying the UAC prompt")
-           data_dump << "levelDescription         : prompts for consent by displaying the UAC prompt\n"
+           print_line("Level Description        : prompts for consent by displaying the UAC prompt")
+           data_dump << "Level Description        : prompts for consent by displaying the UAC prompt\n"
         elsif reg_key == 5
-           print_line("levelDescription         : prompts for consent for non-Windows binaries")
-           data_dump << "levelDescription         : prompts for consent for non-Windows binaries\n"
+           print_line("Level Description        : prompts for consent for non-Windows binaries")
+           data_dump << "Level Description        : prompts for consent for non-Windows binaries\n"
         else
-           print_line("levelDescription         :")
-           data_dump << "levelDescription         :\n"
+           print_line("Level Description        :")
+           data_dump << "Level Description        :\n"
         end
 
 
@@ -199,48 +207,98 @@ def run
 
         ## Determining DEP status/level
         if depstatus =~ /TRUE/
-           print_line("depStatus                : enable")
-           data_dump << "depStatus                : enable\n"
+           print_line("DEP status               : enabled")
+           data_dump << "DEP status               : enabled\n"
         else
-           print_line("depStatus                      : disable")
-           data_dump << "depStatus                      : disable\n"
+           print_line("DEP status                     : disabled")
+           data_dump << "DEP status                     : disabled\n"
         end
 
         if depmode =~ /0/
-           print_line("levelDescription         : DEP is off for the whole system.")
-           data_dump << "levelDescription         : DEP is off for the whole system.\n"
+           print_line("Level Description        : DEP is off for the whole system.")
+           data_dump << "Level Description        : DEP is off for the whole system.\n"
         elsif depmode =~ /1/
-           print_line("levelDescription         : Full DEP coverage for the whole system with no exceptions.")
-           data_dump << "levelDescription         : Full DEP coverage for the whole system with no exceptions.\n"
+           print_line("Level Description        : Full DEP coverage for the whole system with no exceptions.")
+           data_dump << "Level Description        : Full DEP coverage for the whole system with no exceptions.\n"
         elsif depmode =~ /2/
-           print_line("levelDescription         : DEP is limited to Windows system binaries.")
-           data_dump << "levelDescription         : DEP is limited to Windows system binaries.\n"
+           print_line("Level Description        : DEP is limited to Windows system binaries.")
+           data_dump << "Level Description        : DEP is limited to Windows system binaries.\n"
         elsif depmode =~ /3/
-           print_line("levelDescription         : DEP is on for all programs and services.")
-           data_dump << "levelDescription         : DEP is on for all programs and services.\n"
+           print_line("Level Description        : DEP is on for all programs and services.")
+           data_dump << "Level Description        : DEP is on for all programs and services.\n"
         else
-           print_line("levelDescription         :")
-           data_dump << "levelDescription         :\n"
+           print_line("Level Description        :")
+           data_dump << "Level Description        :\n"
+        end
+
+
+        ## Query for Exploit protection/ASLR settings
+        # HINT: 11 12 12 00 00 01 00 00 00 00 00 00 00 00 00 00 = All 3 ASLR windows defender funtions stoped
+        aslr_check = cmd_exec("reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel\" /v MitigationOptions")
+        aslr_error = registry_getvalinfo("HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel","MitigationOptions")
+        # aslr: {"Data"=>"!!\x11\x00\x00\x02\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00", "Type"=>3}
+        ## All definitions [Exploit protection] turn on
+        if aslr_check =~ /11111100000100000000000000000000/
+           print_line("Exploit protection       : enabled")
+           data_dump << "Exploit protection       : enabled\n"
+           print_line("Level Description        : Active for all definitions")
+           data_dump << "Level Description        : Active for all definitions\n"
+        ## All definitions [Exploit protection] turn off
+        elsif aslr_check =~ /22222200000200000002000000000000/
+           print_line("Exploit protection       : disabled")
+           data_dump << "Exploit protection       : disabled\n"
+           print_line("Level Description        : disabled for all definitions")
+           data_dump << "Level Description        : disabled for all definitions\n"
+        ## ASLR and DEP turn off
+        elsif aslr_check =~ /12122200000100000000000000000000/
+           print_line("ASLR and DEP             : disabled")
+           data_dump << "ASLR and DEP             : disabled\n"
+           print_line("Level Description        : disabled for all 5 definitions")
+           data_dump << "Level Description        : disabled for all 5 definitions\n"
+        ## ASLR definition [mandatory process] turn off
+        elsif aslr_check =~ /11121100000100000000000000000000/
+           print_line("ASLR status              : disabled")
+           data_dump << "ASLR status              : disabled\n"
+           print_line("Level Description        : ASLR its disable (Mandatory Processes")
+           data_dump << "Level Description        : ASLR its disable (Mandatory Processes\n"
+        ## ASLR definition [Ascending ASLR] turn off
+        elsif aslr_check =~ /11111200000100000000000000000000/
+           print_line("ASLR status              : disabled")
+           data_dump << "ASLR status              : disabled\n"
+           print_line("Level Description        : ASLR its disable (Ascending ASLR)")
+           data_dump << "Level Description        : ASLR its disable (Ascending ASLR)\n"
+        ## ASLR definition [all 3 ASLR functions] turn off
+        elsif aslr_check =~ /11122200000100000000000000000000/
+           print_line("ASLR status              : disabled")
+           data_dump << "ASLR status              : disabled\n"
+           print_line("Level Description        : ASLR its disable (all 3 ASLR functions)")
+           data_dump << "Level Description        : ASLR its disable (all 3 ASLR functions)\n"
+        else
+           ## Unknow comparition data
+           print_line("Exploit protection       : Unknown")
+           data_dump << "Exploit protection       : Unknown\n"
+           print_line("Level Description        : #{aslr_error}")
+           data_dump << "Level Description        : #{aslr_error}\n"
         end
 
 
         Rex::sleep(1.0)
         print_line("")
         print_line("")
-        print_line("AV Detection")
+        print_line("Installed AV")
         print_line("------------")
         ## AV Install detection function (powershell command)
         av_install = cmd_exec("Powershell.exe Get-CimInstance -ClassName AntivirusProduct -NameSPace root\\securitycenter2")
         print_line(av_install)
         data_dump << "\n\n"
-        data_dump << "AV Detection\n"
+        data_dump << "Installed AV\n"
         data_dump << "------------\n"
         data_dump << "#{av_install}\n"
 
 
 ## List of AVs process names
-# WARNING: This function its 'CASE SENSITIVE'
-# If needed, change process name to suite your needs.
+# WARNING: This function its case sesensitive.
+# change process names to suite your needs
 av_list = %W{
   a2adguard.exe
   a2adwizard.exe
@@ -483,20 +541,20 @@ av_list = %W{
 }
 
 
-     ## Query target task manager for AV process names
      Rex::sleep(1.0)
-     print_line("Task Manager Process")
-     print_line("--------------------")
-     data_dump << "Task Manager Process\n"
-     data_dump << "--------------------\n"
+     print_line("Task Manager Processes")
+     print_line("----------------------")
+     data_dump << "Task Manager Processes\n"
+     data_dump << "----------------------\n"
+     ## Query target task manager for AV process names
      session.sys.process.get_processes().each do |x|
         if (av_list.index(x['name']))
-           print_line("processPID               : #{x['pid']}")
-           data_dump << "processPID               : #{x['pid']}\n"
-           print_line("displayName              : #{x['name']}")
-           data_dump << "displayName              : #{x['name']}\n"
-           print_line("processPath              : #{x['path']}")
-           data_dump << "processPath              : #{x['path']}\n\n"
+           print_line("Process PID              : #{x['pid']}")
+           data_dump << "Process PID              : #{x['pid']}\n"
+           print_line("Display Name             : #{x['name']}")
+           data_dump << "Display Name             : #{x['name']}\n"
+           print_line("Process Path             : #{x['path']}")
+           data_dump << "Process Path             : #{x['path']}\n\n"
            print_line("")
         end
      end
