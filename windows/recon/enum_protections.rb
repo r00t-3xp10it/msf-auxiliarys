@@ -17,7 +17,8 @@
 # [ DESCRIPTION ]
 # This post-module enumerates AV(s) process names active on remote task manager (windows platforms).
 # Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings,
-# ASLR settings, Built-in firewall settings, and stores results into ~/.msf4/loot directory (setg STORE_LOOT true).
+# ASLR settings, Exploit Prevention settings, startup processes, Built-in firewall settings, and stores results
+# into ~/.msf4/loot directory (set STORE_LOOT true).
 #
 #
 # [ MODULE OPTIONS ]
@@ -69,9 +70,9 @@ class MetasploitModule < Msf::Post
 
         def initialize(info={})
                 super(update_info(info,
-                        'Name'          => 'Windows Gather Protection Enumeration',
+                        'Name'          => 'Windows Exploit Protection Enumeration',
                         'Description'   => %q{
-                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings, ASLR settings, Built-in firewall settings, and stores results into ~/.msf4/loot directory (setg STORE_LOOT true).
+                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings, ASLR settings, Exploit Prevention settings, startup processes, Built-in firewall settings, and stores results into ~/.msf4/loot directory (set STORE_LOOT true).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -79,7 +80,7 @@ class MetasploitModule < Msf::Post
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
-                        'Version'        => '$Revision: 1.4',
+                        'Version'        => '$Revision: 1.5',
                         'DisclosureDate' => '26 03 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -158,10 +159,10 @@ def run
      data_dump=''
      print_line("")
      print_line("")
-     print_line("Prevention Mechanisms")
-     print_line("---------------------")
-     data_dump << "\nPrevention Mechanisms\n"
-     data_dump << "---------------------\n"
+     print_line("Exploit Prevention")
+     print_line("------------------")
+     data_dump << "\nExploit Prevention\n"
+     data_dump << "------------------\n"
      ## Query UAC remote settings (regedit)
      uac_check = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","EnableLUA")
      reg_key = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","ConsentPromptBehaviorAdmin")
@@ -291,9 +292,10 @@ def run
         av_install = cmd_exec("Powershell.exe Get-CimInstance -ClassName AntivirusProduct -NameSPace root\\securitycenter2")
         print_line(av_install)
         data_dump << "\n\n"
+        ## Store captured data in 'data_dump'
         data_dump << "Installed AV\n"
         data_dump << "------------\n"
-        data_dump << "#{av_install}\n"
+        data_dump << "#{av_install}"
 
 
 ## List of AVs process names
@@ -554,10 +556,28 @@ av_list = %W{
            print_line("Display Name             : #{x['name']}")
            data_dump << "Display Name             : #{x['name']}\n"
            print_line("Process Path             : #{x['path']}")
-           data_dump << "Process Path             : #{x['path']}\n\n"
+           data_dump << "Process Path             : #{x['path']}\n"
            print_line("")
         end
      end
+
+
+
+     wmic_scan = ""
+     Rex::sleep(1.0)
+     print_line("")
+     print_line("")
+     print_line("Startup Processes")
+     print_line("-----------------")
+     ## Get all startup processes
+     wmic_scan = cmd_exec("wmic startup get Caption, Command")
+     print_line(wmic_scan)
+
+     data_dump << "\n\n"
+     ## Store captured data in 'data_dump'
+     data_dump << "Startup Processes\n"
+     data_dump << "-----------------\n"
+     data_dump << "#{wmic_scan}"
 
 
      output = ""
@@ -568,10 +588,8 @@ av_list = %W{
      output = cmd_exec("netsh firewall show opmode")
      print_line(output)
 
-     data_dump << "\n"
+     data_dump << "\n\n"
      ## Store captured data in 'data_dump'
-     data_dump << "Built-in firewall settings\n"
-     data_dump << "--------------------------\n"
      data_dump << "#{output}\n\n"
 
  
