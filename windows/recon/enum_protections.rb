@@ -10,8 +10,8 @@
 # Exploit Title  : enum_protections.rb
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Affected system: Windows (all)
-# Rapid7 as deprecated  meterpreter scripts like 'getcontrameasures.rb' by @darkoperator
-# This metasploit post-module cames replaces getcontrameasures deprecated script.
+# "Rapid7 as deprecated  meterpreter scripts like 'getcontrameasures.rb' by @darkoperator
+# This metasploit post-module replaces getcontrameasures deprecated script"
 #
 #
 # [ DESCRIPTION ]
@@ -80,7 +80,7 @@ class MetasploitModule < Msf::Post
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
-                        'Version'        => '$Revision: 1.5',
+                        'Version'        => '$Revision: 1.6',
                         'DisclosureDate' => '26 03 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -159,9 +159,9 @@ def run
      data_dump=''
      print_line("")
      print_line("")
-     print_line("Exploit Prevention")
+     print_line("Exploit Protection")
      print_line("------------------")
-     data_dump << "\nExploit Prevention\n"
+     data_dump << "\nExploit Protection\n"
      data_dump << "------------------\n"
      ## Query UAC remote settings (regedit)
      uac_check = registry_getvaldata("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System","EnableLUA")
@@ -195,8 +195,8 @@ def run
            print_line("Level Description        : prompts for consent for non-Windows binaries")
            data_dump << "Level Description        : prompts for consent for non-Windows binaries\n"
         else
-           print_line("Level Description        :")
-           data_dump << "Level Description        :\n"
+           print_line("Level Description        : #{reg_key}")
+           data_dump << "Level Description        : #{reg_key}\n"
         end
 
 
@@ -228,8 +228,8 @@ def run
            print_line("Level Description        : DEP is on for all programs and services.")
            data_dump << "Level Description        : DEP is on for all programs and services.\n"
         else
-           print_line("Level Description        :")
-           data_dump << "Level Description        :\n"
+           print_line("Level Description        : #{depmode}")
+           data_dump << "Level Description        : #{depmode}\n"
         end
 
 
@@ -299,8 +299,6 @@ def run
 
 
 ## List of AVs process names
-# WARNING: This function its case sesensitive.
-# change process names to suite your needs
 av_list = %W{
   a2adguard.exe
   a2adwizard.exe
@@ -422,6 +420,7 @@ av_list = %W{
   kavss.exe
   kavsvc.exe
   klswd.exe
+  ksdeu1.exe
   kpf4gui.exe
   kpf4ss.exe
   livesrv.exe
@@ -433,8 +432,8 @@ av_list = %W{
   mcshield.exe
   mctskshd.exe
   mcvsshld.exe
-  McCSPServiceHost.exe
-  MsMpEng.exe
+  mccspservicehost.exe
+  msmpeng.exe
   mghtml.exe
   mpftray.exe
   msascui.exe
@@ -468,7 +467,7 @@ av_list = %W{
   pccpfw.exe
   pccwin98.exe
   persfw.exe
-  PEFService.exe
+  pefservice.exe
   protector.exe
   qconsole.exe
   qdcsfs.exe
@@ -486,7 +485,7 @@ av_list = %W{
   scheduler daemon.exe
   sdhelp.exe
   serv95.exe
-  SecurityHealthService.exe
+  securityhealthservice.exe
   sgbhp.exe
   sgmain.exe
   slee503.exe
@@ -550,7 +549,7 @@ av_list = %W{
      data_dump << "----------------------\n"
      ## Query target task manager for AV process names
      session.sys.process.get_processes().each do |x|
-        if (av_list.index(x['name']))
+        if (av_list.index(x['name'].downcase))
            print_line("Process PID              : #{x['pid']}")
            data_dump << "Process PID              : #{x['pid']}\n"
            print_line("Display Name             : #{x['name']}")
