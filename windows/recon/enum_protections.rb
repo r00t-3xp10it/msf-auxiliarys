@@ -255,8 +255,8 @@ def run
         elsif aslr_check =~ /12122200000100000000000000000000/
            print_line("ASLR and DEP             : disabled")
            data_dump << "ASLR and DEP             : disabled\n"
-           print_line("Level Description        : disabled for all 5 definitions")
-           data_dump << "Level Description        : disabled for all 5 definitions\n"
+           print_line("Level Description        : disabled for all 4 definitions")
+           data_dump << "Level Description        : disabled for all 4 definitions\n"
         ## ASLR definition [mandatory process] turn off
         elsif aslr_check =~ /11121100000100000000000000000000/
            print_line("ASLR status              : disabled")
@@ -550,11 +550,16 @@ av_list = %W{
      data_dump << "Task Manager Processes\n"
      data_dump << "----------------------\n"
      ## Query target task manager for AV process names
+     # TODO: check if 'gsub()' funtions works
      session.sys.process.get_processes().each do |x|
         if (av_list.index(x['name'].downcase))
            ## Query x['name'] version using powershell 
            psh_ver = cmd_exec("powershell /C \"(Get-Command '#{x['path']}').FileVersionInfo.FileVersion\"")
            app_ver = psh_ver.split(' ')[0]
+           if app_ver.include? ","
+              parse = app_ver.gsub(",", ".")
+              app_ver = "#{parse}"
+           end
            ch_path = "#{x['path']}"
               print_line("Process PID              : #{x['pid']}")
               data_dump << "Process PID              : #{x['pid']}\n"
