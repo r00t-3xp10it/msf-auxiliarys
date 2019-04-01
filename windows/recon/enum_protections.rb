@@ -11,7 +11,8 @@
 # Module Author  : pedr0 Ubuntu [r00t-3xp10it]
 # Affected system: Windows (all)
 # "Rapid7 as deprecated  meterpreter scripts like 'getcontrameasures.rb' by @darkoperator
-# This metasploit post-module replaces getcontrameasures deprecated script"
+# This metasploit post-module replaces getcontrameasures meterpreter script by one post-module
+# with updated exploit protection/enumeration querys"
 #
 #
 # [ DESCRIPTION ]
@@ -80,7 +81,7 @@ class MetasploitModule < Msf::Post
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
-                        'Version'        => '$Revision: 1.6',
+                        'Version'        => '$Revision: 1.7',
                         'DisclosureDate' => '26 03 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -125,7 +126,7 @@ def run
   ## POST MODULE BANNER (set BANNER true)
   if datastore['BANNER'] == true
      print_line("    +--------------------------------------------+")
-     print_line("    |     Enumerate protections on remote PC     |")
+     print_line("    |     ENUMERATE PROTECTIONS ON REMOTE PC     |")
      print_line("    |        Author : r00t-3xp10it (SSA)         |")
      print_line("    +--------------------------------------------+")
      print_line("")
@@ -286,8 +287,8 @@ def run
         Rex::sleep(1.0)
         print_line("")
         print_line("")
-        print_line("Installed AV")
-        print_line("------------")
+        print_line("Installed AV(s)")
+        print_line("---------------")
         ## AV Install detection function (powershell command)
         av_install = cmd_exec("Powershell.exe Get-CimInstance -ClassName AntivirusProduct -NameSPace root\\securitycenter2")
         print_line(av_install)
@@ -349,6 +350,7 @@ av_list = %W{
   avmailc.exe
   avp.exe
   avpm.exe
+  avpui.exe
   avpmwrap.exe
   avsched32.exe
   avwebgrd.exe
@@ -420,7 +422,7 @@ av_list = %W{
   kavss.exe
   kavsvc.exe
   klswd.exe
-  ksdeu1.exe
+  ksdeui.exe
   kpf4gui.exe
   kpf4ss.exe
   livesrv.exe
@@ -550,13 +552,27 @@ av_list = %W{
      ## Query target task manager for AV process names
      session.sys.process.get_processes().each do |x|
         if (av_list.index(x['name'].downcase))
-           print_line("Process PID              : #{x['pid']}")
-           data_dump << "Process PID              : #{x['pid']}\n"
-           print_line("Display Name             : #{x['name']}")
-           data_dump << "Display Name             : #{x['name']}\n"
-           print_line("Process Path             : #{x['path']}")
-           data_dump << "Process Path             : #{x['path']}\n"
-           print_line("")
+           ## Query x['name'] version using powershell 
+           psh_ver = cmd_exec("powershell /C \"(Get-Command '#{x['path']}').FileVersionInfo.FileVersion\"")
+           app_ver = psh_ver.split(' ')[0]
+           ch_path = "#{x['path']}"
+              print_line("Process PID              : #{x['pid']}")
+              data_dump << "Process PID              : #{x['pid']}\n"
+              print_line("Display Name             : #{x['name']}")
+              data_dump << "Display Name             : #{x['name']}\n"
+                 ## appl_ver function requires x['path'] local var
+                 if ch_path.nil? or ch_path == ''
+                    print_line("Process Path             :")
+                    data_dump << "Process Path             :\n"
+                    print_line("Appl version             :")
+                    data_dump << "Appl version             :\n"
+                 else
+                    print_line("Process Path             : #{x['path']}")
+                    data_dump << "Process Path             : #{x['path']}\n"
+                    print_line("Appl version             : #{app_ver}")
+                    data_dump << "Appl version             : #{app_ver}\n"
+                 end
+              print_line("")
         end
      end
 
