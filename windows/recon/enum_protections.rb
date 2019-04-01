@@ -25,7 +25,8 @@
 # [ MODULE OPTIONS ]
 # Display enum_protections module banner?   => set BANNER false
 # The session number to run this module on  => set SESSION 1
-# Store session logfiles (local PC)         => set STORE_LOOT true 
+# Store session logfiles (local PC)         => set STORE_LOOT true
+# Query for all firewall rules?             => set GET_RULES true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE (execute in terminal) ]
@@ -108,6 +109,11 @@ class MetasploitModule < Msf::Post
                                 OptBool.new('BANNER', [ false, 'Display enum_protections module banner?', true]),
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', 1]),
                                 OptBool.new('STORE_LOOT', [ false, 'Store results in loot folder (logfile)?', false])
+                        ], self.class)
+
+                register_advanced_options(
+                        [
+                                OptBool.new('GET_RULES', [ false, 'Query for all firewall rules?', false])
                         ], self.class)
 
         end
@@ -554,7 +560,7 @@ av_list = %W{
      session.sys.process.get_processes().each do |x|
         if (av_list.index(x['name'].downcase))
            ## Query x['name'] version using powershell 
-           psh_ver = cmd_exec("powershell /C \"(Get-Command '#{x['path']}').FileVersionInfo.FileVersion\"")
+           psh_ver = cmd_exec("powershell -C \"(Get-Command '#{x['path']}').FileVersionInfo.FileVersion\"")
            app_ver = psh_ver.split(' ')[0]
            if app_ver.include? ","
               parse = app_ver.gsub(",", ".")
@@ -610,6 +616,21 @@ av_list = %W{
      data_dump << "\n\n"
      ## Store captured data in 'data_dump'
      data_dump << "#{output}\n\n"
+
+
+     ## Get ALL the configurations of the built-in Windows Firewall
+     if datastore['GET_RULES'] == true
+        print_line("")
+        print_line("NetFirewallRules")
+        print_line("----------------")
+        net_rules = cmd_exec("powershell.exe -C \"Get-NetFirewallRule -All\"")
+        print_line(net_rules)
+
+        ## Store captured data in 'data_dump'
+        data_dump << "NetFirewallRules\n"
+        data_dump << "----------------\n"
+        data_dump << "#{net_rules}\n\n"
+     end
 
  
      ## Store (data_dump) contents into msf loot folder? (local) ..
