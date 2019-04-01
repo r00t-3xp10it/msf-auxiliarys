@@ -603,9 +603,8 @@ av_list = %W{
      output = ""
      Rex::sleep(1.0)
      print_line("")
-     print_line("")
      ## Get the configurations of the built-in Windows Firewall
-     output = cmd_exec("netsh firewall show opmode")
+     output = cmd_exec("netsh advfirewall show allprofiles")
      print_line(output)
 
      data_dump << "\n\n"
