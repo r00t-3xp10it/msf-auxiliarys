@@ -18,15 +18,16 @@
 # [ DESCRIPTION ]
 # This post-module enumerates AV(s) process names active on remote task manager (windows platforms).
 # Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings,
-# ASLR settings, Exploit Prevention settings, startup processes, Built-in firewall settings, and stores results
-# into ~/.msf4/loot directory (set STORE_LOOT true).
+# ASLR settings, AMSI settings, Exploit Prevention settings, startup processes, Built-in firewall settings,
+# and stores results into ~/.msf4/loot directory (set STORE_LOOT true).
 #
 #
 # [ MODULE OPTIONS ]
-# Display enum_protections module banner?   => set BANNER false
 # The session number to run this module on  => set SESSION 1
+# Display enum_protections module banner?   => set BANNER false
 # Store session logfiles (local PC)         => set STORE_LOOT true
 # Query for all firewall rules?             => set GET_RULES true
+# Query for all amsi rules?                 => set AMSI_RULES true
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE (execute in terminal) ]
@@ -48,6 +49,7 @@
 # msf exploit(handler) > use post/windows/recon/enum_protections
 # msf post(windows/recon/enum_protections) > info
 # msf post(windows/recon/enum_protections) > show options
+# msf post(windows/recon/enum_protections) > show advanced options
 # msf post(windows/recon/enum_protections) > set [option(s)]
 # msf post(windows/recon/enum_protections) > exploit
 ##
@@ -74,7 +76,7 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'Windows Exploit Protection Enumeration',
                         'Description'   => %q{
-                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings, ASLR settings, Exploit Prevention settings, startup processes, Built-in firewall settings, and stores results into ~/.msf4/loot directory (set STORE_LOOT true).
+                                        This post-module enumerates AV(s) process names active on remote task manager (windows platforms). Displays process name(s), pid(s) and process absoluct path(s), query remote UAC settings, DEP Policy settings, ASLR settings, AMSI settings, Exploit Prevention settings, startup processes, Built-in firewall settings, and stores results into ~/.msf4/loot directory (set STORE_LOOT true).
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
@@ -82,7 +84,7 @@ class MetasploitModule < Msf::Post
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
  
-                        'Version'        => '$Revision: 1.7',
+                        'Version'        => '$Revision: 1.8',
                         'DisclosureDate' => '26 03 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -113,7 +115,8 @@ class MetasploitModule < Msf::Post
 
                 register_advanced_options(
                         [
-                                OptBool.new('GET_RULES', [ false, 'Query for all firewall rules?', false])
+                                OptBool.new('GET_RULES', [ false, 'Query for all firewall rules?', false]),
+                                OptBool.new('AMSI_RULES', [ false, 'Query for all amsi rules?', false])
                         ], self.class)
 
         end
@@ -288,6 +291,47 @@ def run
            print_line("Level Description        : #{aslr_error}")
            data_dump << "Level Description        : #{aslr_error}\n"
         end
+
+
+        ## Query for AMSI (anti-mallware-system-interface) rules
+        amsi_script = cmd_exec("powershell -C \"MpPreference | Select DisableScriptScanning\"")       # false
+        amsi_behavior = cmd_exec("powershell -C \"MpPreference | Select DisableBehaviorMonitoring\"") # false
+        amsi_realtime = cmd_exec("powershell -C \"MpPreference | Select DisableRealtimeMonitoring\"") # false
+
+           ## Determining AMSI status/level
+           if amsi_script =~ /false/i
+              print_line("AMSI ScriptScanning      : enabled")
+              data_dump << "AMSI ScriptScanning      : enabled\n"
+           elsif amsi_script =~ /true/i
+              print_line("AMSI ScriptScanning      : disabled")
+              data_dump << "AMSI ScriptScanning      : disabled\n"
+           else
+              print_line("AMSI ScriptScanning      :")
+              data_dump << "AMSI ScriptScanning      :\n"
+           end
+
+           if amsi_behavior =~ /false/i
+              print_line("AMSI BehaviorMonitoring  : enabled")
+              data_dump << "AMSI BehaviorMonitoring  : enabled\n"
+           elsif amsi_behavior =~ /true/i
+              print_line("AMSI BehaviorMonitoring  : disabled")
+              data_dump << "AMSI BehaviorMonitoring  : disabled\n"
+           else
+              print_line("AMSI BehaviorMonitoring  :")
+              data_dump << "AMSI BehaviorMonitoring  :\n"
+           end
+
+           if amsi_realtime =~ /false/i
+              print_line("AMSI RealtimeMonitoring  : enabled")
+              data_dump << "AMSI RealtimeMonitoring  : enabled\n"
+           elsif amsi_realtime =~ /true/i
+              print_line("AMSI RealtimeMonitoring  : disabled")
+              data_dump << "AMSI RealtimeMonitoring  : disabled\n"
+           else
+              print_line("AMSI RealtimeMonitoring  :")
+              data_dump << "AMSI RealtimeMonitoring  :\n"
+           end
+
 
 
         Rex::sleep(1.0)
@@ -615,7 +659,7 @@ av_list = %W{
 
      data_dump << "\n\n"
      ## Store captured data in 'data_dump'
-     data_dump << "#{output}\n\n"
+     data_dump << "#{output}\n"
 
 
      ## Get ALL the configurations of the built-in Windows Firewall
@@ -627,9 +671,26 @@ av_list = %W{
         print_line(net_rules)
 
         ## Store captured data in 'data_dump'
+        data_dump << "\n\n"
         data_dump << "NetFirewallRules\n"
         data_dump << "----------------\n"
-        data_dump << "#{net_rules}\n\n"
+        data_dump << "#{net_rules}\n"
+     end
+
+
+     ## Get ALL the configurations of AMSI
+     if datastore['AMSI_RULES'] == true
+        print_line("")
+        print_line("AMSI Rules")
+        print_line("----------")
+        amsi_rules = cmd_exec("powershell.exe -C \"MpPreference\"")
+        print_line(amsi_rules)
+
+        ## Store captured data in 'data_dump'
+        data_dump << "\n\n"
+        data_dump << "AMSI Rules\n"
+        data_dump << "----------\n"
+        data_dump << "#{amsi_rules}\n"
      end
 
  
