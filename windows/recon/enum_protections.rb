@@ -179,11 +179,11 @@ def run
 
         ## determining UAC status/level
         if uac_check == 1
-           print_line("UAC status               : enabled")
-           data_dump << "UAC status               : enabled\n"
+           print_line("UAC status               : Enable")
+           data_dump << "UAC status               : Enable\n"
         else
-           print_line("UAC status               : disabled")
-           data_dump << "UAC status               : disabled\n"
+           print_line("UAC status               : Disable")
+           data_dump << "UAC status               : Disable\n"
         end
 
         if reg_key == 0
@@ -218,11 +218,11 @@ def run
 
         ## Determining DEP status/level
         if depstatus =~ /TRUE/
-           print_line("DEP status               : enabled")
-           data_dump << "DEP status               : enabled\n"
+           print_line("DEP status               : Enable")
+           data_dump << "DEP status               : Enable\n"
         else
-           print_line("DEP status                     : disabled")
-           data_dump << "DEP status                     : disabled\n"
+           print_line("DEP status                     : Disable")
+           data_dump << "DEP status                     : Disable\n"
         end
 
         if depmode =~ /0/
@@ -250,38 +250,38 @@ def run
         # aslr: {"Data"=>"!!\x11\x00\x00\x02\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00", "Type"=>3}
         ## All definitions [Exploit protection] turn on
         if aslr_check =~ /11111100000100000000000000000000/
-           print_line("Exploit protection       : enabled")
-           data_dump << "Exploit protection       : enabled\n"
+           print_line("Exploit protection       : Enable")
+           data_dump << "Exploit protection       : Enable\n"
            print_line("Level Description        : Active for all definitions")
            data_dump << "Level Description        : Active for all definitions\n"
         ## All definitions [Exploit protection] turn off
         elsif aslr_check =~ /22222200000200000002000000000000/
-           print_line("Exploit protection       : disabled")
-           data_dump << "Exploit protection       : disabled\n"
-           print_line("Level Description        : disabled for all definitions")
-           data_dump << "Level Description        : disabled for all definitions\n"
+           print_line("Exploit protection       : Disable")
+           data_dump << "Exploit protection       : Disable\n"
+           print_line("Level Description        : Disable for all definitions")
+           data_dump << "Level Description        : Disable for all definitions\n"
         ## ASLR and DEP turn off
         elsif aslr_check =~ /12122200000100000000000000000000/
-           print_line("ASLR and DEP             : disabled")
-           data_dump << "ASLR and DEP             : disabled\n"
-           print_line("Level Description        : disabled for all 4 definitions")
-           data_dump << "Level Description        : disabled for all 4 definitions\n"
+           print_line("ASLR and DEP             : Disable")
+           data_dump << "ASLR and DEP             : Disable\n"
+           print_line("Level Description        : Disable for all 4 definitions")
+           data_dump << "Level Description        : Disable for all 4 definitions\n"
         ## ASLR definition [mandatory process] turn off
         elsif aslr_check =~ /11121100000100000000000000000000/
-           print_line("ASLR status              : disabled")
-           data_dump << "ASLR status              : disabled\n"
+           print_line("ASLR status              : Disable")
+           data_dump << "ASLR status              : Disable\n"
            print_line("Level Description        : ASLR its disable (Mandatory Processes")
            data_dump << "Level Description        : ASLR its disable (Mandatory Processes\n"
         ## ASLR definition [Ascending ASLR] turn off
         elsif aslr_check =~ /11111200000100000000000000000000/
-           print_line("ASLR status              : disabled")
-           data_dump << "ASLR status              : disabled\n"
+           print_line("ASLR status              : Disable")
+           data_dump << "ASLR status              : Disable\n"
            print_line("Level Description        : ASLR its disable (Ascending ASLR)")
            data_dump << "Level Description        : ASLR its disable (Ascending ASLR)\n"
         ## ASLR definition [all 3 ASLR functions] turn off
         elsif aslr_check =~ /11122200000100000000000000000000/
-           print_line("ASLR status              : disabled")
-           data_dump << "ASLR status              : disabled\n"
+           print_line("ASLR status              : Disable")
+           data_dump << "ASLR status              : Disable\n"
            print_line("Level Description        : ASLR its disable (all 3 ASLR functions)")
            data_dump << "Level Description        : ASLR its disable (all 3 ASLR functions)\n"
         else
@@ -293,6 +293,13 @@ def run
         end
 
 
+        ## Query for Windows Defender version (powershell)
+        wd_ver = cmd_exec("powershell -C \"(Get-Command C:\\'Program Files'\\'Windows Defender'\\MsMpEng.exe).FileVersionInfo.FileVersion\"")
+        parse_ver = wd_ver.split(' ')[0]
+        print_line("Windows Defender version : #{parse_ver}")
+        data_dump << "Windows Defender version : #{parse_ver}\n"
+
+
         ## Query for AMSI (anti-mallware-system-interface) rules
         amsi_script = cmd_exec("powershell -C \"MpPreference | Select DisableScriptScanning\"")       # false
         amsi_behavior = cmd_exec("powershell -C \"MpPreference | Select DisableBehaviorMonitoring\"") # false
@@ -300,38 +307,37 @@ def run
 
            ## Determining AMSI status/level
            if amsi_script =~ /false/i
-              print_line("AMSI ScriptScanning      : enabled")
-              data_dump << "AMSI ScriptScanning      : enabled\n"
+              print_line("AMSI ScriptScanning      : Enable")
+              data_dump << "AMSI ScriptScanning      : Enable\n"
            elsif amsi_script =~ /true/i
-              print_line("AMSI ScriptScanning      : disabled")
-              data_dump << "AMSI ScriptScanning      : disabled\n"
+              print_line("AMSI ScriptScanning      : Disable")
+              data_dump << "AMSI ScriptScanning      : Disable\n"
            else
               print_line("AMSI ScriptScanning      :")
               data_dump << "AMSI ScriptScanning      :\n"
            end
 
            if amsi_behavior =~ /false/i
-              print_line("AMSI BehaviorMonitoring  : enabled")
-              data_dump << "AMSI BehaviorMonitoring  : enabled\n"
+              print_line("AMSI BehaviorMonitoring  : Enable")
+              data_dump << "AMSI BehaviorMonitoring  : Enable\n"
            elsif amsi_behavior =~ /true/i
-              print_line("AMSI BehaviorMonitoring  : disabled")
-              data_dump << "AMSI BehaviorMonitoring  : disabled\n"
+              print_line("AMSI BehaviorMonitoring  : Disable")
+              data_dump << "AMSI BehaviorMonitoring  : Disable\n"
            else
               print_line("AMSI BehaviorMonitoring  :")
               data_dump << "AMSI BehaviorMonitoring  :\n"
            end
 
            if amsi_realtime =~ /false/i
-              print_line("AMSI RealtimeMonitoring  : enabled")
-              data_dump << "AMSI RealtimeMonitoring  : enabled\n"
+              print_line("AMSI RealtimeMonitoring  : Enable")
+              data_dump << "AMSI RealtimeMonitoring  : Enable\n"
            elsif amsi_realtime =~ /true/i
-              print_line("AMSI RealtimeMonitoring  : disabled")
-              data_dump << "AMSI RealtimeMonitoring  : disabled\n"
+              print_line("AMSI RealtimeMonitoring  : Disable")
+              data_dump << "AMSI RealtimeMonitoring  : Disable\n"
            else
               print_line("AMSI RealtimeMonitoring  :")
               data_dump << "AMSI RealtimeMonitoring  :\n"
            end
-
 
 
         Rex::sleep(1.0)
@@ -600,17 +606,16 @@ av_list = %W{
      data_dump << "Task Manager Processes\n"
      data_dump << "----------------------\n"
      ## Query target task manager for AV process names
-     # TODO: check if 'gsub()' funtions works
      session.sys.process.get_processes().each do |x|
         if (av_list.index(x['name'].downcase))
-           ## Query x['name'] version using powershell 
+           ## Query x['name'] version using powershell
            psh_ver = cmd_exec("powershell -C \"(Get-Command '#{x['path']}').FileVersionInfo.FileVersion\"")
            app_ver = psh_ver.split(' ')[0]
            if app_ver.include? ","
               parse = app_ver.gsub(",", ".")
               app_ver = "#{parse}"
            end
-           ch_path = "#{x['path']}"
+              ch_path = "#{x['path']}"
               print_line("Process PID              : #{x['pid']}")
               data_dump << "Process PID              : #{x['pid']}\n"
               print_line("Display Name             : #{x['name']}")
@@ -655,11 +660,12 @@ av_list = %W{
      print_line("")
      ## Get the configurations of the built-in Windows Firewall
      output = cmd_exec("netsh advfirewall show allprofiles")
-     print_line(output)
+     parse = output.slice(0..-6)
+     print_line(parse)
 
      data_dump << "\n\n"
      ## Store captured data in 'data_dump'
-     data_dump << "#{output}\n"
+     data_dump << "#{parse}\n"
 
 
      ## Get ALL the configurations of the built-in Windows Firewall
