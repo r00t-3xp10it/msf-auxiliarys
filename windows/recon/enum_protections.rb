@@ -296,8 +296,8 @@ def run
         ## Query for Windows Defender version (powershell)
         wd_ver = cmd_exec("powershell -C \"(Get-Command C:\\'Program Files'\\'Windows Defender'\\MsMpEng.exe).FileVersionInfo.FileVersion\"")
         parse_ver = wd_ver.split(' ')[0]
-        print_line("Windows Defender version : #{parse_ver}")
-        data_dump << "Windows Defender version : #{parse_ver}\n"
+        print_line("AMSI executable version    : #{parse_ver}")
+        data_dump << "AMSI executable version    : #{parse_ver}\n"
 
 
         ## Query for AMSI (anti-mallware-system-interface) rules
