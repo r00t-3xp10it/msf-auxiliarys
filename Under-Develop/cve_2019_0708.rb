@@ -25,7 +25,7 @@
 # [ MODULE OPTIONS ]
 # The session number to run this module on  => set SESSION 1
 # List_Only all security patchs installed?  => set LIST_ONLY true
-# Absoluct path of termdd.sys file (remote) => set PATH C:\\Windows\\System32\\Drivers\\termdd.sys
+# Absoluct path of termdd.sys file (remote) => set RPATH C:\\Windows\\System32\\Drivers\\termdd.sys
 #
 #
 # [ PORT MODULE TO METASPLOIT DATABASE (execute in terminal) ]
@@ -79,8 +79,8 @@ class MetasploitModule < Msf::Post
                                 [
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
-                        'Version'        => '$Revision: 1.1',
-                        'DisclosureDate' => '24 mai 2019',
+                        'Version'        => '$Revision: 1.2',
+                        'DisclosureDate' => '25 mai 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
                         'Privileged'     => 'false',   # Thats no need for privilege escalation.
@@ -99,7 +99,7 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'PATH' => 'C:\\Windows\\System32\\DRIVERS\\termdd.sys',  # Default termdd.sys path
+                                         'RPATH' => 'C:\\Windows\\System32\\DRIVERS\\termdd.sys',  # Default termdd.sys path
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
@@ -108,13 +108,13 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', 1]),
-                                OptBool.new('LIST_ONLY', [ false, 'List ALL security patchs installed only', false])
+                                OptBool.new('LIST_ONLY', [ false, 'List ALL security patchs installed ?', false])
 
                         ], self.class)
 
                 register_advanced_options(
                         [
-                                OptString.new('PATH', [ false, 'Absoluct path of termdd.sys (remote)'])
+                                OptString.new('RPATH', [ false, 'Absoluct path of termdd.sys (remote)'])
                         ], self.class)
 
         end
@@ -142,7 +142,7 @@ def run
     end
 
     ## Local variable declarations
-    xpath = datastore['PATH']
+    xpath = datastore['RPATH']
     ## Get all installed patchs (HotFixID)
     print_status("Listing ALL security patchs installed (remote)")
     Rex::sleep(0.5)
@@ -219,6 +219,7 @@ elsif sysinfo['OS'] =~ /Windows xp/i
 elsif sysinfo['OS'] =~ /Windows 2003/i
    patched_version = "5.2.3790.3959"
 else
+   ## Just in case lets set the higher version
    patched_version = "6.1.7601.24441"
 end
 
@@ -241,7 +242,7 @@ if session.fs.file.exist?(xpath)
       end
 else
     ## termdd.sys driver not found (release not vuln)
-    ver_stat = "No need to Patch. This release is patched."
+    ver_stat = "Module can not find termdd.sys driver"
 end
 
 
@@ -474,8 +475,8 @@ elsif sysinfo['OS'] =~ /Windows (8|10)/i
    print_line("    ARCH        : #{sysinfo['Architecture']}")
    print_line("    Status      : This system is not affected by CVE-2019-0708")
    print_line("    HotFixID    : None patch available to address this vulnerability")
-   print_line("    Termdd.sys  : #{ver_stat}")
-   print_line("    Status      : No need to Patch. Released as patched.")
+   print_line("    Termdd.sys  : This release does not have termdd.sys driver")
+   print_line("    Status      : No need to Patch. This Release is patched.")
    print_line("    Path        : #{xpath}")
    print_line("")
    print_line("    List of Installed Patchs:")
@@ -493,7 +494,7 @@ elsif sysinfo['OS'] =~ /Windows (8|10)/i
 
 else
 
-   print_error("[ERROR]: This module can not identify system distro")
+   print_error("[ERROR]: This module can not identify system release")
    Rex::sleep(1.0)
    return nil
 
