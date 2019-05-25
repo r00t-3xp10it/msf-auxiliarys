@@ -30,7 +30,7 @@
 #
 # [ PORT MODULE TO METASPLOIT DATABASE (execute in terminal) ]
 # path=$(locate modules/post/windows/recon | grep -v '\doc' | grep -v '\documentation' | head -n 1)
-# sudo cp CVE-2019-0708.rb $path/CVE-2019-0708.rb
+# sudo cp cve_2019_0708.rb $path/cve_2019_0708.rb
 #
 #
 # [ RELOAD MSF DATABASE (execute in terminal) ]
@@ -190,7 +190,7 @@ kb_trinta = parse[30]
 
 ## List ONLY security patch(s) installed
 # Do not check for CVE-2019-0708 vulnerability.
-if datastore['LIST_ONLY'] == "true"
+if datastore['LIST_ONLY'] == true
    sec_patch = cmd_exec("wmic qfe get HotFixID,InstalledOn,Description | findstr \"Security\"")
    print_good("Listing ONLY security patchs installed.")
    Rex::sleep(1.0)
@@ -269,7 +269,7 @@ if sysinfo['OS'] =~ /Windows (2008|2008 R2)/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -295,7 +295,7 @@ if sysinfo['OS'] =~ /Windows (2008|2008 R2)/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -323,7 +323,7 @@ elsif sysinfo['OS'] =~ /Windows vista/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -349,7 +349,7 @@ elsif sysinfo['OS'] =~ /Windows vista/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -378,7 +378,7 @@ elsif sysinfo['OS'] =~ /Windows (2003|xp)/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -404,7 +404,7 @@ elsif sysinfo['OS'] =~ /Windows (2003|xp)/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -433,7 +433,7 @@ elsif sysinfo['OS'] =~ /Windows 7/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -459,7 +459,7 @@ elsif sysinfo['OS'] =~ /Windows 7/i
       print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
       print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
       print_line("")
-      print_line("    Referencies :")
+      print_line("    References  :")
       print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
       print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
       print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
@@ -485,7 +485,7 @@ elsif sysinfo['OS'] =~ /Windows (8|10)/i
    print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
    print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
    print_line("")
-   print_line("    Referencies :")
+   print_line("    References  :")
    print_line("       https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce/")
    print_line("       https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708")
    print_line("       https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708")
