@@ -24,7 +24,7 @@
 #
 # [ MODULE OPTIONS ]
 # The session number to run this module on  => set SESSION 1
-# List_Only all security patchs installed?  => set LIST_ONLY true
+# List_Only security patchs installed ?     => set LIST_ONLY true
 # Absoluct path of termdd.sys file (remote) => set RPATH C:\\Windows\\System32\\Drivers\\termdd.sys
 #
 #
@@ -79,7 +79,7 @@ class MetasploitModule < Msf::Post
                                 [
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
-                        'Version'        => '$Revision: 1.2',
+                        'Version'        => '$Revision: 1.3',
                         'DisclosureDate' => '25 mai 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -92,6 +92,7 @@ class MetasploitModule < Msf::Post
                         'DefaultTarget'  => '3', # Default its to run againts windows 2008 R2
                         'References'     =>
                                 [
+                                         [ 'CVE', '2019-0708' ],
                                          [ 'URL', 'https://wazehell.io/2019/05/22/cve-2019-0708-technical-analysis-rdp-rce' ],
                                          [ 'URL', 'https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708' ],
                                          [ 'URL', 'https://support.microsoft.com/pt-pt/help/4500705/customer-guidance-for-cve-2019-0708' ]
@@ -108,7 +109,7 @@ class MetasploitModule < Msf::Post
                 register_options(
                         [
                                 OptString.new('SESSION', [ true, 'The session number to run this module on', 1]),
-                                OptBool.new('LIST_ONLY', [ false, 'List ALL security patchs installed ?', false])
+                                OptBool.new('LIST_ONLY', [ false, 'List ONLY security patchs installed ?', false])
 
                         ], self.class)
 
@@ -190,6 +191,7 @@ kb_trinta = parse[30]
 ## List ONLY security patch(s) installed
 # Do not check for CVE-2019-0708 vulnerability.
 if datastore['LIST_ONLY'] == "true"
+   sec_patch = cmd_exec("wmic qfe get HotFixID,InstalledOn,Description | findstr \"Security\"")
    print_good("Listing ONLY security patchs installed.")
    Rex::sleep(1.0)
    print_line("")
@@ -197,12 +199,9 @@ if datastore['LIST_ONLY'] == "true"
    print_line("    OS          : #{sysinfo['OS']}")
    print_line("    ARCH        : #{sysinfo['Architecture']}")
    print_line("")
-   print_line("    List of Installed Patchs:")
-   print_line("       #{kb_um} #{kb_dois} #{kb_tres} #{kb_quatro} #{kb_cinco} #{kb_seis}")
-   print_line("       #{kb_sete} #{kb_oito} #{kb_nove} #{kb_dez} #{kb_onze} #{kb_doze}")
-   print_line("       #{kb_treze} #{kb_quatorse} #{kb_quinze} #{kb_dezaseis} #{kb_dezasete} #{kb_dezoito}")
-   print_line("       #{kb_dezanove} #{kb_vinte} #{kb_vinteum} #{kb_vintedois} #{kb_vintetres} #{kb_vintequatro}")
-   print_line("       #{kb_vintecinco} #{kb_vinteseis} #{kb_vintesete} #{kb_vinteoito} #{kb_vintenove} #{kb_trinta}")
+   print_line("Description      HotFixID   InstalledOn")
+   print_line("-----------      --------   -----------")
+   print_line("#{sec_patch}")
    print_line("")
    return nil
 end
@@ -228,7 +227,7 @@ end
 if session.fs.file.exist?(xpath)
    print_status("Retry/Compare termdd.sys driver version number")
    Rex::sleep(0.5)
-   term_ver = cmd_exec("powershell -C \"(Get-Command '#{xpath}').FileVersionInfo.FileVersion\"") 
+   term_ver = cmd_exec("powershell -C \"(Get-Command #{xpath}).FileVersionInfo.FileVersion\"") 
       ## Compare termdd version number againts patched version number
       if term_ver == "#{patched_version}"
          ver_stat = "Driver is PATCHED againts CVE-2019-0708"
