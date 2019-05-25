@@ -100,7 +100,7 @@ class MetasploitModule < Msf::Post
                                 ],
 			'DefaultOptions' =>
 				{
-                                         'RPATH' => 'C:\\Windows\\System32\\DRIVERS\\termdd.sys',  # Default termdd.sys path
+                                         'RPATH' => 'C:\\Windows\\System32\\Drivers\\termdd.sys',  # Default termdd.sys path
 				},
                         'SessionTypes'   => [ 'meterpreter' ]
  
