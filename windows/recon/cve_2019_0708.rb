@@ -17,9 +17,9 @@
 # pre-authentication and requires no user interaction. An attacker who successfully exploited this
 # vulnerability could execute arbitrary code on the target system.
 # ---
-# This module will check if current system its patched or vulnerable to CVE-2019-0708 (RDP-RCE) by checking
-# if the correct security patchs are installed. check termdd.sys driver version number and presents a list
-# of all installed security patchs (KB ID).
+# This module will determine if current system has been patched for CVE-2019-0708 (RDP-RCE) by checking
+# if the correct security patchs are installed, if the termdd.sys driver has been updated appropriate
+# and is at a version level at or greater than the versions released in the 5/14/2019 patches.
 #
 #
 # [ MODULE OPTIONS ]
@@ -72,14 +72,14 @@ class MetasploitModule < Msf::Post
                 super(update_info(info,
                         'Name'          => 'CVE-2019-0708 (patch) checks',
                         'Description'   => %q{
-                                        This module will check if current system its patched or vulnerable to CVE-2019-0708 (RDP-RCE) by checking if the correct security patchs are installed. Check termdd.sys driver version number and presents a list of all installed security patchs (KB ID).
+                                        This module will determine if current system has been patched for CVE-2019-0708 (RDP-RCE) by checking if the correct security patchs are installed, if the termdd.sys driver has been updated appropriate and is at a version level at or greater than the versions released in the 5/14/2019 patches.
                         },
                         'License'       => UNKNOWN_LICENSE,
                         'Author'        =>
                                 [
                                         'r00t-3xp10it <pedroubuntu10[at]gmail.com>',
                                 ],
-                        'Version'        => '$Revision: 1.3',
+                        'Version'        => '$Revision: 1.4',
                         'DisclosureDate' => '25 mai 2019',
                         'Platform'       => 'windows',
                         'Arch'           => 'x86_x64',
@@ -125,8 +125,8 @@ class MetasploitModule < Msf::Post
 def run
   session = client
   ## Variable declarations
-  xhost = client.session_host
-  print_status("Check if #{xhost} its patched to CVE-2019-0708")
+  xhost = session.sys.config.sysinfo
+  print_status("Check if #{xhost['Computer']} its patched to CVE-2019-0708")
   Rex::sleep(1.5)
 
      ## Check for proper operative system releases
@@ -191,18 +191,15 @@ kb_trinta = parse[30]
 ## List ONLY security patch(s) installed
 # Do not check for CVE-2019-0708 vulnerability.
 if datastore['LIST_ONLY'] == true
-   sec_patch = cmd_exec("wmic qfe get HotFixID,InstalledOn,Description | findstr \"Security\"")
+   sec_patch = cmd_exec("wmic qfe get Hotfixid,installedon,description,installedby")
    print_good("Listing ONLY security patchs installed.")
    Rex::sleep(1.0)
    print_line("")
+   print_line("    ARCH        : #{sysinfo['Architecture']}")
    print_line("    Computer    : #{sysinfo['Computer']}")
    print_line("    OS          : #{sysinfo['OS']}")
-   print_line("    ARCH        : #{sysinfo['Architecture']}")
    print_line("")
-   print_line("Description      HotFixID   InstalledOn")
-   print_line("-----------      --------   -----------")
    print_line("#{sec_patch}")
-   print_line("")
    return nil
 end
 
@@ -253,9 +250,9 @@ if sysinfo['OS'] =~ /Windows (2008|2008 R2)/i
    ## check if correct patch(s) are installed
    if kb_id =~ /(KB4499180|KB4499149|KB4499175|KB4499164)/
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is PATCHED againts CVE-2019-0708")
       print_line("    HotFixID(s) : KB4499180|KB4499149|KB4499175|KB4499164 - Security Patch Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -279,9 +276,9 @@ if sysinfo['OS'] =~ /Windows (2008|2008 R2)/i
       print_error("[ERROR] CVE-2019-0708 Security patch not found")
       Rex::sleep(1.0)
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is VULNERABLE to CVE-2019-0708")
       print_line("    HotFixID(s) : KB4499180|KB4499149|KB4499175|KB4499164 - Security Patch Not Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -307,9 +304,9 @@ elsif sysinfo['OS'] =~ /Windows vista/i
    ## check if correct patch are installed
    if kb_id =~ /KB4499180/
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is PATCHED againts CVE-2019-0708")
       print_line("    HotFixID    : KB4499180 - Security Patch Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -333,9 +330,9 @@ elsif sysinfo['OS'] =~ /Windows vista/i
       print_error("[ERROR] CVE-2019-0708 Security patch not found")
       Rex::sleep(1.0)
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is VULNERABLE to CVE-2019-0708")
       print_line("    HotFixID    : KB4499180 - Security Patch Not Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -362,9 +359,9 @@ elsif sysinfo['OS'] =~ /Windows (2003|xp)/i
    ## check if correct patch are installed
    if kb_id =~ /KB4500331/
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is PATCHED againts CVE-2019-0708")
       print_line("    HotFixID    : KB4500331 - Security Patch Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -388,9 +385,9 @@ elsif sysinfo['OS'] =~ /Windows (2003|xp)/i
       print_error("[ERROR] CVE-2019-0708 Security patch not found")
       Rex::sleep(1.0)
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is VULNERABLE to CVE-2019-0708")
       print_line("    HotFixID    : KB4500331 - Security Patch Not Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -417,9 +414,9 @@ elsif sysinfo['OS'] =~ /Windows 7/i
    ## check if correct patch(s) are installed
    if kb_id =~ /(KB4499175|KB4499164)/
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is PATCHED againts CVE-2019-0708")
       print_line("    HotFixID(s) : KB4499175|KB4499164 - Security Patch Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -443,9 +440,9 @@ elsif sysinfo['OS'] =~ /Windows 7/i
       print_error("[ERROR] CVE-2019-0708 Security patch not found")
       Rex::sleep(1.0)
       print_line("")
+      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Computer    : #{sysinfo['Computer']}")
       print_line("    OS          : #{sysinfo['OS']}")
-      print_line("    ARCH        : #{sysinfo['Architecture']}")
       print_line("    Status      : This system is VULNERABLE to CVE-2019-0708")
       print_line("    HotFixID(s) : KB4499175|KB4499164 - Security Patch Not Found")
       print_line("    Termdd.sys  : #{term_ver}")
@@ -469,9 +466,9 @@ elsif sysinfo['OS'] =~ /Windows 7/i
 ## Check OS version
 elsif sysinfo['OS'] =~ /Windows (8|10)/i
    print_line("")
+   print_line("    ARCH        : #{sysinfo['Architecture']}")
    print_line("    Computer    : #{sysinfo['Computer']}")
    print_line("    OS          : #{sysinfo['OS']}")
-   print_line("    ARCH        : #{sysinfo['Architecture']}")
    print_line("    Status      : This system is not affected by CVE-2019-0708")
    print_line("    HotFixID    : None patch available to address this vulnerability")
    print_line("    Termdd.sys  : This release does not have termdd.sys driver")
